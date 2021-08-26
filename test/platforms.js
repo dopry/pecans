@@ -3,7 +3,7 @@ import {
   platforms,
   detectPlatform,
   resolveForVersion,
-} from "../lib/utils/platforms.js";
+} from "../lib/v1/utils/platforms.js";
 
 describe("Platforms", function () {
   describe("Detect", function () {

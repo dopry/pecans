@@ -4,7 +4,7 @@ import {
   toSemver,
   parseRELEASES,
   generateRELEASES,
-} from "../lib/utils/win-releases.js";
+} from "../lib/v1/utils/win-releases.js";
 
 describe("Windows RELEASES", function () {
   describe("Version Normalization", function () {

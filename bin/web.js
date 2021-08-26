@@ -3,7 +3,7 @@ import { v4 as uuid } from "uuid";
 import basicAuth from "basic-auth";
 import Analytics from "analytics-node";
 import { Pecans, platforms } from "../lib/index.js";
-import { platformToType } from "../lib/utils/platforms.js";
+import { platformToType } from "../lib/v1/utils/platforms.js";
 
 const app = express();
 
