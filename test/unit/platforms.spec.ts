@@ -1,6 +1,6 @@
 import should from "should";
-import { PecansReleaseDTO } from "../src/models";
-import { filenameToOperatingSystem } from "../src/utils/OperatingSystem";
+import { PecansReleaseDTO } from "../../src/models";
+import { filenameToOperatingSystem } from "../../src/utils/OperatingSystem";
 import {
   Architecture,
   filenameToPlatform,
@@ -8,11 +8,11 @@ import {
   PackageFormat,
   Platform,
   platforms,
-} from "../src/utils/";
-import { resolveReleaseAssetForVersion } from "../src/utils/resolveForVersion";
-import { filenameToPackageFormat } from "../src/utils/PackageFormat";
-import { filenameToArchitecture } from "../src/utils/Architecture";
-import { SupportedFileExtension } from "../src/utils/SupportedFileExtension";
+} from "../../src/utils";
+import { resolveReleaseAssetForVersion } from "../../src/utils/resolveForVersion";
+import { filenameToPackageFormat } from "../../src/utils/PackageFormat";
+import { filenameToArchitecture } from "../../src/utils/Architecture";
+import { SupportedFileExtension } from "../../src/utils/SupportedFileExtension";
 
 type FilenameResolveTestTuple = [
   filename: string,

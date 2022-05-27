@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response, Router } from "express";
 import useragent from "express-useragent";
+import Debug from "debug";
 
 import EventEmitter from "node:events";
 import { ParsedQs } from "qs";
@@ -37,6 +38,8 @@ import {
 import { resolveReleaseAssetForVersion } from "./utils/resolveForVersion";
 import { generateRELEASES, parseRELEASES } from "./utils/win-releases";
 import { VersionFilterOpts, Versions } from "./versions";
+
+const logger = Debug("pecans");
 
 export interface PecansSettings {
   /** Timeout for releases cache (seconds) */
@@ -199,8 +202,10 @@ export class Pecans extends EventEmitter {
     // Create backend
     this.versions = new Versions(this.backend);
     this.router = Router();
+
+    // Log requests
     this.router.use((req, res, next) => {
-      console.log(`${req.method} ${req.url}`);
+      logger(`${req.method} ${req.url}`);
       return next();
     });
 
@@ -214,22 +219,22 @@ export class Pecans extends EventEmitter {
     );
 
     // #region download endpoints
-    this.router.get("/", this.download.bind(this));
+    this.router.get("/", this.handleDownload.bind(this));
     this.router.get(
       "/download/channel/:channel/:platform?",
-      this.download.bind(this)
+      this.handleDownload.bind(this)
     );
-    this.router.get("/download/:platform?", this.download.bind(this));
-    this.router.get("/download/:tag/:filename", this.download.bind(this));
+    this.router.get("/download/:platform?", this.handleDownload.bind(this));
+    this.router.get("/download/:tag/:filename", this.handleDownload.bind(this));
     this.router.get(
       "/download/version/:tag/:platform?",
-      this.download.bind(this)
+      this.handleDownload.bind(this)
     );
 
     // the /dl path will supersede the /download/**  paths
     this.router.get("/dl/:filename", this.dlfilename.bind(this));
-    // ?channel?os?arch?version
-    this.router.get("/dl/:channel/:os/:arch", this.dl.bind(this));
+    // ?channel?version
+    this.router.get("/dl/:os/:arch", this.dl.bind(this));
     // #endregion
 
     this.router.get("/api/channels", this.handleApiChannels.bind(this));
@@ -264,12 +269,12 @@ export class Pecans extends EventEmitter {
       const releases = await this.getReleases();
       const matchingReleases = releases.queryReleases(query);
       if (matchingReleases.length == 0) {
-        res.status(404).send(`${filename} not found`);
+        return res.status(404).send(`${filename} not found`);
       }
       const release = matchingReleases[0];
       const matchingAssets = release.queryAssets(query);
       if (matchingAssets.length == 0) {
-        res.status(404).send(`${filename} not found`);
+        return res.status(404).send(`${filename} not found`);
       }
       const asset = matchingAssets[0];
       this.serveAsset(req, res, release, asset);
@@ -362,20 +367,20 @@ export class Pecans extends EventEmitter {
     return;
   }
 
-  getCacheKey(): number {
+  protected getCacheKey(): number {
     // use a time based key to ensure the cached releases are update when cacheMaxAge is reached.
     return this.cacheId + Math.ceil(Date.now() / this.opts.cacheMaxAge);
   }
 
-  getBaseUrl(req: Request) {
+  protected getBaseUrl(req: Request) {
     return req.protocol + "://" + req.get("host") + this.opts.basePath;
   }
 
-  getFullUrl(req: Request) {
+  protected getFullUrl(req: Request) {
     return this.getBaseUrl(req) + req.originalUrl;
   }
 
-  async getReleases(): Promise<PecansReleases> {
+  public async getReleases(): Promise<PecansReleases> {
     const key = this.getCacheKey();
     if (!this.releasesCache[key]) {
       this.releasesCache[key] = this.backend.releases();
@@ -383,7 +388,11 @@ export class Pecans extends EventEmitter {
     return this.releasesCache[key];
   }
 
-  async handleApiChannels(req: Request, res: Response, next: NextFunction) {
+  protected async handleApiChannels(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) {
     try {
       const releases = await this.getReleases();
       const channels = releases.getChannels();
@@ -393,7 +402,11 @@ export class Pecans extends EventEmitter {
     }
   }
 
-  async handleApiStatus(req: Request, res: Response, next: NextFunction) {
+  protected async handleApiStatus(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) {
     try {
       res.send({ uptime: (Date.now() - this.startTime) / 1000 });
     } catch (err) {
@@ -401,7 +414,11 @@ export class Pecans extends EventEmitter {
     }
   }
 
-  async handleApiVersions(req: Request, res: Response, next: NextFunction) {
+  protected async handleApiVersions(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) {
     try {
       const channel = validateReqQueryChannel(req.query.channel || "*");
       const platform = getPlatformFromQuery(req.query);
@@ -420,7 +437,11 @@ export class Pecans extends EventEmitter {
   }
 
   // Handler for download routes
-  async download(req: Request, res: Response, next: NextFunction) {
+  protected async handleDownload(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) {
     try {
       let channel = validateReqQueryChannel(req.query.channel || "stable");
       const tag = validateReqQueryTag(req.query.tag);
@@ -492,7 +513,11 @@ export class Pecans extends EventEmitter {
   }
 
   // Request to update
-  handleUpdateRedirect(req: Request, res: Response, next: NextFunction) {
+  protected handleUpdateRedirect(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) {
     try {
       if (!req.query.version) throw new Error('Requires "version" parameter');
       if (!req.query.platform) throw new Error('Requires "platform" parameter');
@@ -505,7 +530,11 @@ export class Pecans extends EventEmitter {
   }
 
   // Updater used by OSX (Squirrel.Mac) and others
-  async handleUpdateOSX(req: Request, res: Response, next: NextFunction) {
+  protected async handleUpdateOSX(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) {
     try {
       if (!req.params.version) throw new Error('Requires "version" parameter');
       if (!req.params.platform)
@@ -548,7 +577,11 @@ export class Pecans extends EventEmitter {
   // Update Windows (Squirrel.Windows)
   // Auto-updates: Squirrel.Windows: serve RELEASES from latest version
   // Currently, it will only serve a full.nupkg of the latest release with a normalized filename (for pre-release)
-  async handleUpdateWin(req: Request, res: Response, next: NextFunction) {
+  protected async handleUpdateWin(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) {
     try {
       const _platform = req.params.platform || "windows_32";
       const mapped_platform = mapLegacyPlatform(_platform || "");
@@ -598,7 +631,11 @@ export class Pecans extends EventEmitter {
   }
 
   // Serve releases notes
-  async handleServeNotes(req: Request, res: Response, next: NextFunction) {
+  protected async handleServeNotes(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) {
     try {
       const version = getVersionFromQuery(req.query);
       const releases = await this.getReleases();
@@ -623,7 +660,7 @@ export class Pecans extends EventEmitter {
   }
 
   // Serve an asset to the response
-  async serveAsset(
+  protected async serveAsset(
     req: Request,
     res: Response,
     release: PecansReleaseDTO,

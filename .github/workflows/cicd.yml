@@ -12,11 +12,15 @@ jobs:
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v3
         with:
-          node-version: 16
+          node-version: 18
           cache: "npm"
       - run: npm ci
       # - run: npm run lint
       - run: npm test
+        env:
+          GITHUB_OWNER: owner-nock-mocked
+          GITHUB_REPO: repo-nock-mocked
+          GITHUB_TOKEN: token-nock-mocked
       - run: npm run build
       - run: npm run semantic-release
         env:

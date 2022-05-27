@@ -1,3 +1,4 @@
+/** @type { import('mocha').MochaInstanceOptions } */
 module.exports = {
   color: true,
   exit: true,
