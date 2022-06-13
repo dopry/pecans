@@ -93,8 +93,10 @@ export class GitHubBackend extends Backend {
       { owner, repo }
     );
 
-    const normalizedReleases = releases.map((release) =>
-      this.normalizeRelease(release)
+    const normalizedReleases = releases
+      // filter out the draft (unpublished) releases if they exist
+      .filter((release) => !release.draft)
+      .map((release) => this.normalizeRelease(release)
     );
     const pecansReleases = new PecansReleases(normalizedReleases);
     return pecansReleases;
