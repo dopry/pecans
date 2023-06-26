@@ -21,6 +21,18 @@ describe("Platforms", function () {
       detectPlatform("myapp-arm.dmg").should.be.exactly(platforms.OSX_ARM64);
     });
 
+    it("should detect osx_universal", function () {
+      detectPlatform("myapp-v0.25.1-darwin-universal.zip").should.be.exactly(
+        platforms.OSX_UNIVERSAL
+      );
+      detectPlatform("myapp-osx-univ.zip").should.be.exactly(
+        platforms.OSX_UNIVERSAL
+      );
+      detectPlatform("myapp-universal.dmg").should.be.exactly(
+        platforms.OSX_UNIVERSAL
+      );
+    });
+
     it("should detect windows_32", function () {
       detectPlatform("myapp-v0.25.1-win32-ia32.zip").should.be.exactly(
         platforms.WINDOWS_32
@@ -191,12 +203,54 @@ describe("Platforms", function () {
       ],
     };
 
+    const versionWithUniversal = {
+      ...version,
+    };
+    versionWithUniversal.platforms = [...versionWithUniversal.platforms, {
+      type: "osx_universal",
+      filename: "test-3.3.1-darwin-universal.dmg",
+      download_url:
+        "https://api.github.com/repos/test/test2/releases/assets/793897",
+      download_count: 0,
+    }];
+
+
     it("should resolve to best platform", function () {
-      resolveForVersion(version, "osx").filename.should.be.exactly(
+      // x64 should get x64
+      resolveForVersion(version, "osx_x64").filename.should.be.exactly(
         "test-3.3.1-darwin.dmg"
       );
+      // arm64 should get arm64
       resolveForVersion(version, "osx_arm64").filename.should.be.exactly(
         "test-3.3.1-darwin-arm64.dmg"
+      );
+      // universal should get universal
+      resolveForVersion(versionWithUniversal, "osx_univ").filename.should.be.exactly(
+        "test-3.3.1-darwin-universal.dmg"
+      );
+      // no arch should get universal
+      resolveForVersion(versionWithUniversal, "osx").filename.should.be.exactly(
+        "test-3.3.1-darwin-universal.dmg"
+      );
+      // x64 should get universal, when present
+      resolveForVersion(versionWithUniversal, "osx_x64").filename.should.be.exactly(
+        "test-3.3.1-darwin-universal.dmg"
+      );
+      // arm64 should get universal, when present
+      resolveForVersion(versionWithUniversal, "osx_arm64").filename.should.be.exactly(
+        "test-3.3.1-darwin-universal.dmg"
+      );
+      // x64 should not get universal, when preferUniversal is false
+      resolveForVersion(versionWithUniversal, "osx_x64", { preferUniversal: false }).filename.should.be.exactly(
+        "test-3.3.1-darwin.dmg"
+      );
+      // arm64 should not get universal, when preferUniversal is false
+      resolveForVersion(versionWithUniversal, "osx_arm64", { preferUniversal: false }).filename.should.be.exactly(
+        "test-3.3.1-darwin-arm64.dmg"
+      );
+      // request for universal should get universal, when preferUniversal is false
+      resolveForVersion(versionWithUniversal, "osx_univ", { preferUniversal: false }).filename.should.be.exactly(
+        "test-3.3.1-darwin-universal.dmg"
       );
       resolveForVersion(version, "win32").filename.should.be.exactly(
         "AtomSetup.exe"
