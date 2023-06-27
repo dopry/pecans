@@ -1,5 +1,3 @@
-// @ts-ignore
-import urljoin from "urljoin.js";
 import { Router, Request, Response, NextFunction } from "express";
 import useragent from "express-useragent";
 
@@ -539,7 +537,6 @@ export class Pecans extends EventEmitter {
   // Currently, it will only serve a full.nupkg of the latest release with a normalized filename (for pre-release)
   async handleUpdateWin(req: Request, res: Response, next: NextFunction) {
     try {
-      const fullUrl = this.getFullUrl(req);
       const _platform = req.params.platform || "windows_32";
       const mapped_platform = mapLegacyPlatform(_platform || "");
       const platform = validateReqQueryPlatform(mapped_platform);

@@ -9,6 +9,7 @@ import {
   PecansAssetDTO,
   PecansRelease,
   PecansReleaseDTO,
+  isPecansAsset,
 } from "../models";
 import { channelFromVersion, filenameToPlatform } from "../utils/";
 import { PecansReleases } from "../models/PecansReleases";
@@ -160,7 +161,15 @@ export class GitHubBackend extends Backend {
     const valid_assets = release.assets.filter(
       (asset) => filenameToPlatform(asset.name) != null
     );
-    const assets = valid_assets.map((asset) => this.normalizeAsset(asset));
+    const assets = valid_assets
+      .map((asset) => {
+        try {
+          return this.normalizeAsset(asset);
+        } catch (err) {
+          return undefined;
+        }
+      })
+      .filter(isPecansAsset);
     const dto: PecansReleaseDTO = {
       version,
       channel,

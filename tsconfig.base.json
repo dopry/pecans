@@ -16,7 +16,8 @@
     "rootDir": "src",
     "skipLibCheck": true,
     "strict": true,
-    "traceResolution": false
+    "traceResolution": false,
+    "types": ["mocha"]
   },
   "compileOnSave": false,
   "exclude": ["node_modules", "dist"],
