@@ -2,7 +2,7 @@ import { gt } from "semver";
 import { PecansRelease } from "../models";
 
 // Compare two version
-export function sortRelaseBySemVerDescending(
+export function sortReleaseBySemVerDescending(
   a: PecansRelease,
   b: PecansRelease
 ) {

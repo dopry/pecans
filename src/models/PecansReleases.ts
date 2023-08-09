@@ -1,4 +1,4 @@
-import { sortRelaseBySemVerDescending } from "../utils";
+import { sortReleaseBySemVerDescending } from "../utils";
 import { PecansChannel } from "./PecansChannel";
 import { PecansRelease } from "./PecansRelease";
 import { PecansReleaseQuery } from "./PecansReleaseQuery";
@@ -10,7 +10,7 @@ export class PecansReleases {
   protected releases: PecansRelease[] = [];
 
   constructor(releases: PecansRelease[]) {
-    this.releases = releases.sort(sortRelaseBySemVerDescending);
+    this.releases = releases.sort(sortReleaseBySemVerDescending);
     releases.forEach((release) => {
       if (!this.idxReleaseByChannel[release.channel]) {
         this.idxReleaseByChannel[release.channel] = [release];
