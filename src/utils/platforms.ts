@@ -21,6 +21,7 @@ export const PLATFORMS = [
   "linux_deb_32",
   "linux_deb_64",
   "osx",
+  "osx_universal",
   "osx_32",
   "osx_64",
   "osx_arm64",
@@ -29,7 +30,7 @@ export const PLATFORMS = [
   "windows_64",
 ] as const;
 
-export type Platform = typeof PLATFORMS[number];
+export type Platform = (typeof PLATFORMS)[number];
 
 export const platforms: Record<string, Platform> = {
   // key must be uppercase version of value
@@ -46,6 +47,7 @@ export const platforms: Record<string, Platform> = {
   OSX_32: "osx_32",
   OSX_64: "osx_64",
   OSX_ARM64: "osx_arm64",
+  OSX_UNIVERSAL: "osx_universal",
   WINDOWS: "windows",
   WINDOWS_32: "windows_32",
   WINDOWS_64: "windows_64",
@@ -102,7 +104,7 @@ export function filenameToPlatform(filename: string): Platform {
   if (name == "releases" || name.endsWith(".nupkg"))
     return platforms.WINDOWS_32;
 
-  const parts = [];
+  const parts: string[] = [];
   const os = filenameToOperatingSystem(name);
   parts.push(os);
   const pkg = filenameToPackageFormat(name);

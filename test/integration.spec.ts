@@ -1,4 +1,3 @@
-import { createHash } from "crypto";
 import { Architecture, GithubRelease, GithubReleaseAsset } from "../src";
 import { SupportedFileExtension } from "../src/utils/SupportedFileExtension";
 type MockGithubReleaseAsset = Pick<

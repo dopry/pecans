@@ -17,9 +17,11 @@ import { SupportedFileExtension } from "../src/utils/SupportedFileExtension";
 type FilenameResolveTestTuple = [
   filename: string,
   os: OperatingSystem,
-  arch: Architecture,
+  /** null means it will throw */
+  arch: Architecture | null,
   pkg: PackageFormat | undefined,
-  platform: Platform
+  /** null means it will throw */
+  platform: Platform | null
 ];
 
 const release: PecansReleaseDTO = {
@@ -56,6 +58,22 @@ const release: PecansReleaseDTO = {
       id: "2",
       type: "osx_arm64",
       filename: "test-3.3.1-darwin-arm64.zip",
+      size: 1457531,
+      content_type: "application/zip",
+      raw: {},
+    },
+    {
+      id: "2",
+      type: "osx_universal",
+      filename: "test-3.3.1-darwin-universal.zip",
+      size: 1457531,
+      content_type: "application/zip",
+      raw: {},
+    },
+    {
+      id: "2",
+      type: "osx_universal",
+      filename: "test-3.3.1-darwin-universal.dmg",
       size: 1457531,
       content_type: "application/zip",
       raw: {},
@@ -144,8 +162,29 @@ const release: PecansReleaseDTO = {
 };
 const tests: FilenameResolveTestTuple[] = [
   ["myapp-v0.25.1-darwin-x64.zip", "osx", "64", undefined, platforms.OSX_64],
-  ["myapp.dmg", "osx", "64", undefined, platforms.OSX_64],
+  ["myapp.dmg", "osx", null, undefined, null],
   ["myapp-arm.dmg", "osx", "arm64", undefined, platforms.OSX_ARM64],
+  [
+    "myapp-v0.25.1-darwin-universal.zip",
+    "osx",
+    "universal",
+    undefined,
+    platforms.OSX_UNIVERSAL,
+  ],
+  [
+    "myapp-osx-univ.zip",
+    "osx",
+    "universal",
+    undefined,
+    platforms.OSX_UNIVERSAL,
+  ],
+  [
+    "myapp-universal.dmg",
+    "osx",
+    "universal",
+    undefined,
+    platforms.OSX_UNIVERSAL,
+  ],
   [
     "myapp-v0.25.1-win32-ia32.zip",
     "windows",
@@ -153,8 +192,8 @@ const tests: FilenameResolveTestTuple[] = [
     undefined,
     platforms.WINDOWS_32,
   ],
-  ["atom-1.0.9-delta.nupkg", "windows", "32", undefined, platforms.WINDOWS_32],
-  ["RELEASES", "windows", "32", undefined, platforms.WINDOWS_32],
+  ["atom-1.0.9-delta.nupkg", "windows", null, undefined, null],
+  ["RELEASES", "windows", null, undefined, null],
   ["enterprise-amd64.tar.gz", "linux", "64", undefined, platforms.LINUX_64],
   ["enterprise-amd64.tgz", "linux", "64", undefined, platforms.LINUX_64],
   ["enterprise-ia32.tar.gz", "linux", "32", undefined, platforms.LINUX_32],
@@ -166,6 +205,7 @@ const tests: FilenameResolveTestTuple[] = [
 ];
 
 const fileNameByPlatformTests: [platform: Platform, filename: string][] = [
+  [platforms.OSX_UNIVERSAL, "test-3.3.1-darwin-universal.dmg"],
   ["osx_64", "test-3.3.1-darwin.dmg"],
   ["osx_arm64", "test-3.3.1-darwin-arm64.dmg"],
   ["windows_32", "AtomSetup.exe"],
@@ -184,6 +224,8 @@ const fileNameByPlatformAndExtTests: [
 ][] = [
   ["osx_64", ".zip", "test-3.3.1-darwin-x64.zip"],
   ["osx_arm64", ".zip", "test-3.3.1-darwin-arm64.zip"],
+  [platforms.OSX_UNIVERSAL, ".zip", "test-3.3.1-darwin-universal.zip"],
+  [platforms.OSX_UNIVERSAL, ".dmg", "test-3.3.1-darwin-universal.dmg"],
 ];
 
 describe("Platforms", function () {
@@ -199,7 +241,14 @@ describe("Platforms", function () {
     tests.forEach(([filename, os, arch, pkg]) => {
       it(`resolves ${filename} to architecture ${arch}`, () => {
         const os = filenameToOperatingSystem(filename);
-        filenameToArchitecture(filename, os).should.be.exactly(arch);
+        if (arch === null) {
+          // expect an error
+          should.throws(() => {
+            filenameToArchitecture(filename, os);
+          });
+        } else {
+          filenameToArchitecture(filename, os).should.be.exactly(arch);
+        }
       });
     });
   });
@@ -216,8 +265,18 @@ describe("Platforms", function () {
   describe("filenameToPlatform", function () {
     tests.forEach(([filename, os, arch, pkg, platform]) => {
       it(`resolves ${filename} to platform ${platform}`, () => {
-        const target = filenameToPlatform(filename);
-        should(target).be.exactly(platform);
+        if (platform === null) {
+          // expect an error
+          try {
+            filenameToPlatform(filename);
+            throw new Error("Expected an error");
+          } catch (err) {
+            // pass
+          }
+        } else {
+          const target = filenameToPlatform(filename);
+          should(target).be.exactly(platform);
+        }
       });
     });
   });
