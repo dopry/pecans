@@ -1,3 +1,10 @@
+# [2.0.0-next.7](https://github.com/dopry/pecans/compare/v2.0.0-next.6...v2.0.0-next.7) (2023-08-09)
+
+
+### Features
+
+* add support for osx universal binaries. ([#5](https://github.com/dopry/pecans/issues/5)) ([902f283](https://github.com/dopry/pecans/commit/902f2836d09025ba096366cbb7195063b3e3a376))
+
 # [2.0.0-next.6](https://github.com/dopry/pecans/compare/v2.0.0-next.5...v2.0.0-next.6) (2022-06-13)
 
 
