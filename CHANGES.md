@@ -1,3 +1,10 @@
+# [2.0.0-next.9](https://github.com/dopry/pecans/compare/v2.0.0-next.8...v2.0.0-next.9) (2023-09-08)
+
+
+### Bug Fixes
+
+* missing preferUniversal from options ([8dbb31d](https://github.com/dopry/pecans/commit/8dbb31d1b68f508af8c369eea2c7d1d451620a07))
+
 # [2.0.0-next.8](https://github.com/dopry/pecans/compare/v2.0.0-next.7...v2.0.0-next.8) (2023-09-08)
 
 
