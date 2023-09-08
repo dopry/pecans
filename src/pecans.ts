@@ -1,48 +1,42 @@
-import { Router, Request, Response, NextFunction } from "express";
+import { NextFunction, Request, Response, Router } from "express";
 import useragent from "express-useragent";
 
-import { VersionFilterOpts, Versions } from "./versions";
+import EventEmitter from "node:events";
+import { ParsedQs } from "qs";
+import { validRange } from "semver";
+import { Backend } from "./backends/";
+import {
+  PecansAssetDTO,
+  PecansRelease,
+  PecansReleaseDTO,
+  PecansReleaseQuery,
+  PecansReleases,
+} from "./models/index";
+import {
+  Architecture,
+  OPERATING_SYSTEMS,
+  PLATFORMS,
+  Platform,
+  filenameToPlatform,
+  getPkgFromQuery,
+  isOperatingSystem,
+  isPlatform,
+  isValidArchForOS,
+  mapLegacyPlatform,
+  platforms,
+} from "./utils/";
+import {
+  SupportedFileExtension,
+  getDownloadExtensionsByOs,
+  isSupportedFileExtension,
+} from "./utils/SupportedFileExtension";
 import {
   formatReleaseNote,
   mergeReleaseNotes,
 } from "./utils/mergeReleaseNotes";
-import {
-  platforms,
-  PLATFORMS,
-  Platform,
-  isPlatform,
-  filenameToPlatform,
-  Architecture,
-  getPkgFromQuery,
-  isOperatingSystem,
-  OPERATING_SYSTEMS,
-  isValidArchForOS,
-  mapLegacyPlatform,
-} from "./utils/";
 import { resolveReleaseAssetForVersion } from "./utils/resolveForVersion";
-import { parseRELEASES, generateRELEASES } from "./utils/win-releases";
-import { Backend } from "./backends/";
-import { ParsedQs } from "qs";
-import EventEmitter from "node:events";
-import {
-  getDownloadExtensionsByOs,
-  isSupportedFileExtension,
-  SupportedFileExtension,
-} from "./utils/SupportedFileExtension";
-import {
-  PecansReleases,
-  PecansRelease,
-  PecansAssetDTO,
-  PecansReleaseDTO,
-  PecansReleaseQuery,
-} from "./models/index";
-import { validRange } from "semver";
-
-export interface PecansOptions {
-  timeout?: number;
-  basePath?: string;
-  cacheMaxAge?: number;
-}
+import { generateRELEASES, parseRELEASES } from "./utils/win-releases";
+import { VersionFilterOpts, Versions } from "./versions";
 
 export interface PecansSettings {
   /** Timeout for releases cache (seconds) */
@@ -54,6 +48,8 @@ export interface PecansSettings {
   /** If universal build exists, prefer it over platform specific builds */
   preferUniversal: boolean;
 }
+
+export interface PecansOptions extends Partial<PecansSettings> {}
 
 export class UnsupportedPlatformError extends Error {
   constructor(platform: unknown) {
@@ -449,7 +445,7 @@ export class Pecans extends EventEmitter {
           channel: channel,
           platform: platform,
           versionRange: tag,
-          preferUniversal: this.opts.preferUniversal
+          preferUniversal: this.opts.preferUniversal,
         });
       } catch (err) {
         if (channel || tag != "latest") throw err;
@@ -460,23 +456,28 @@ export class Pecans extends EventEmitter {
           channel: "*",
           platform: platform,
           versionRange: tag,
-          preferUniversal: this.opts.preferUniversal
+          preferUniversal: this.opts.preferUniversal,
         });
       }
 
       const asset = filename
         ? release.assets.find((i) => i.filename == filename)
-        : resolveReleaseAssetForVersion(release, platform, this.opts.preferUniversal, filetype);
+        : resolveReleaseAssetForVersion(
+            release,
+            platform,
+            this.opts.preferUniversal,
+            filetype
+          );
 
       if (!asset)
         throw new Error(
           "No download available for platform " +
-          platform +
-          " for version " +
-          release.version +
-          " (" +
-          (channel || "beta") +
-          ")"
+            platform +
+            " for version " +
+            release.version +
+            " (" +
+            (channel || "beta") +
+            ")"
         );
 
       // Call analytic middleware, then serve
@@ -525,8 +526,9 @@ export class Pecans extends EventEmitter {
       const notesSlice =
         versions.length === 1 ? [latest] : versions.slice(0, -1);
       const releaseNotes = mergeReleaseNotes(notesSlice, false);
-      const url = `${this.getBaseUrl(req)}/download/version/${latest.version
-        }/${platform}?filetype=${filetype}`;
+      const url = `${this.getBaseUrl(req)}/download/version/${
+        latest.version
+      }/${platform}?filetype=${filetype}`;
 
       res.status(200).send({
         url,
