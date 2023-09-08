@@ -1,7 +1,7 @@
 import semver from "semver";
 import { Backend } from "./backends/";
 import { PecansRelease } from "./models/PecansRelease";
-import { sortRelaseBySemVerDescending } from "./utils/sortRelaseBySemVerDescending";
+import { sortReleaseBySemVerDescending } from "./utils/sortReleaseBySemVerDescending";
 import { isPlatform, Platform, satisfiesPlatform } from "./utils";
 import { UnsupportedPlatformError } from "./pecans";
 import { reset } from "express-useragent";
@@ -9,12 +9,14 @@ import { reset } from "express-useragent";
 export type PlatformQuery = Platform | undefined;
 
 export interface VersionFilterOpts {
-  // latest or a semver range, see: https://github.com/npm/node-semver#ranges, defaults to latest
+  /** latest or a semver range, see: https://github.com/npm/node-semver#ranges, defaults to latest */
   versionRange?: string;
-  // * or  a channel name, defaults to stable
+  /** * or  a channel name, defaults to stable */
   channel?: string;
-  // defaults to undefined
+  /** defaults to undefined */
   platform?: Platform;
+  /** Should we prioritize Universal build over x64/arm64? Default to true */
+  preferUniversal?: boolean;
 }
 
 export class Versions {
@@ -22,11 +24,12 @@ export class Versions {
     versionRange: "latest",
     platform: undefined,
     channel: "stable",
+    preferUniversal: true,
   };
 
-  constructor(protected backend: Backend) {}
+  constructor(protected backend: Backend) { }
 
-  // Filter versions with criterias
+  // Filter versions with criteria
   async filter(opts: VersionFilterOpts): Promise<PecansRelease[]> {
     const _opts: VersionFilterOpts = Object.assign(
       {},
@@ -44,12 +47,16 @@ export class Versions {
       if (!release.satisfiesChannel(_opts.channel)) {
         return false;
       }
-      // Not available for requested paltform
+      // Not available for requested platform
       if (_opts.platform && _opts.platform !== undefined) {
-        const platform: string = _opts.platform;
+        const platforms: Platform[] = [_opts.platform];
+        // if we prefer universal, add it to the list of platforms to match
+        if (_opts.platform.startsWith("osx") && _opts.preferUniversal) {
+          platforms.push("osx_universal");
+        }
         const availableForPlatform = release.assets.some((a) => {
           if (a.filename === "RELEASES") return false;
-          const match = a.type == _opts.platform || a.type.startsWith(platform);
+          const match = platforms.includes(a.type) || platforms.some(p => a.type.startsWith(p));
           return match;
         });
         if (!availableForPlatform) return false;
@@ -75,7 +82,7 @@ export class Versions {
   async list() {
     const releases = await this.backend.releases();
     const versions = releases.getReleases();
-    return versions.sort(sortRelaseBySemVerDescending);
+    return versions.sort(sortReleaseBySemVerDescending);
   }
 
   // Resolve a platform, by filtering then taking the first result

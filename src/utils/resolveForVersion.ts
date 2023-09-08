@@ -12,6 +12,7 @@ import {
 export function resolveReleaseAssetForVersion(
   version: PecansReleaseDTO,
   platform: Platform,
+  preferUniversal = true,
   wanted?: string
 ) {
   const prefs: string[] = [...SUPPORTED_FILE_EXTENSIONS];
@@ -19,13 +20,21 @@ export function resolveReleaseAssetForVersion(
   // Put wanted at the top of the list... will fallback to other extensions.
   if (wanted) prefs.unshift(wanted);
 
+  const platforms: Platform[] = [platform]
+
+  // If we want a universal binary, add the other platform to the list.
+  if (preferUniversal && platform.startsWith("osx")) {
+    platforms.push("osx_universal");
+  }
+
   const compatibleAssets = version.assets.filter((asset) => {
     const ext = getSupportedExt(asset.filename) || "";
-    return prefs.includes(ext) && asset.type.startsWith(platform);
+    return prefs.includes(ext) && platforms.some(p => asset.type.startsWith(p));
   });
 
   const sorted = compatibleAssets.sort((p1, p2) => {
-    // Compare by arhcitecture ("osx_64" > "osx")
+    // Compare by architecture ("osx_64" > "osx")
+    // "osx_universal" > "osx_64" > "osx"
     if (p1.type.length > p2.type.length) return -1;
     if (p2.type.length > p1.type.length) return 1;
 

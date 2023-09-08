@@ -6,5 +6,5 @@ export * from "./channelFromVersion";
 export * from "./mergeReleaseNotes";
 export * from "./resolveForVersion";
 export * from "./satisfiesPlatform";
-export * from "./sortRelaseBySemVerDescending";
+export * from "./sortReleaseBySemVerDescending";
 export * from "./win-releases";

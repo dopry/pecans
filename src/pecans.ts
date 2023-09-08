@@ -45,9 +45,14 @@ export interface PecansOptions {
 }
 
 export interface PecansSettings {
+  /** Timeout for releases cache (seconds) */
   timeout: number;
+  /** Base path for all routes */
   basePath: string;
+  /** Max age for releases cache (seconds) */
   cacheMaxAge: number;
+  /** If universal build exists, prefer it over platform specific builds */
+  preferUniversal: boolean;
 }
 
 export class UnsupportedPlatformError extends Error {
@@ -171,11 +176,10 @@ export class Pecans extends EventEmitter {
   protected opts: PecansSettings;
 
   static defaults: PecansSettings = {
-    // Timeout for releases cache (seconds)
     timeout: 60 * 60 * 1000,
     cacheMaxAge: 60 * 60 * 2,
-    // Secret for GitHub webhook
     basePath: "",
+    preferUniversal: true,
   };
 
   protected releasesCache: Record<string, Promise<PecansReleases>> = {};
@@ -222,7 +226,7 @@ export class Pecans extends EventEmitter {
       this.download.bind(this)
     );
 
-    // the /dl path will supercede the /download/**  paths
+    // the /dl path will supersede the /download/**  paths
     this.router.get("/dl/:filename", this.dlfilename.bind(this));
     // ?channel?os?arch?version
     this.router.get("/dl/:channel/:os/:arch", this.dl.bind(this));
@@ -439,36 +443,40 @@ export class Pecans extends EventEmitter {
       // If specific version, don't enforce a channel
       if (tag != "latest") channel = "*";
 
-      let release: PecansRelease;
+      let release: PecansRelease | undefined = undefined;
       try {
         release = await this.versions.resolve({
           channel: channel,
           platform: platform,
           versionRange: tag,
+          preferUniversal: this.opts.preferUniversal
         });
       } catch (err) {
         if (channel || tag != "latest") throw err;
       }
 
-      release = await this.versions.resolve({
-        channel: "*",
-        platform: platform,
-        versionRange: tag,
-      });
+      if (!release) {
+        release = await this.versions.resolve({
+          channel: "*",
+          platform: platform,
+          versionRange: tag,
+          preferUniversal: this.opts.preferUniversal
+        });
+      }
 
       const asset = filename
         ? release.assets.find((i) => i.filename == filename)
-        : resolveReleaseAssetForVersion(release, platform, filetype);
+        : resolveReleaseAssetForVersion(release, platform, this.opts.preferUniversal, filetype);
 
       if (!asset)
         throw new Error(
           "No download available for platform " +
-            platform +
-            " for version " +
-            release.version +
-            " (" +
-            (channel || "beta") +
-            ")"
+          platform +
+          " for version " +
+          release.version +
+          " (" +
+          (channel || "beta") +
+          ")"
         );
 
       // Call analytic middleware, then serve
@@ -517,9 +525,8 @@ export class Pecans extends EventEmitter {
       const notesSlice =
         versions.length === 1 ? [latest] : versions.slice(0, -1);
       const releaseNotes = mergeReleaseNotes(notesSlice, false);
-      const url = `${this.getBaseUrl(req)}/download/version/${
-        latest.version
-      }/${platform}?filetype=${filetype}`;
+      const url = `${this.getBaseUrl(req)}/download/version/${latest.version
+        }/${platform}?filetype=${filetype}`;
 
       res.status(200).send({
         url,
