@@ -1,3 +1,10 @@
+# [2.0.0-next.8](https://github.com/dopry/pecans/compare/v2.0.0-next.7...v2.0.0-next.8) (2023-09-08)
+
+
+### Features
+
+* preferUniversal option ([#6](https://github.com/dopry/pecans/issues/6)) ([74c4f04](https://github.com/dopry/pecans/commit/74c4f041d572e619e94ab29c3a283255f5e51640))
+
 # [2.0.0-next.7](https://github.com/dopry/pecans/compare/v2.0.0-next.6...v2.0.0-next.7) (2023-08-09)
 
 
