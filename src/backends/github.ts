@@ -64,6 +64,9 @@ export class GitHubBackend extends Backend {
       auth: token,
       baseUrl,
       userAgent: "Pecans Github Backend",
+      request: {
+        fetch: fetch,
+      },
     };
     this.octokit = new Octokit(octokitOptions);
   }
