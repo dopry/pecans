@@ -1,10 +1,17 @@
 import { ParsedQs } from "qs";
+
 // TODO: more consistent use of explicit package name instead of assuming based on context
 export const PACKAGE_FORMATS = [
-  "deb",
-  "rpm" /*"zip", "dmg", "tar", "nupkg"*/,
+  "deb", // typically: linux (debian) installer
+  "rpm", // typically: linux (redhat) installer
+  "zip", // typically a mac update
+  "dmg", // typically: darwin installer
+  "tar", // typically: linux tarball
+  "exe", // typically: windows installer
+  "nupkg", // typically: windows installer / update
 ] as const;
-export type PackageFormat = typeof PACKAGE_FORMATS[number];
+
+export type PackageFormat = (typeof PACKAGE_FORMATS)[number];
 // check if a string is an Package type identifier
 export function isPackageFormat(obj: unknown): obj is PackageFormat {
   return (

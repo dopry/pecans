@@ -1,7 +1,7 @@
 import { satisfies, validRange } from "semver";
 import { channelFromVersion as channelFromVersion } from "../utils";
 import { PecansAssetQuery } from "./PecansAssetQuery";
-import { PecansAsset, PecansAssetDTO } from "./PecansAsset";
+import { PecansAsset, PecansAssetDTO, isPecansAsset } from "./PecansAsset";
 import { PecansReleaseQuery } from "./PecansReleaseQuery";
 
 export interface PecansReleaseDTO {
@@ -12,10 +12,6 @@ export interface PecansReleaseDTO {
   // missing published_at indicates a draft that hasn't been published.
   published_at: Date;
   version: string;
-}
-
-export function isPecansAsset(obj: unknown): obj is PecansAsset {
-  return obj instanceof PecansAsset;
 }
 
 export class PecansRelease implements PecansReleaseDTO {

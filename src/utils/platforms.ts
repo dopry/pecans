@@ -1,5 +1,4 @@
-import { platform } from "os";
-import { filenameToArchitecture } from "./Architecture";
+import { filenameToArchitectureLegacy } from "./Architecture";
 import {
   filenameToOperatingSystem,
   isOperatingSystem,
@@ -9,7 +8,7 @@ import { filenameToPackageFormat } from "./PackageFormat";
 
 // platform identifier
 // {{os}}_{{packaging system}}_{{arch}}
-// TODO: refactor so resolution works off of discrete os, arch, pkg rather than these composite strings.
+// @deprecated, use discrete os, arch, and pkg properties rather than these composite strings.
 export const PLATFORMS = [
   "linux",
   "linux_32",
@@ -30,6 +29,7 @@ export const PLATFORMS = [
   "windows_64",
 ] as const;
 
+// @deprecated user os, archs, and pkg instead.
 export type Platform = (typeof PLATFORMS)[number];
 
 export const platforms: Record<string, Platform> = {
@@ -110,7 +110,7 @@ export function filenameToPlatform(filename: string): Platform {
   const pkg = filenameToPackageFormat(name);
   // pkg is optional and typically only with linux.
   pkg && parts.push(pkg);
-  const arch = filenameToArchitecture(name, os);
+  const arch = filenameToArchitectureLegacy(name);
   parts.push(arch);
   const platformKey = parts.join("_").toUpperCase();
   return platforms[platformKey];

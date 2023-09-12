@@ -3,6 +3,7 @@ import { PecansReleaseDTO } from "../../src/models";
 import { filenameToOperatingSystem } from "../../src/utils/OperatingSystem";
 import {
   Architecture,
+  filenameToArchitectureLegacy,
   filenameToPlatform,
   OperatingSystem,
   PackageFormat,
@@ -11,7 +12,6 @@ import {
 } from "../../src/utils";
 import { resolveReleaseAssetForVersion } from "../../src/utils/resolveForVersion";
 import { filenameToPackageFormat } from "../../src/utils/PackageFormat";
-import { filenameToArchitecture } from "../../src/utils/Architecture";
 import { SupportedFileExtension } from "../../src/utils/SupportedFileExtension";
 
 type FilenameResolveTestTuple = [
@@ -276,10 +276,10 @@ describe("Platforms", function () {
         if (arch === null) {
           // expect an error
           should.throws(() => {
-            filenameToArchitecture(filename, os);
+            filenameToArchitectureLegacy(filename);
           });
         } else {
-          filenameToArchitecture(filename, os).should.be.exactly(arch);
+          filenameToArchitectureLegacy(filename).should.be.exactly(arch);
         }
       });
     });

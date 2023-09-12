@@ -16,14 +16,17 @@ import {
 import {
   Architecture,
   OPERATING_SYSTEMS,
+  OperatingSystem,
   PLATFORMS,
   Platform,
+  SUPPORTED_ARCHITECTURES,
+  SupportedArchitecture,
   filenameToPlatform,
   getPkgFromQuery,
   isOperatingSystem,
   isPlatform,
-  isValidArchForOS,
   mapLegacyPlatform,
+  paramToSupportedArchitectures,
   platforms,
 } from "./utils/";
 import {
@@ -218,48 +221,77 @@ export class Pecans extends EventEmitter {
       this.backend.getRefreshWebhookMiddleware("/webhook/refresh")
     );
 
-    // #region download endpoints
+    // #region deprecated endpoints
+    // @deprecated - the /download endpoint is deprecated, please use /dl/:os/:arch
     this.router.get("/", this.handleDownload.bind(this));
+    // @deprecated - the /download/channel/:channel/:platform? endpoint is deprecated, please use /dl/:os/:arch?channel=
     this.router.get(
       "/download/channel/:channel/:platform?",
       this.handleDownload.bind(this)
     );
+    // @deprecated - the /download/:platform? endpoint is deprecated, please use /dl/:os/:arch
     this.router.get("/download/:platform?", this.handleDownload.bind(this));
+    // @deprecated - the /download/:tag/:filename endpoint is deprecated, please use /dl/:filename
     this.router.get("/download/:tag/:filename", this.handleDownload.bind(this));
+    // @deprecated - the /download/:tag/:platform? endpoint is deprecated, please use /dl/:os/:arch?version=
     this.router.get(
       "/download/version/:tag/:platform?",
       this.handleDownload.bind(this)
     );
-
-    // the /dl path will supersede the /download/**  paths
-    this.router.get("/dl/:filename", this.dlfilename.bind(this));
-    // ?channel?version
-    this.router.get("/dl/:os/:arch", this.dl.bind(this));
     // #endregion
 
-    this.router.get("/api/channels", this.handleApiChannels.bind(this));
-    // ?channel?platform?version
-    this.router.get("/api/versions", this.handleApiVersions.bind(this));
-
-    this.router.get("/notes/:version?", this.handleServeNotes.bind(this));
-    // @deprecated - the /update endpoint is deprecated, please use /update/:platform/:version
-    this.router.get("/update", this.handleUpdateRedirect.bind(this));
+    // #region deprecated update endpoints
+    // Mac updates
+    // @deprecated - the /update/:platform/:version endpoint is deprecated, please use /up/:os/:arch/:currentVersion for mac instead
     this.router.get(
       "/update/:platform/:version",
       this.handleUpdateOSX.bind(this)
     );
+    // @deprecated - the /update/:platform/:version endpoint is deprecated, please use /up/:os/:arch/:currentVersion?channel for mac instead
     this.router.get(
       "/update/channel/:channel/:platform/:version",
       this.handleUpdateOSX.bind(this)
     );
+
+    // Squirrel Update endpoints
+    // @deprecated - the /update/:platform/:version/RELEASES endpoint is deprecated, please use /up/:os/:arch/:version/RELEASES?channel for windows squirrel instead
     this.router.get(
       "/update/:platform/:version/RELEASES",
       this.handleUpdateWin.bind(this)
     );
+    // @deprecated - the /update/channel/:channel/:platform/:version/RELEASES endpoint is deprecated, please use /up/:os/:arch/:version/RELEASES?channel for windows squirrel instead
     this.router.get(
       "/update/channel/:channel/:platform/:version/RELEASES",
       this.handleUpdateWin.bind(this)
     );
+    // #endregion
+
+    // #region api endpoints
+    this.router.get("/api/channels", this.handleApiChannels.bind(this));
+    // ?channel?platform?version
+    this.router.get("/api/versions", this.handleApiVersions.bind(this));
+    this.router.get("/notes/:version?", this.handleServeNotes.bind(this));
+    // #endregion
+
+    // #region download endpoints
+    this.router.get("/dl/:filename", this.dlfilename.bind(this));
+    // optional query params: channel, version, pkg
+    this.router.get("/dl/:os/:arch", this.dl.bind(this));
+    // #endregion
+
+    // # region curren update endpoints
+    // optional querystrings ?channel
+    // this.router.get(
+    //   "/up/:os/:arch/:version/RELEASES",
+    //   this.handleUpdatesWindowsSquirrel.bind(this)
+    // );
+    // // optional querystrings ?channel
+    // this.router.get(
+    //   "/up/:os/:arch/:version",
+    //   this.handleUpdatesDarwin.bind(this)
+    // );
+
+    // #endregion
   }
 
   async dlfilename(req: Request, res: Response, next: NextFunction) {
@@ -291,7 +323,13 @@ export class Pecans extends EventEmitter {
   async dl(req: Request, res: Response, next: NextFunction) {
     try {
       const channel = req.params.channel;
-      this.validateChannelName(channel);
+      try {
+        await this.validateChannelName(channel);
+      } catch (err) {
+        if (err instanceof Error) res.status(404).send(err.message);
+        else res.status(404).send(`Unrecognized Channel: ${channel}`);
+        return;
+      }
 
       const os = req.params.os;
       if (!isOperatingSystem(os)) {
@@ -305,9 +343,18 @@ export class Pecans extends EventEmitter {
         return;
       }
 
-      const arch = req.params.arch;
-      if (!isValidArchForOS(os, arch)) {
-        res.status(404).send(`Unsupported Arch (${arch}) for OS (${os})`);
+      const archs = paramToSupportedArchitectures(req.params.arch);
+
+      if (archs.length == 0) {
+        res
+          .status(404)
+          .send(
+            `Unsupported Arch (${
+              req.params.arch
+            }) expecting one of ${SUPPORTED_ARCHITECTURES.join(
+              ", "
+            )}, univ, universal`
+          );
         return;
       }
 
@@ -317,7 +364,7 @@ export class Pecans extends EventEmitter {
       const releaseQuery: PecansReleaseQuery = {
         channel,
         os,
-        arch,
+        archs,
         version,
         pkg,
       };
@@ -331,7 +378,7 @@ export class Pecans extends EventEmitter {
       // should be the highest version that matched the que
       const release = releases[0];
       const extensions = getDownloadExtensionsByOs(os, pkg);
-      const assetQuery = { arch, version, pkg, extensions };
+      const assetQuery = { archs, version, pkg, extensions };
       const matchingAssets = release.queryAssets(assetQuery);
 
       if (matchingAssets.length == 0) {
@@ -350,7 +397,10 @@ export class Pecans extends EventEmitter {
     const releases = await this.getReleases();
     const names = releases.getChannelNames();
     if (!names.includes(name)) {
-      throw new Error(`Invalid Channel: ${name}`);
+      const msg = `Unrecognized Channel (${name}) expecting one of ${names.join(
+        ", "
+      )}`;
+      throw new Error(msg);
     }
   }
 
@@ -437,6 +487,7 @@ export class Pecans extends EventEmitter {
   }
 
   // Handler for download routes
+  // @deprecated use dl or dlfile instead.
   protected async handleDownload(
     req: Request,
     res: Response,
@@ -512,18 +563,90 @@ export class Pecans extends EventEmitter {
     }
   }
 
-  // Request to update
-  protected handleUpdateRedirect(
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ) {
-    try {
-      if (!req.query.version) throw new Error('Requires "version" parameter');
-      if (!req.query.platform) throw new Error('Requires "platform" parameter');
-      return res.redirect(
-        "/update/" + req.query.platform + "/" + req.query.version
+  async validateOperatingSystem(os: string) {
+    if (!isOperatingSystem(os)) {
+      throw new Error(
+        `Unrecognized OS (${os}) expecting one of ${OPERATING_SYSTEMS.join(
+          ", "
+        )} `
       );
+    }
+  }
+
+  async findUpdateReleases(
+    os: OperatingSystem,
+    archs: SupportedArchitecture[],
+    currentVersion: string,
+    channel = "stable"
+  ) {
+    const releaseQuery: PecansReleaseQuery = {
+      channel,
+      os,
+      archs,
+      version: `>=${currentVersion}`,
+      pkg: "zip",
+    };
+
+    const releases = await this.queryReleases(releaseQuery);
+    return releases;
+  }
+
+  async handleUpdateDarwin(req: Request, res: Response, next: NextFunction) {
+    const os = req.params.os;
+    if (!os) return res.status(404).send("Missing os from update path");
+    if (!isOperatingSystem(os)) {
+      res
+        .status(404)
+        .send(
+          `Unrecognized OS (${os}) in update path  expecting one of ${OPERATING_SYSTEMS.join(
+            ", "
+          )} `
+        );
+      return;
+    }
+    const version = req.params.version;
+    if (!version)
+      return res.status(500).send("Missing version from update path");
+    const archs = paramToSupportedArchitectures(req.params.arch);
+    if (archs.length == 0) {
+      res
+        .status(404)
+        .send(
+          `Unsupported Arch (${
+            req.params.arch
+          }) expecting one of ${SUPPORTED_ARCHITECTURES.join(
+            ", "
+          )}, univ, universal`
+        );
+      return;
+    }
+    const channel =
+      getStringValueFromRequestQuery(req.query, "channel") || "stable";
+
+    try {
+      const releases = await this.findUpdateReleases(
+        os,
+        archs,
+        version,
+        channel
+      );
+      if (releases.length === 0) return res.status(204).send("No updates");
+      const latest = releases[0];
+      if (latest.version == version) return res.status(204).send("No updates");
+      const assets = latest.queryAssets({ os, archs, pkg: "zip" });
+      if (assets.length === 0) return res.status(204).send("No updates");
+      const asset = assets[0];
+      const filename = asset.filename;
+      const url = `${this.getBaseUrl(req)}/dl/${filename}`;
+      const notesSlice =
+        releases.length === 1 ? [latest] : releases.slice(0, -1);
+      const releaseNotes = mergeReleaseNotes(notesSlice, false);
+      res.status(200).send({
+        url,
+        name: latest.version,
+        notes: releaseNotes,
+        pub_date: latest.published_at.toISOString(),
+      });
     } catch (err) {
       next(err);
     }
@@ -606,7 +729,6 @@ export class Pecans extends EventEmitter {
 
       // File exists
       const asset = latest.assets.find((i) => i.filename == "RELEASES");
-      if (!asset) throw new Error("File not found");
       if (!asset) {
         throw new Error(`RELEASES File not found for ${latest.version}`);
       }
