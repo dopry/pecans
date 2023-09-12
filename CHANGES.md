@@ -1,3 +1,10 @@
+# [2.0.0-next.10](https://github.com/dopry/pecans/compare/v2.0.0-next.9...v2.0.0-next.10) (2023-09-12)
+
+
+### Bug Fixes
+
+* fetch missing ([#7](https://github.com/dopry/pecans/issues/7)) ([0bd2aa7](https://github.com/dopry/pecans/commit/0bd2aa7ec8a4380c10284260171dcaccaf7d0d48))
+
 # [2.0.0-next.9](https://github.com/dopry/pecans/compare/v2.0.0-next.8...v2.0.0-next.9) (2023-09-08)
 
 
