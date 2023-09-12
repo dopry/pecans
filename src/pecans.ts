@@ -199,6 +199,10 @@ export class Pecans extends EventEmitter {
     // Create backend
     this.versions = new Versions(this.backend);
     this.router = Router();
+    this.router.use((req, res, next) => {
+      console.log(`${req.method} ${req.url}`);
+      return next();
+    });
 
     // Bind routes
     this.router.use(useragent.express());
