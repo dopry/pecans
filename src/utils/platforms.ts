@@ -102,7 +102,7 @@ export function filenameToPlatform(filename: string): Platform {
   const name = filename.toLowerCase();
   // Detect NuGet/Squirrel.Windows files
   if (name == "releases" || name.endsWith(".nupkg"))
-    return platforms.WINDOWS_32;
+    return platforms.WINDOWS_64;
 
   const parts: string[] = [];
   const os = filenameToOperatingSystem(name);

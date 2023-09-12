@@ -166,7 +166,6 @@ export class GitHubBackend extends Backend {
         return filenameToPlatform(asset.name) != null;
       } catch (err) {
         console.error(err);
-      } finally {
         return false;
       }
     });
@@ -175,6 +174,7 @@ export class GitHubBackend extends Backend {
         try {
           return this.normalizeAsset(asset);
         } catch (err) {
+          console.log("failed to normalize asset", err);
           return undefined;
         }
       })

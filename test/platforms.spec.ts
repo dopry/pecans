@@ -162,7 +162,7 @@ const release: PecansReleaseDTO = {
 };
 const tests: FilenameResolveTestTuple[] = [
   ["myapp-v0.25.1-darwin-x64.zip", "osx", "64", undefined, platforms.OSX_64],
-  ["myapp.dmg", "osx", null, undefined, null],
+  ["myapp.dmg", "osx", "64", undefined, null],
   ["myapp-arm.dmg", "osx", "arm64", undefined, platforms.OSX_ARM64],
   [
     "myapp-v0.25.1-darwin-universal.zip",
@@ -192,8 +192,8 @@ const tests: FilenameResolveTestTuple[] = [
     undefined,
     platforms.WINDOWS_32,
   ],
-  ["atom-1.0.9-delta.nupkg", "windows", null, undefined, null],
-  ["RELEASES", "windows", null, undefined, null],
+  ["atom-1.0.9-delta.nupkg", "windows", "64", undefined, null],
+  ["RELEASES", "windows", "universal", undefined, null],
   ["enterprise-amd64.tar.gz", "linux", "64", undefined, platforms.LINUX_64],
   ["enterprise-amd64.tgz", "linux", "64", undefined, platforms.LINUX_64],
   ["enterprise-ia32.tar.gz", "linux", "32", undefined, platforms.LINUX_32],
@@ -217,7 +217,10 @@ const fileNameByPlatformTests: [platform: Platform, filename: string][] = [
   ["linux_deb_64", "atom-amd64.deb"],
 ];
 
-const fileNameByPlatformUniversalTests: [platform: Platform, filename: string][] = [
+const fileNameByPlatformUniversalTests: [
+  platform: Platform,
+  filename: string
+][] = [
   [platforms.OSX, "test-3.3.1-darwin-universal.dmg"],
   [platforms.OSX_UNIVERSAL, "test-3.3.1-darwin-universal.dmg"],
   [platforms.OSX_64, "test-3.3.1-darwin-universal.dmg"],
@@ -236,26 +239,26 @@ const fileNameByPlatformAndExtTests: [
   ext: SupportedFileExtension,
   filename: string
 ][] = [
-    ["osx_64", ".zip", "test-3.3.1-darwin-x64.zip"],
-    ["osx_arm64", ".zip", "test-3.3.1-darwin-arm64.zip"],
-    [platforms.OSX_UNIVERSAL, ".zip", "test-3.3.1-darwin-universal.zip"],
-    [platforms.OSX_UNIVERSAL, ".dmg", "test-3.3.1-darwin-universal.dmg"],
-  ];
+  ["osx_64", ".zip", "test-3.3.1-darwin-x64.zip"],
+  ["osx_arm64", ".zip", "test-3.3.1-darwin-arm64.zip"],
+  [platforms.OSX_UNIVERSAL, ".zip", "test-3.3.1-darwin-universal.zip"],
+  [platforms.OSX_UNIVERSAL, ".dmg", "test-3.3.1-darwin-universal.dmg"],
+];
 
 const fileNameByPlatformAndExtUniversalTests: [
   platform: Platform,
   ext: SupportedFileExtension,
   filename: string
 ][] = [
-    [platforms.OSX, ".zip", "test-3.3.1-darwin-universal.zip"],
-    [platforms.OSX_UNIVERSAL, ".zip", "test-3.3.1-darwin-universal.zip"],
-    [platforms.OSX_64, ".zip", "test-3.3.1-darwin-universal.zip"],
-    [platforms.OSX_ARM64, ".zip", "test-3.3.1-darwin-universal.zip"],
-    [platforms.OSX, ".dmg", "test-3.3.1-darwin-universal.dmg"],
-    [platforms.OSX_UNIVERSAL, ".dmg", "test-3.3.1-darwin-universal.dmg"],
-    [platforms.OSX_64, ".dmg", "test-3.3.1-darwin-universal.dmg"],
-    [platforms.OSX_ARM64, ".dmg", "test-3.3.1-darwin-universal.dmg"],
-  ];
+  [platforms.OSX, ".zip", "test-3.3.1-darwin-universal.zip"],
+  [platforms.OSX_UNIVERSAL, ".zip", "test-3.3.1-darwin-universal.zip"],
+  [platforms.OSX_64, ".zip", "test-3.3.1-darwin-universal.zip"],
+  [platforms.OSX_ARM64, ".zip", "test-3.3.1-darwin-universal.zip"],
+  [platforms.OSX, ".dmg", "test-3.3.1-darwin-universal.dmg"],
+  [platforms.OSX_UNIVERSAL, ".dmg", "test-3.3.1-darwin-universal.dmg"],
+  [platforms.OSX_64, ".dmg", "test-3.3.1-darwin-universal.dmg"],
+  [platforms.OSX_ARM64, ".dmg", "test-3.3.1-darwin-universal.dmg"],
+];
 
 describe("Platforms", function () {
   describe("filenameToOperatingSystem", () => {
@@ -319,14 +322,18 @@ describe("Platforms", function () {
     });
     fileNameByPlatformAndExtTests.forEach(([platform, ext, filename]) => {
       it(`resolves ${platform}, ${ext} to ${filename}`, () => {
-        const target = resolveReleaseAssetForVersion(release, platform, false, ext);
+        const target = resolveReleaseAssetForVersion(
+          release,
+          platform,
+          false,
+          ext
+        );
         should(target.filename).be.exactly(filename);
       });
     });
   });
 
   describe("resolveReleaseAssetForVersion with preferUniversal", function () {
-
     // test that we resolve to universal assets when preferUniversal is true
     fileNameByPlatformUniversalTests.forEach(([platform, filename]) => {
       it(`resolves ${platform} to ${filename}`, () => {
@@ -339,10 +346,14 @@ describe("Platforms", function () {
     const releaseWithoutUniversal = {
       ...release,
       assets: release.assets.filter((asset) => asset.type !== "osx_universal"),
-    }
+    };
     fileNameByPlatformTests.forEach(([platform, filename]) => {
       it(`resolves ${platform} to ${filename}`, () => {
-        const target = resolveReleaseAssetForVersion(releaseWithoutUniversal, platform, true);
+        const target = resolveReleaseAssetForVersion(
+          releaseWithoutUniversal,
+          platform,
+          true
+        );
         if (platform === platforms.OSX_UNIVERSAL) {
           // these have been removed, so expect undefined
           should(target).be.undefined();
@@ -353,17 +364,29 @@ describe("Platforms", function () {
     });
 
     // test that we resolve to universal assets when preferUniversal is true and the extension is specified
-    fileNameByPlatformAndExtUniversalTests.forEach(([platform, ext, filename]) => {
-      it(`resolves ${platform}, ${ext} to ${filename}`, () => {
-        const target = resolveReleaseAssetForVersion(release, platform, true, ext);
-        should(target.filename).be.exactly(filename);
-      });
-    });
+    fileNameByPlatformAndExtUniversalTests.forEach(
+      ([platform, ext, filename]) => {
+        it(`resolves ${platform}, ${ext} to ${filename}`, () => {
+          const target = resolveReleaseAssetForVersion(
+            release,
+            platform,
+            true,
+            ext
+          );
+          should(target.filename).be.exactly(filename);
+        });
+      }
+    );
 
     // test that we fall back to conventional assets when universal are not available and the extension is specified
     fileNameByPlatformAndExtTests.forEach(([platform, ext, filename]) => {
       it(`resolves ${platform}, ${ext} to ${filename}`, () => {
-        const target = resolveReleaseAssetForVersion(releaseWithoutUniversal, platform, true, ext);
+        const target = resolveReleaseAssetForVersion(
+          releaseWithoutUniversal,
+          platform,
+          true,
+          ext
+        );
         if (platform === platforms.OSX_UNIVERSAL) {
           // these have been removed, so expect undefined
           should(target).be.undefined();

@@ -15,25 +15,31 @@ export function filenameToArchitecture(
   os: OperatingSystem
 ): Architecture {
   const name = filename.toLowerCase();
+  if (name == "releases") return "universal";
   if (name.includes("universal") || name.includes("univ")) return "universal";
   // do arm64 berfore 64 other wise it will always be 64, since both contain 64
-  if (name.includes("arm64") || name.includes("arm")) return "arm64";
+  if (name.includes("arm64")) return "arm64";
+  // technically this should be just arm.... but that platform isn't very common in desktops other than rpi.
+  if (name.includes("arm")) return "arm64";
   // Detect suffix: 32 or 64
-  if (name.includes("32") || name.includes("ia32") || name.includes("i386"))
+  if (
+    name.includes("32") ||
+    name.includes("ia32") ||
+    name.includes("i386") ||
+    name.includes("x86")
+  )
     return "32";
-  if (name.includes("64") || name.includes("x64") || name.includes("amd64"))
-    return "64";
-  throw new Error(
-    `Unable to determine architecture from filename: ${filename}`
-  );
+  // we default to 64 if we don't find anything else since that is the generally
+  return "64";
 }
 
 export function getSupportedArchByOs(os: OperatingSystem): Architecture[] {
   switch (os) {
     case "osx":
       return ["64", "32", "arm64", "universal"];
-    case "linux":
     case "windows":
+      return ["32", "64", "universal"];
+    case "linux":
     default:
       return ["32", "64"];
   }

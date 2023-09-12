@@ -574,6 +574,9 @@ export class Pecans extends EventEmitter {
       // File exists
       const asset = latest.assets.find((i) => i.filename == "RELEASES");
       if (!asset) throw new Error("File not found");
+      if (!asset) {
+        throw new Error(`RELEASES File not found for ${latest.version}`);
+      }
 
       const content = await this.backend.readAsset(asset);
       let releases = await parseRELEASES(content.toString("utf-8"));
