@@ -1,3 +1,10 @@
+# [2.0.0-next.13](https://github.com/dopry/pecans/compare/v2.0.0-next.12...v2.0.0-next.13) (2023-09-12)
+
+
+### Bug Fixes
+
+* version and arch resolution ([4e00394](https://github.com/dopry/pecans/commit/4e003949dfd21d802feed57869a40677c49167dc))
+
 # [2.0.0-next.12](https://github.com/dopry/pecans/compare/v2.0.0-next.11...v2.0.0-next.12) (2023-09-12)
 
 
