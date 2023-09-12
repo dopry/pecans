@@ -1,3 +1,10 @@
+# [2.0.0-next.12](https://github.com/dopry/pecans/compare/v2.0.0-next.11...v2.0.0-next.12) (2023-09-12)
+
+
+### Features
+
+* log requests for debugging ([e8e3b1c](https://github.com/dopry/pecans/commit/e8e3b1cfa5d4bf89b59edd7fcbb1511e940f73c7))
+
 # [2.0.0-next.11](https://github.com/dopry/pecans/compare/v2.0.0-next.10...v2.0.0-next.11) (2023-09-12)
 
 
