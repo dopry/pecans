@@ -161,9 +161,15 @@ export class GitHubBackend extends Backend {
     const published_at = release.published_at
       ? new Date(release.published_at)
       : new Date(99999, 12, 31);
-    const valid_assets = release.assets.filter(
-      (asset) => filenameToPlatform(asset.name) != null
-    );
+    const valid_assets = release.assets.filter((asset) => {
+      try {
+        return filenameToPlatform(asset.name) != null;
+      } catch (err) {
+        console.error(err);
+      } finally {
+        return false;
+      }
+    });
     const assets = valid_assets
       .map((asset) => {
         try {
