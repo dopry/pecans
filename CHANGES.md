@@ -1,3 +1,10 @@
+# [2.0.0-next.11](https://github.com/dopry/pecans/compare/v2.0.0-next.10...v2.0.0-next.11) (2023-09-12)
+
+
+### Bug Fixes
+
+* unrecognized architecture preventing start up ([#9](https://github.com/dopry/pecans/issues/9)) ([8f74b5f](https://github.com/dopry/pecans/commit/8f74b5fe8c46d0590659cd9e1820decabbc1d342))
+
 # [2.0.0-next.10](https://github.com/dopry/pecans/compare/v2.0.0-next.9...v2.0.0-next.10) (2023-09-12)
 
 
