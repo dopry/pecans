@@ -1,3 +1,10 @@
+# [2.0.0-next.14](https://github.com/dopry/pecans/compare/v2.0.0-next.13...v2.0.0-next.14) (2023-09-13)
+
+
+### Features
+
+* integration tests for /dl/:filename ([#10](https://github.com/dopry/pecans/issues/10)) ([20f8140](https://github.com/dopry/pecans/commit/20f8140ef05004a9446c16f0f81d1aeefe67075a))
+
 # [2.0.0-next.13](https://github.com/dopry/pecans/compare/v2.0.0-next.12...v2.0.0-next.13) (2023-09-12)
 
 
