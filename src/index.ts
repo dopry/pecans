@@ -1,34 +1,36 @@
-import express, { Request, Response, NextFunction } from "express";
-import { GitHubBackend } from "./backends";
+import express, { NextFunction, Request, Response } from "express";
+import { PecansGitHubBackend } from "./backends";
 import { Pecans, PecansOptions } from "./pecans";
 
 export * from "./backends";
 export * from "./pecans";
-export * from "./versions";
 export * from "./utils/";
+export * from "./versions";
 
-
-if (require.main === module) {
-  if (!process.env.GITHUB_TOKEN)
-    throw new Error("GITHUB_TOKEN environment variables is required.");
-  if (!process.env.GITHUB_OWNER)
-    throw new Error("GITHUB_OWNER environment variable is required.");
-  if (!process.env.GITHUB_REPO)
-    throw new Error("GITHUB_REPO environment variable is required.");
-
-  const token = process.env.GITHUB_TOKEN;
-  const owner = process.env.GITHUB_OWNER;
-  const repo = process.env.GITHUB_REPO;
-  const backend = new GitHubBackend(token, owner, repo);
+export function configure() {
+  const PECANS_BACKEND = "PecansGithubBackend";
   const basePath = process.env.PECANS_BASE_PATH || "";
-
   const pecansOpts: PecansOptions = {
     // base path to inject between host and relative path. use for D.O. app service where
     // app is proxied through / api and the original url isn't passed by the proxy.
     basePath,
   };
 
-  const pecans = new Pecans(backend, pecansOpts);
+  switch (PECANS_BACKEND) {
+    case "PecansGithubBackend":
+      const backendEnv = PecansGitHubBackend.getEnvironment();
+      const backend = PecansGitHubBackend.FromEnv(backendEnv);
+      const pecans = new Pecans(backend, pecansOpts);
+      return { env: backendEnv, backend, pecans };
+
+    default:
+      throw "Unrecognized PECANS_BACKEND. Must be one of ['PecansGithubBackend']";
+  }
+}
+
+if (require.main === module) {
+  const { pecans } = configure();
+
   // Log download
   pecans.on("beforeDownload", (download) => {
     console.log(

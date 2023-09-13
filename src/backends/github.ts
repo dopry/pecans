@@ -23,41 +23,95 @@ export type GithubReleaseAsset =
 export type GithubRelease =
   Endpoints["GET /repos/{owner}/{repo}/releases/latest"]["response"]["data"];
 
-export interface GitHubBackendOpts extends BackendOpts {
+export interface PecansGitHubBackendOpts extends BackendOpts {
   baseUrl?: string;
   proxyAssets?: boolean;
 }
 
-export class GitHubBackendSettings
+export class PecansGitHubBackendSettings
   extends BackendSettings
-  implements GitHubBackendOpts
+  implements PecansGitHubBackendOpts
 {
   baseUrl?: string;
   proxyAssets = true;
 }
 
-export class GitHubBackend extends Backend {
-  protected opts: GitHubBackendSettings;
+export interface PecansGithubBackendEnvironment {
+  GITHUB_OWNER: string;
+  GITHUB_REPO: string;
+  GITHUB_TOKEN?: string;
+}
+
+export class PecansGitHubBackend extends Backend {
+  protected opts: PecansGitHubBackendSettings;
   protected octokit: Octokit;
 
+  static getEnvironment(prefix?: string): PecansGithubBackendEnvironment {
+    const ownerEnv = prefix ? `${prefix}_GITHUB_OWNER` : "GITHUB_OWNER";
+    const GITHUB_OWNER = process.env[ownerEnv];
+
+    const repoEnv = prefix ? `${prefix}_GITHUB_REPO` : "GITHUB_REPO";
+    const GITHUB_REPO = process.env[repoEnv];
+
+    const tokenEnv = prefix ? `${prefix}_GITHUB_TOKEN` : "GITHUB_TOKEN";
+    const GITHUB_TOKEN = process.env[tokenEnv];
+
+    if (!GITHUB_OWNER) {
+      throw new Error(`${ownerEnv} environment variable is required.`);
+    }
+    if (!GITHUB_REPO) {
+      throw new Error(`${repoEnv} environment variable is required.`);
+    }
+    if (!GITHUB_TOKEN) {
+      console.warn(
+        `${tokenEnv} environment variable was not provided, if your repo is private you will need to provide a token.`
+      );
+    }
+    const env = {
+      GITHUB_OWNER,
+      GITHUB_REPO,
+      GITHUB_TOKEN,
+    };
+    // console.log(
+    //   {
+    //     GITHUB_OWNER,
+    //     GITHUB_REPO,
+    //     GITHUB_TOKEN:
+    //       GITHUB_TOKEN &&
+    //       GITHUB_TOKEN.substring(0, 4) +
+    //         "******" +
+    //         GITHUB_TOKEN?.substring(GITHUB_TOKEN.length - 6),
+    //   } || "No Github Token"
+    // );
+    return env;
+  }
+
+  static FromEnv(env: PecansGithubBackendEnvironment): PecansGitHubBackend {
+    return new PecansGitHubBackend(
+      env.GITHUB_OWNER,
+      env.GITHUB_REPO,
+      env.GITHUB_TOKEN
+    );
+  }
+
   constructor(
-    protected token: string,
     protected owner: string,
     protected repo: string,
-    opts: GitHubBackendOpts = {}
+    protected token?: string,
+    opts: PecansGitHubBackendOpts = {}
   ) {
-    if (!token) {
-      throw new Error("Github Token Required");
-    }
     if (!owner) {
       throw new Error("Github Owner Required");
     }
     if (!repo) {
       throw new Error("Github Repo Required");
     }
+    if (!token) {
+      console.warn("Github Token not provided, ensure the repo is public");
+    }
     super(opts);
 
-    this.opts = Object.assign({}, new GitHubBackendSettings(), opts);
+    this.opts = Object.assign({}, new PecansGitHubBackendSettings(), opts);
     const { baseUrl = undefined } = opts;
 
     const octokitOptions = {
@@ -92,6 +146,8 @@ export class GitHubBackend extends Backend {
   async releases() {
     const { owner, repo } = this;
 
+    // const reponse = await this.octokit.rest.repos.listReleases({ owner, repo });
+    // console.debug({ data: reponse.data });
     const releases = await this.octokit.paginate(
       this.octokit.rest.repos.listReleases,
       { owner, repo }
@@ -112,6 +168,7 @@ export class GitHubBackend extends Backend {
   async serveAsset(asset: PecansAssetDTO, res: Response): Promise<void> {
     if (!this.opts.proxyAssets) {
       res.redirect(asset.raw.browser_download_url);
+      return;
     } else {
       const redirect = "manual";
       const headers = { Accept: "application/octet-stream" };
@@ -205,5 +262,29 @@ export class GitHubBackend extends Backend {
       raw,
     };
     return new PecansAsset(dto);
+  }
+}
+
+// @deprecated
+export class GitHubBackend extends PecansGitHubBackend {
+  constructor(
+    protected token: string,
+    protected owner: string,
+    protected repo: string,
+    opts: PecansGitHubBackendOpts = {}
+  ) {
+    console.warn(
+      "GitHubBackend has been deprecated in favor of the namespaced PecansGithubBackend"
+    );
+    if (!token) {
+      throw new Error("Github Token Required");
+    }
+    if (!owner) {
+      throw new Error("Github Owner Required");
+    }
+    if (!repo) {
+      throw new Error("Github Repo Required");
+    }
+    super(owner, repo, token, opts);
   }
 }

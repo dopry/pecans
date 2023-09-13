@@ -2,19 +2,13 @@
 
 Pecans can be easily be deployed to a state-less server or PaaS. It only uses the disk as a cache for assets.
 
-### On Heroku:
+<!-- ### With docker
 
-Heroku is the perfect solution to host a Pecans instance.
-
-[![Deploy](https://www.herokucdn.com/deploy/button.png)](https://heroku.com/deploy)
-
-### With docker
-
-Pecans can also be run as a Docker container:
+You'll need to build your own pecans image at this time. We do not net publish one.
 
 ```
-docker run -it -p 80:80 -e GITHUB_REPO=username/repo gitbook/pecans
-```
+docker run -it -p 80:80 -e GITHUB_REPO=username/repo dopry/pecans
+``` -->
 
 ### On your own server:
 
