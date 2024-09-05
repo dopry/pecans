@@ -222,7 +222,6 @@ export class PecansGitHubBackend extends Backend {
       try {
         return filenameToPlatform(asset.name) != null;
       } catch (err) {
-        console.error(err);
         return false;
       }
     });

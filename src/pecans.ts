@@ -443,7 +443,8 @@ export class Pecans extends EventEmitter {
     next: NextFunction
   ) {
     try {
-      let channel = validateReqQueryChannel(req.query.channel || "stable");
+      let channel = validateReqQueryChannel(req.params.channel || "stable");
+
       const tag = validateReqQueryTag(req.query.tag);
       const filename = req.params.filename;
       const filetype = getFiletypeFromQuery(req.query);

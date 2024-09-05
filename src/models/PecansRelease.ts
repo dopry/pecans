@@ -72,6 +72,8 @@ export class PecansRelease implements PecansReleaseDTO {
     if (!validRange(range)) {
       throw new Error("Invalid Range Specified");
     }
-    return satisfies(this.version, range);
+    return satisfies(this.version, range, {
+      includePrerelease: true,
+    });
   }
 }
