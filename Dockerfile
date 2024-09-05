@@ -1,10 +1,10 @@
-FROM mhart/alpine-node:16
+FROM node:20-alpine
 
 # Switch to /app
 WORKDIR /app
 # Install deps
 COPY package.json ./
-RUN npm install --production
+RUN npm install
 # Copy source
 COPY . ./
 
