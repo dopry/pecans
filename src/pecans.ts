@@ -96,7 +96,7 @@ export function validateReqQueryPlatform(
 export function validateReqQueryTag(
   tag?: string | ParsedQs | string[] | ParsedQs[]
 ): string | undefined {
-  if (tag == undefined) return;
+  if (tag == undefined) return "latest";
   if (typeof tag !== "string") {
     throw new UnsupportedTagError(tag);
   }
