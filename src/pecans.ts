@@ -443,7 +443,9 @@ export class Pecans extends EventEmitter {
     next: NextFunction
   ) {
     try {
-      let channel = validateReqQueryChannel(req.params.channel || "stable");
+      let channel = validateReqQueryChannel(
+        req.params.channel || req.query.channel || "stable"
+      );
 
       const tag = validateReqQueryTag(req.query.tag);
       const filename = req.params.filename;
@@ -562,7 +564,7 @@ export class Pecans extends EventEmitter {
       const releaseNotes = mergeReleaseNotes(notesSlice, false);
       const url = `${this.getBaseUrl(req)}/download/version/${
         latest.version
-      }/${platform}?filetype=${filetype}`;
+      }/${platform}?filetype=${filetype}&channel=${channel}`;
 
       res.status(200).send({
         url,
