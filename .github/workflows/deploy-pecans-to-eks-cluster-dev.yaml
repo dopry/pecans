@@ -1,0 +1,93 @@
+name: "Lighthouse: Deploy backend to EKS cluster"
+
+on:
+  push:
+    branches: 
+      - next
+    
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REPOSITORY: harbor
+  PROJECT_NAME: pecans
+
+jobs:
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: '0'
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1-node16
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Set up and get SemVer tag
+        id: semver
+        run: |
+          set -x
+          wget -O /usr/local/bin/semver https://raw.githubusercontent.com/fsaintjacques/semver-tool/master/src/semver
+          chmod +x /usr/local/bin/semver
+          CURRENT_VERSION=$(git tag --sort=-v:refname | head -n 1)
+          NEW_VERSION=$(semver bump minor ${CURRENT_VERSION})
+          if git tag $NEW_VERSION; then 
+            echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          else 
+            NEW_VERSION_EXISTS=$(semver bump minor ${NEW_VERSION})          
+            git tag $NEW_VERSION_EXISTS
+            echo "new_version=$NEW_VERSION_EXISTS" >> $GITHUB_OUTPUT
+          fi 
+
+      - name: Build, tag, and push image to Amazon ECR
+        id: build-image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ steps.semver.outputs.new_version }}
+        run: |
+          # Build a docker container and
+          # push it to ECR so that it can
+          # be deployed to ECS.
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY/$PROJECT_NAME:$IMAGE_TAG .
+          docker tag $ECR_REGISTRY/$ECR_REPOSITORY/$PROJECT_NAME:$IMAGE_TAG \
+            $ECR_REGISTRY/$ECR_REPOSITORY/$PROJECT_NAME:latest
+          docker image push --all-tags $ECR_REGISTRY/$ECR_REPOSITORY/$PROJECT_NAME
+          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY/$PROJECT_NAME:$IMAGE_TAG" >> $GITHUB_OUTPUT
+          echo "image_tag=$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+      - name: Push tag
+        run: |
+          git config --global user.name 'Github Actions'
+          git config --global user.email 'harbor-systems@users.noreply.github.com'
+          git push origin ${{ steps.semver.outputs.new_version }}
+
+      - name: Check out gitops repo
+        uses: actions/checkout@v3
+        with:
+          repository: Harbor-Systems/gitops
+          token: ${{ secrets.WORKFLOW_GIT_ACCESS_TOKEN }}
+
+      - name: Configure Git
+        run: |
+          git config --global user.name "Github Actions"
+          git config --global user.email "$GITHUB_ACTOR@users.noreply.github.com"
+
+      - name: Patch image tags in pecans app
+        run: |
+          IMAGE=${{ steps.build-image.outputs.image }}
+          yq eval ".spec.template.spec.containers[0].image = \"${IMAGE}\"" -i "./helm/dev/pecans/manifests/deployment.yaml" || true # Always return true in case of action re run
+        shell: bash
+
+      - uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          commit_message: Bump pecans dev images to version ${{ steps.build-image.outputs.image_tag }}
