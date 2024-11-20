@@ -39,7 +39,7 @@ jobs:
           set -x
           wget -O /usr/local/bin/semver https://raw.githubusercontent.com/fsaintjacques/semver-tool/master/src/semver
           chmod +x /usr/local/bin/semver
-          CURRENT_VERSION=$(git tag --sort=-v:refname | head -n 1)
+          CURRENT_VERSION=$(git tag --sort=-v:refname | grep -E '^[^v]' | head -n 1)
           NEW_VERSION=$(semver bump minor ${CURRENT_VERSION})
           if git tag $NEW_VERSION; then 
             echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
