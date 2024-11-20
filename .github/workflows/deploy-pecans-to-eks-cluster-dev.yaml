@@ -1,4 +1,4 @@
-name: "Lighthouse: Deploy backend to EKS cluster"
+name: "Lighthouse: Deploy Pecans to EKS cluster"
 
 on:
   push:

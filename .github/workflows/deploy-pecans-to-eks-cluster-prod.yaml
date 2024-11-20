@@ -1,0 +1,45 @@
+name: "Production: Deploy Pecans to EKS cluster"
+
+on:
+  workflow_dispatch:
+    
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REPOSITORY: harbor
+  PROJECT_NAME: pecans
+  DEV_VALUES: ./helm/dev/pecans/manifests/deployment.yaml
+  PROD_VALUES: ./helm/prod/pecans/manifests/deployment.yaml
+
+jobs:
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Check out gitops repo
+        uses: actions/checkout@v3
+        with:
+          repository: Harbor-Systems/gitops
+          token: ${{ secrets.WORKFLOW_GIT_ACCESS_TOKEN }}
+
+      - name: Configure Git
+        run: |
+          git config --global user.name "Github Actions"
+          git config --global user.email "$GITHUB_ACTOR@users.noreply.github.com"
+
+      - name: Read pecans image version
+        id: version
+        run: |
+          IMAGE=$(yq -r .spec.template.spec.containers[0].image ${DEV_VALUES})
+          echo "image=$IMAGE" >> $GITHUB_OUTPUT
+
+      - name: Patch image tags in pecans app
+        run: |
+          IMAGE=${{ steps.build-image.outputs.image }}
+          yq eval ".spec.template.spec.containers[0].image = \"${IMAGE}\"" -i ${PROD_VALUES} || true # Always return true in case of action re run
+        shell: bash
+
+      - uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          commit_message: Bump pecans dev images to version ${{ steps.build-image.outputs.image_tag }}
