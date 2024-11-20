@@ -36,7 +36,7 @@ jobs:
 
       - name: Patch image tags in pecans app
         run: |
-          IMAGE=${{ steps.build-image.outputs.image }}
+          IMAGE=${{ steps.version.outputs.image }}
           yq eval ".spec.template.spec.containers[0].image = \"${IMAGE}\"" -i ${PROD_VALUES} || true # Always return true in case of action re run
         shell: bash
 
