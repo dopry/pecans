@@ -31,7 +31,7 @@ jobs:
       - name: Read pecans image version
         id: version
         run: |
-          IMAGE=$(yq -r .spec.template.spec.containers[0].image ${DEV_VALUES})
+          IMAGE=$(yq -r ".spec.template.spec.containers[0].image" ${DEV_VALUES})
           echo "image=$IMAGE" >> $GITHUB_OUTPUT
 
       - name: Patch image tags in pecans app
