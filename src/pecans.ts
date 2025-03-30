@@ -50,9 +50,11 @@ export interface PecansSettings {
   cacheMaxAge: number;
   /** If universal build exists, prefer it over platform specific builds */
   preferUniversal: boolean;
+  /** Whether to include version in the aggregation of release notes when comparing versions */
+  includeVersionInReleaseNotes: boolean;
 }
 
-export interface PecansOptions extends Partial<PecansSettings> {}
+export interface PecansOptions extends Partial<PecansSettings> { }
 
 export class UnsupportedPlatformError extends Error {
   constructor(platform: unknown) {
@@ -179,6 +181,7 @@ export class Pecans extends EventEmitter {
     cacheMaxAge: 60 * 60 * 2,
     basePath: "",
     preferUniversal: true,
+    includeVersionInReleaseNotes: false,
   };
 
   protected releasesCache: Record<string, Promise<PecansReleases>> = {};
@@ -488,21 +491,21 @@ export class Pecans extends EventEmitter {
       const asset = filename
         ? release.assets.find((i) => i.filename == filename)
         : resolveReleaseAssetForVersion(
-            release,
-            platform,
-            this.opts.preferUniversal,
-            filetype
-          );
+          release,
+          platform,
+          this.opts.preferUniversal,
+          filetype
+        );
 
       if (!asset)
         throw new Error(
           "No download available for platform " +
-            platform +
-            " for version " +
-            release.version +
-            " (" +
-            (channel || "beta") +
-            ")"
+          platform +
+          " for version " +
+          release.version +
+          " (" +
+          (channel || "beta") +
+          ")"
         );
 
       // Call analytic middleware, then serve
@@ -558,10 +561,12 @@ export class Pecans extends EventEmitter {
 
       const notesSlice =
         versions.length === 1 ? [latest] : versions.slice(0, -1);
-      const releaseNotes = mergeReleaseNotes(notesSlice, false);
-      const url = `${this.getBaseUrl(req)}/download/version/${
-        latest.version
-      }/${platform}?filetype=${filetype}`;
+      const url = `${this.getBaseUrl(req)}/download/version/${latest.version
+        }/${platform}?filetype=${filetype}`;
+      const releaseNotes = mergeReleaseNotes(
+        notesSlice,
+        this.opts.includeVersionInReleaseNotes
+      );
 
       res.status(200).send({
         url,
