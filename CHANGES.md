@@ -1,3 +1,10 @@
+# [2.0.0-next.15](https://github.com/dopry/pecans/compare/v2.0.0-next.14...v2.0.0-next.15) (2025-05-09)
+
+
+### Features
+
+* includeVersionInReleaseNotes setting ([#17](https://github.com/dopry/pecans/issues/17)) ([05449b0](https://github.com/dopry/pecans/commit/05449b0ac83e7860fc8f44d6feec2be0b173a6dc))
+
 # [2.0.0-next.14](https://github.com/dopry/pecans/compare/v2.0.0-next.13...v2.0.0-next.14) (2023-09-13)
 
 
