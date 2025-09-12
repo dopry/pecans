@@ -10,16 +10,22 @@ export * from "./versions";
 export function configure() {
   const PECANS_BACKEND = "PecansGithubBackend";
   const basePath = process.env.PECANS_BASE_PATH || "";
+  const cacheMaxAge = process.env.PECANS_CACHE_MAX_AGE ? 
+    parseInt(process.env.PECANS_CACHE_MAX_AGE) : 
+    60 * 60 * 2; // Default 2 hours
+  
   const pecansOpts: PecansOptions = {
     // base path to inject between host and relative path. use for D.O. app service where
     // app is proxied through / api and the original url isn't passed by the proxy.
     basePath,
+    cacheMaxAge,
   };
 
   switch (PECANS_BACKEND) {
     case "PecansGithubBackend":
       const backendEnv = PecansGitHubBackend.getEnvironment();
-      const backend = PecansGitHubBackend.FromEnv(backendEnv);
+      // Pass cacheMaxAge to the backend
+      const backend = PecansGitHubBackend.FromEnv(backendEnv, { cacheMaxAge });
       const pecans = new Pecans(backend, pecansOpts);
       return { env: backendEnv, backend, pecans };
 
