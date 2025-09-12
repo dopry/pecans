@@ -26,7 +26,6 @@ export type GithubRelease =
 export interface PecansGitHubBackendOpts extends BackendOpts {
   baseUrl?: string;
   proxyAssets?: boolean;
-  cacheMaxAge?: number;
 }
 
 export class PecansGitHubBackendSettings
@@ -35,7 +34,6 @@ export class PecansGitHubBackendSettings
 {
   baseUrl?: string;
   proxyAssets = true;
-  cacheMaxAge = 60 * 60 * 2; // 2 hours in seconds, matching Pecans.defaults
 }
 
 export interface PecansGithubBackendEnvironment {
@@ -47,8 +45,6 @@ export interface PecansGithubBackendEnvironment {
 export class PecansGitHubBackend extends Backend {
   protected opts: PecansGitHubBackendSettings;
   protected octokit: Octokit;
-  protected releasesCache: Record<string, Promise<PecansReleases>> = {};
-  protected cacheTimestamp = 0;
 
   static getEnvironment(prefix?: string): PecansGithubBackendEnvironment {
     const ownerEnv = prefix ? `${prefix}_GITHUB_OWNER` : "GITHUB_OWNER";
@@ -130,13 +126,6 @@ export class PecansGitHubBackend extends Backend {
     this.octokit = new Octokit(octokitOptions);
   }
 
-  // Override onRelease to clear cache
-  onRelease() {
-    super.onRelease();
-    this.releasesCache = {};
-    this.cacheTimestamp = 0;
-  }
-
   getRefreshWebhookMiddleware(
     path: string
   ): (req: Request, res: Response, next: NextFunction) => void {
@@ -154,53 +143,8 @@ export class PecansGitHubBackend extends Backend {
     return createNodeMiddleware(webhook, { path });
   }
 
-  protected getCacheKey(): string {
-    // use a time based key to ensure the cached releases are updated when cacheMaxAge is reached.
-    const timeSlot = Math.floor(Date.now() / (this.opts.cacheMaxAge * 1000));
-    return `${this.cacheId}_${timeSlot}`;
-  }
-
-  // List all releases for this repository
-  async releases(): Promise<PecansReleases> {
-    const cacheKey = this.getCacheKey();
-    
-    // Check if we have a cached version
-    if (cacheKey in this.releasesCache) {
-      // Return cached version immediately (stale-while-revalidate)
-      const cachedReleases = this.releasesCache[cacheKey];
-      
-      // Trigger background update if cache is old
-      const now = Date.now();
-      if (now - this.cacheTimestamp > this.opts.cacheMaxAge * 1000) {
-        // Start background refresh without awaiting
-        this.refreshReleasesInBackground(cacheKey);
-      }
-      
-      return cachedReleases;
-    }
-    
-    // No cache exists, fetch and cache
-    return this.fetchAndCacheReleases(cacheKey);
-  }
-
-  private async refreshReleasesInBackground(cacheKey: string): Promise<void> {
-    try {
-      await this.fetchAndCacheReleases(cacheKey);
-    } catch (error) {
-      // Background refresh failed, keep existing cache
-      console.warn('Background refresh of releases failed:', error);
-    }
-  }
-
-  private async fetchAndCacheReleases(cacheKey: string): Promise<PecansReleases> {
-    if (!(cacheKey in this.releasesCache)) {
-      this.releasesCache[cacheKey] = this.fetchReleases();
-      this.cacheTimestamp = Date.now();
-    }
-    return this.releasesCache[cacheKey];
-  }
-
-  private async fetchReleases(): Promise<PecansReleases> {
+  // Implement fetchReleases abstract method from Backend class
+  async fetchReleases(): Promise<PecansReleases> {
     const { owner, repo } = this;
 
     // const reponse = await this.octokit.rest.repos.listReleases({ owner, repo });
