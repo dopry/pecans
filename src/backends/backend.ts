@@ -21,12 +21,11 @@ function cleanup(stream: NodeJS.ReadableStream) {
 }
 
 export abstract class Backend {
-  // use to salt cache keys to allow updates onRelease().
-  protected cacheId = 0;
   protected opts: BackendSettings;
   private hash?: string;
-  protected releasesCache: Record<string, Promise<PecansReleases>> = {};
-  protected cacheTimestamp = 0;
+  protected releasesCache: PecansReleases | null = null;
+  protected releaseCacheTimestamp: number = 0;
+  protected releaseCacheRefreshPromise: Promise<PecansReleases> | null = null;
 
   constructor(opts?: BackendOpts) {
     this.opts = Object.assign({}, new BackendSettings(), opts);
@@ -39,43 +38,65 @@ export abstract class Backend {
 
   // New release? clear cache and repopulate
   onRelease() {
-    this.cacheId++;
-    this.releasesCache = {};
-    this.cacheTimestamp = 0;
+    this.releasesCache = null;
+    this.releaseCacheTimestamp = 0;
+    this.releaseCacheRefreshPromise = null;
     // Trigger background cache repopulation
     this.repopulateCache();
   }
 
   private async repopulateCache(): Promise<void> {
     try {
-      const cacheKey = this.getCacheKey();
-      await this.fetchAndCacheReleases(cacheKey);
+      await this.releases();
     } catch (error) {
       console.warn('Cache repopulation failed:', error);
     }
   }
 
-  protected getCacheKey(): string {
-    // use a time based key to ensure the cached releases are updated when cacheMaxAge is reached.
-    const timeSlot = Math.floor(Date.now() / (this.opts.cacheMaxAge! * 1000));
-    return `${this.cacheId}_${timeSlot}`;
-  }
-
-  private async refreshReleasesInBackground(cacheKey: string): Promise<void> {
-    try {
-      await this.fetchAndCacheReleases(cacheKey);
-    } catch (error) {
-      // Background refresh failed, keep existing cache
-      console.warn('Background refresh of releases failed:', error);
+  // List all releases for this repository with caching
+  async releases(): Promise<PecansReleases> {
+    const now = Date.now();
+    const cacheAge = now - this.releaseCacheTimestamp;
+    const cacheMaxAgeMs = this.opts.cacheMaxAge! * 1000;
+    
+    // If we have cached data
+    if (this.releasesCache) {
+      // If cache is still fresh, return it immediately
+      if (cacheAge < cacheMaxAgeMs) {
+        return this.releasesCache;
+      }
+      
+      // Cache is stale - return it immediately but trigger background refresh
+      if (!this.releaseCacheRefreshPromise) {
+        this.releaseCacheRefreshPromise = this.fetchReleases().then(releases => {
+          this.releasesCache = releases;
+          this.releaseCacheTimestamp = Date.now();
+          this.releaseCacheRefreshPromise = null;
+          return releases;
+        }).catch(error => {
+          console.warn('Background cache refresh failed:', error);
+          // Reset the promise so we can try again later
+          this.releaseCacheRefreshPromise = null;
+          // Return the existing cache data rather than throwing
+          return this.releasesCache!;
+        });
+      }
+      
+      // Return stale cache immediately
+      return this.releasesCache;
     }
-  }
-
-  private async fetchAndCacheReleases(cacheKey: string): Promise<PecansReleases> {
-    if (!(cacheKey in this.releasesCache)) {
-      this.releasesCache[cacheKey] = this.fetchReleases();
-      this.cacheTimestamp = Date.now();
+    
+    // No cache exists - fetch synchronously
+    if (!this.releaseCacheRefreshPromise) {
+      this.releaseCacheRefreshPromise = this.fetchReleases().then(releases => {
+        this.releasesCache = releases;
+        this.releaseCacheTimestamp = Date.now();
+        this.releaseCacheRefreshPromise = null;
+        return releases;
+      });
     }
-    return this.releasesCache[cacheKey];
+    
+    return this.releaseCacheRefreshPromise;
   }
 
   // return an express middlware to catch a specific path
@@ -97,29 +118,6 @@ export abstract class Backend {
       res.send(200);
     };
     return middleware;
-  }
-
-  // List all releases for this repository with caching
-  async releases(): Promise<PecansReleases> {
-    const cacheKey = this.getCacheKey();
-    
-    // Check if we have a cached version
-    if (cacheKey in this.releasesCache) {
-      // Return cached version immediately (stale-while-revalidate)
-      const cachedReleases = this.releasesCache[cacheKey];
-      
-      // Trigger background update if cache is old
-      const now = Date.now();
-      if (now - this.cacheTimestamp > this.opts.cacheMaxAge! * 1000) {
-        // Start background refresh without awaiting
-        this.refreshReleasesInBackground(cacheKey);
-      }
-      
-      return cachedReleases;
-    }
-    
-    // No cache exists, fetch and cache
-    return this.fetchAndCacheReleases(cacheKey);
   }
 
   // Abstract method for backends to implement actual fetching logic
