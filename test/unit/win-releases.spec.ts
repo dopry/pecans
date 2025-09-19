@@ -1,4 +1,4 @@
-import "should";
+import { describe, it, expect } from "vitest";
 import {
   normVersion,
   toSemver,
@@ -9,24 +9,24 @@ import {
 describe("Windows RELEASES", function () {
   describe("Version Normalization", function () {
     it("should not changed version without pre-release", function () {
-      normVersion("1.0.0").should.be.exactly("1.0.0");
-      normVersion("4.5.0").should.be.exactly("4.5.0");
-      normVersion("67.8.345").should.be.exactly("67.8.345");
+      expect(normVersion("1.0.0")).toBe("1.0.0");
+      expect(normVersion("4.5.0")).toBe("4.5.0");
+      expect(normVersion("67.8.345")).toBe("67.8.345");
     });
 
     it("should normalize the pre-release", function () {
-      normVersion("1.0.0-alpha.1").should.be.exactly("1.0.0.1001");
-      normVersion("1.0.0-beta.1").should.be.exactly("1.0.0.2001");
-      normVersion("1.0.0-unstable.1").should.be.exactly("1.0.0.3001");
-      normVersion("1.0.0-rc.1").should.be.exactly("1.0.0.4001");
-      normVersion("1.0.0-14").should.be.exactly("1.0.0.14");
+      expect(normVersion("1.0.0-alpha.1")).toBe("1.0.0.1001");
+      expect(normVersion("1.0.0-beta.1")).toBe("1.0.0.2001");
+      expect(normVersion("1.0.0-unstable.1")).toBe("1.0.0.3001");
+      expect(normVersion("1.0.0-rc.1")).toBe("1.0.0.4001");
+      expect(normVersion("1.0.0-14")).toBe("1.0.0.14");
     });
 
     it("should correctly return to a semver", function () {
-      toSemver("1.0.0.1001").should.be.exactly("1.0.0-alpha.1");
-      toSemver("1.0.0.2001").should.be.exactly("1.0.0-beta.1");
-      toSemver("1.0.0.2015").should.be.exactly("1.0.0-beta.15");
-      toSemver("1.0.0").should.be.exactly("1.0.0");
+      expect(toSemver("1.0.0.1001")).toBe("1.0.0-alpha.1");
+      expect(toSemver("1.0.0.2001")).toBe("1.0.0-beta.1");
+      expect(toSemver("1.0.0.2015")).toBe("1.0.0-beta.15");
+      expect(toSemver("1.0.0")).toBe("1.0.0");
     });
   });
 
@@ -40,41 +40,39 @@ describe("Windows RELEASES", function () {
     );
 
     it("should have parsed all lines", function () {
-      releases.should.be.an.Array();
-      releases.length.should.be.exactly(5);
+      expect(Array.isArray(releases)).toBe(true);
+      expect(releases.length).toBe(5);
     });
 
     it("should parse a one-line file (with utf-8 BOM)", async function () {
       const oneRelease = await parseRELEASES(
         "\uFEFF24182FAD211FB9EB72610B1C086810FE37F70AE3 gitbook-editor-4.0.0-full.nupkg 46687158"
       );
-      oneRelease.length.should.be.exactly(1);
+      expect(oneRelease.length).toBe(1);
     });
 
     it("should correctly parse sha, version, isDelta, filename and size", function () {
-      releases[0].sha.should.be.a.String();
-      releases[0].sha.should.be.exactly(
-        "62E8BF432F29E8E08240910B85EDBF2D1A41EDF2"
-      );
+      expect(typeof releases[0].sha).toBe("string");
+      expect(releases[0].sha).toBe("62E8BF432F29E8E08240910B85EDBF2D1A41EDF2");
 
-      releases[0].filename.should.be.a.String();
-      releases[0].filename.should.be.exactly("atom-0.178.0-full.nupkg");
+      expect(typeof releases[0].filename).toBe("string");
+      expect(releases[0].filename).toBe("atom-0.178.0-full.nupkg");
 
-      releases[0].size.should.be.a.Number();
-      releases[0].size.should.be.exactly(81272434);
+      expect(typeof releases[0].size).toBe("number");
+      expect(releases[0].size).toBe(81272434);
 
-      releases[0].isDelta.should.be.a.Boolean();
-      releases[0].version.should.be.a.String();
+      expect(typeof releases[0].isDelta).toBe("boolean");
+      expect(typeof releases[0].version).toBe("string");
     });
 
     it("should correctly detect deltas", function () {
-      releases[0].isDelta.should.be.False();
-      releases[1].isDelta.should.be.True();
+      expect(releases[0].isDelta).toBe(false);
+      expect(releases[1].isDelta).toBe(true);
     });
 
     it("should correctly parse versions", function () {
-      releases[0].version.should.be.exactly("0.178.0");
-      releases[1].version.should.be.exactly("0.178.1");
+      expect(releases[0].version).toBe("0.178.0");
+      expect(releases[1].version).toBe("0.178.1");
     });
   });
 
@@ -89,21 +87,23 @@ describe("Windows RELEASES", function () {
     const releases = await parseRELEASES(input);
 
     it("should correctly generate a RELEASES file", function () {
-      generateRELEASES(releases).should.be.exactly(input);
+      expect(generateRELEASES(releases)).toBe(input);
     });
 
     it("should correctly generate filenames", function () {
-      generateRELEASES([
-        {
-          sha: "62E8BF432F29E8E08240910B85EDBF2D1A41EDF2",
-          version: "1.0.0",
-          app: "atom",
-          size: 81272434,
-          isDelta: false,
-          filename: "",
-          semver: "",
-        },
-      ]).should.be.exactly(
+      expect(
+        generateRELEASES([
+          {
+            sha: "62E8BF432F29E8E08240910B85EDBF2D1A41EDF2",
+            version: "1.0.0",
+            app: "atom",
+            size: 81272434,
+            isDelta: false,
+            filename: "",
+            semver: "",
+          },
+        ])
+      ).toBe(
         "62E8BF432F29E8E08240910B85EDBF2D1A41EDF2 atom-1.0.0-full.nupkg 81272434"
       );
     });

@@ -1,4 +1,4 @@
-import should from "should";
+import { describe, it, expect } from "vitest";
 import { PecansReleaseDTO } from "../../src/models";
 import { filenameToOperatingSystem } from "../../src/utils/OperatingSystem";
 import {
@@ -264,7 +264,7 @@ describe("Platforms", function () {
   describe("filenameToOperatingSystem", () => {
     tests.forEach(([filename, os, arch, pkg]) => {
       it(`resolves ${filename} to operating system ${os}`, () => {
-        filenameToOperatingSystem(filename).should.be.exactly(os);
+        expect(filenameToOperatingSystem(filename)).toBe(os);
       });
     });
   });
@@ -275,11 +275,11 @@ describe("Platforms", function () {
         const os = filenameToOperatingSystem(filename);
         if (arch === null) {
           // expect an error
-          should.throws(() => {
+          expect(() => {
             filenameToArchitecture(filename, os);
-          });
+          }).toThrow();
         } else {
-          filenameToArchitecture(filename, os).should.be.exactly(arch);
+          expect(filenameToArchitecture(filename, os)).toBe(arch);
         }
       });
     });
@@ -289,7 +289,7 @@ describe("Platforms", function () {
     tests.forEach(([filename, os, arch, pkg]) => {
       it(`resolves ${filename} to pkg format ${pkg}`, () => {
         const target = filenameToPackageFormat(filename);
-        should(target).be.exactly(pkg);
+        expect(target).toBe(pkg);
       });
     });
   });
@@ -307,7 +307,7 @@ describe("Platforms", function () {
           }
         } else {
           const target = filenameToPlatform(filename);
-          should(target).be.exactly(platform);
+          expect(target).toBe(platform);
         }
       });
     });
@@ -317,7 +317,7 @@ describe("Platforms", function () {
     fileNameByPlatformTests.forEach(([platform, filename]) => {
       it(`resolves ${platform} to ${filename}`, () => {
         const target = resolveReleaseAssetForVersion(release, platform, false);
-        should(target.filename).be.exactly(filename);
+        expect(target.filename).toBe(filename);
       });
     });
     fileNameByPlatformAndExtTests.forEach(([platform, ext, filename]) => {
@@ -328,7 +328,7 @@ describe("Platforms", function () {
           false,
           ext
         );
-        should(target.filename).be.exactly(filename);
+        expect(target.filename).toBe(filename);
       });
     });
   });
@@ -338,7 +338,7 @@ describe("Platforms", function () {
     fileNameByPlatformUniversalTests.forEach(([platform, filename]) => {
       it(`resolves ${platform} to ${filename}`, () => {
         const target = resolveReleaseAssetForVersion(release, platform, true);
-        should(target.filename).be.exactly(filename);
+        expect(target.filename).toBe(filename);
       });
     });
 
@@ -356,9 +356,9 @@ describe("Platforms", function () {
         );
         if (platform === platforms.OSX_UNIVERSAL) {
           // these have been removed, so expect undefined
-          should(target).be.undefined();
+          expect(target).toBeUndefined();
         } else {
-          should(target.filename).be.exactly(filename);
+          expect(target.filename).toBe(filename);
         }
       });
     });
@@ -373,7 +373,7 @@ describe("Platforms", function () {
             true,
             ext
           );
-          should(target.filename).be.exactly(filename);
+          expect(target.filename).toBe(filename);
         });
       }
     );
@@ -389,9 +389,9 @@ describe("Platforms", function () {
         );
         if (platform === platforms.OSX_UNIVERSAL) {
           // these have been removed, so expect undefined
-          should(target).be.undefined();
+          expect(target).toBeUndefined();
         } else {
-          should(target.filename).be.exactly(filename);
+          expect(target.filename).toBe(filename);
         }
       });
     });

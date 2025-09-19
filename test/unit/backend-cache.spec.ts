@@ -1,4 +1,4 @@
-import should from "should";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { Backend, BackendOpts } from "../../src/backends/backend";
 import { PecansReleases } from "../../src/models/PecansReleases";
 import {
@@ -79,6 +79,7 @@ class TestBackend extends Backend {
 describe("Backend Caching", () => {
   let backend: TestBackend;
   let originalDateNow: () => number;
+  let originalConsoleWarn: typeof console.warn;
   let currentTime: number;
 
   beforeEach(() => {
@@ -86,11 +87,26 @@ describe("Backend Caching", () => {
     currentTime = 1000000000000; // Fixed start time
     originalDateNow = Date.now;
     Date.now = () => currentTime;
+
+    // Mock console.warn to suppress expected cache refresh failure messages during tests
+    originalConsoleWarn = console.warn;
+    console.warn = vi.fn();
+
     backend = new TestBackend();
   });
 
-  afterEach(() => {
+  afterEach(async () => {
+    // Clean up any pending refresh promises to avoid unhandled rejections
+    const refreshPromise = backend?.getCacheRefreshPromise();
+    if (refreshPromise) {
+      try {
+        await refreshPromise;
+      } catch (error) {
+        // Ignore errors during cleanup
+      }
+    }
     Date.now = originalDateNow;
+    console.warn = originalConsoleWarn;
   });
 
   function advanceTime(ms: number) {
@@ -99,10 +115,10 @@ describe("Backend Caching", () => {
 
   describe("Cache Initialization", () => {
     it("should have empty cache state on initialization", () => {
-      should(backend.getCache()).be.null();
-      backend.getCacheTimestamp().should.equal(0);
-      should(backend.getCacheRefreshPromise()).be.undefined();
-      backend.fetchCount.should.equal(0);
+      expect(backend.getCache()).toBeNull();
+      expect(backend.getCacheTimestamp()).toBe(0);
+      expect(backend.getCacheRefreshPromise()).toBeUndefined();
+      expect(backend.fetchCount).toBe(0);
     });
   });
 
@@ -112,18 +128,18 @@ describe("Backend Caching", () => {
 
       const releases = await backend.releases();
 
-      releases.should.be.instanceOf(PecansReleases);
-      backend.fetchCount.should.equal(1);
-      should(backend.getCache()).equal(releases);
-      backend.getCacheTimestamp().should.equal(startTime);
-      should(backend.getCacheRefreshPromise()).be.undefined();
+      expect(releases).toBeInstanceOf(PecansReleases);
+      expect(backend.fetchCount).toBe(1);
+      expect(backend.getCache()).toBe(releases);
+      expect(backend.getCacheTimestamp()).toBe(startTime);
+      expect(backend.getCacheRefreshPromise()).toBeUndefined();
     });
 
     it("should return the same data from cache and fetchReleases", async () => {
       const releases = await backend.releases();
       const directFetch = await backend.fetchReleases();
 
-      releases.getReleases().should.deepEqual(directFetch.getReleases());
+      expect(releases.getReleases()).toEqual(directFetch.getReleases());
     });
   });
 
@@ -131,15 +147,15 @@ describe("Backend Caching", () => {
     it("should return cached data without fetching when cache is valid", async () => {
       // First call to populate cache
       const firstReleases = await backend.releases();
-      backend.fetchCount.should.equal(1);
+      expect(backend.fetchCount).toBe(1);
 
       // Advance time but stay within cache max age (2 hours = 7200000 ms)
       advanceTime(3600000); // 1 hour
 
       // Second call should use cache
       const secondReleases = await backend.releases();
-      backend.fetchCount.should.equal(1); // Should not increment
-      secondReleases.should.equal(firstReleases); // Should be same object reference
+      expect(backend.fetchCount).toBe(1); // Should not increment
+      expect(secondReleases).toBe(firstReleases); // Should be same object reference
     });
 
     it("should serve cached data for multiple concurrent requests", async () => {
@@ -151,9 +167,9 @@ describe("Backend Caching", () => {
 
       const results = await Promise.all(promises);
 
-      backend.fetchCount.should.equal(1); // Only one fetch
-      results[0].should.equal(results[1]);
-      results[1].should.equal(results[2]);
+      expect(backend.fetchCount).toBe(1); // Only one fetch
+      expect(results[0]).toBe(results[1]);
+      expect(results[1]).toBe(results[2]);
     });
   });
 
@@ -161,14 +177,14 @@ describe("Backend Caching", () => {
     it("should fetch new data when cache expires", async () => {
       // First call to populate cache
       await backend.releases();
-      backend.fetchCount.should.equal(1);
+      expect(backend.fetchCount).toBe(1);
 
       // Advance time beyond cache max age (2 hours + 1 second)
       advanceTime(7200000 + 1000);
 
       // Second call should trigger new fetch
       await backend.releases();
-      backend.fetchCount.should.equal(2);
+      expect(backend.fetchCount).toBe(2);
     });
 
     it("should update cache timestamp after expiration fetch", async () => {
@@ -176,14 +192,14 @@ describe("Backend Caching", () => {
 
       // First call
       await backend.releases();
-      backend.getCacheTimestamp().should.equal(startTime);
+      expect(backend.getCacheTimestamp()).toBe(startTime);
 
       // Advance time and make expired call
       advanceTime(7200000 + 1000);
       const expiredCallTime = Date.now();
 
       await backend.releases();
-      backend.getCacheTimestamp().should.equal(expiredCallTime);
+      expect(backend.getCacheTimestamp()).toBe(expiredCallTime);
     });
   });
 
@@ -203,9 +219,9 @@ describe("Backend Caching", () => {
 
       const results = await Promise.all(promises);
 
-      backend.fetchCount.should.equal(1); // Only one fetch despite 3 calls
-      results[0].should.equal(results[1]);
-      results[1].should.equal(results[2]);
+      expect(backend.fetchCount).toBe(1); // Only one fetch despite 3 calls
+      expect(results[0]).toBe(results[1]);
+      expect(results[1]).toBe(results[2]);
     });
 
     it("should deduplicate requests even when cache is expired", async () => {
@@ -222,7 +238,7 @@ describe("Backend Caching", () => {
       advanceTime(100);
       await Promise.all(promises);
 
-      backend.fetchCount.should.equal(2); // Initial + one refresh
+      expect(backend.fetchCount).toBe(2); // Initial + one refresh
     });
   });
 
@@ -239,12 +255,20 @@ describe("Backend Caching", () => {
       const releases = await backend.releases();
 
       // Cache should still contain original data (stale but valid)
-      releases.should.equal(originalReleases);
-      should(backend.getCache()).equal(originalReleases);
+      expect(releases).toBe(originalReleases);
+      expect(backend.getCache()).toBe(originalReleases);
 
-      // Wait a tick for the promise to be cleared
-      await new Promise((resolve) => setTimeout(resolve, 0));
-      should(backend.getCacheRefreshPromise()).be.undefined();
+      // Wait for the background refresh promise to fail and be cleared
+      // We need to catch the background promise to prevent unhandled rejection
+      const refreshPromise = backend.getCacheRefreshPromise();
+      if (refreshPromise) {
+        try {
+          await refreshPromise;
+        } catch (error) {
+          // Expected to fail, catch and ignore
+        }
+      }
+      expect(backend.getCacheRefreshPromise()).toBeUndefined();
     });
 
     it("should allow retry after failed refresh", async () => {
@@ -257,18 +281,26 @@ describe("Backend Caching", () => {
 
       // First call should return stale cache (not throw error)
       const staleReleases = await backend.releases();
-      staleReleases.should.be.instanceOf(PecansReleases);
+      expect(staleReleases).toBeInstanceOf(PecansReleases);
 
       // Wait for the failed refresh promise to clear
-      await new Promise((resolve) => setTimeout(resolve, 0));
+      // We need to catch the background promise to prevent unhandled rejection
+      const refreshPromise = backend.getCacheRefreshPromise();
+      if (refreshPromise) {
+        try {
+          await refreshPromise;
+        } catch (error) {
+          // Expected to fail, catch and ignore
+        }
+      }
 
       // Reset failure and try again - should trigger new fetch since cache is still expired
       advanceTime(1000); // Move time forward a bit more
       backend.shouldFailFetch = false;
       const releases = await backend.releases();
 
-      releases.should.be.instanceOf(PecansReleases);
-      backend.fetchCount.should.equal(3); // Initial + failed attempt + successful retry
+      expect(releases).toBeInstanceOf(PecansReleases);
+      expect(backend.fetchCount).toBe(3); // Initial + failed attempt + successful retry
     });
 
     it("should serve stale cache when no cache exists and fetch fails", async () => {
@@ -278,10 +310,10 @@ describe("Backend Caching", () => {
         await backend.releases();
         throw new Error("Expected error to be thrown");
       } catch (error: any) {
-        error.message.should.equal("Mock fetch error");
+        expect(error.message).toBe("Mock fetch error");
       }
 
-      should(backend.getCache()).be.null();
+      expect(backend.getCache()).toBeNull();
     });
   });
 
@@ -297,10 +329,10 @@ describe("Backend Caching", () => {
       // Manual refresh
       const refreshedReleases = await backend.refreshCache();
 
-      backend.fetchCount.should.equal(2); // Initial + manual refresh
-      backend.getCacheTimestamp().should.be.greaterThan(originalTimestamp);
-      refreshedReleases.should.be.instanceOf(PecansReleases);
-      should(backend.getCacheRefreshPromise()).be.undefined();
+      expect(backend.fetchCount).toBe(2); // Initial + manual refresh
+      expect(backend.getCacheTimestamp()).toBeGreaterThan(originalTimestamp);
+      expect(refreshedReleases).toBeInstanceOf(PecansReleases);
+      expect(backend.getCacheRefreshPromise()).toBeUndefined();
     });
 
     it("should handle refresh failure and reset promise", async () => {
@@ -312,10 +344,10 @@ describe("Backend Caching", () => {
         await backend.refreshCache();
         throw new Error("Expected error to be thrown");
       } catch (error: any) {
-        error.message.should.equal("Mock fetch error");
+        expect(error.message).toBe("Mock fetch error");
       }
 
-      should(backend.getCacheRefreshPromise()).be.undefined();
+      expect(backend.getCacheRefreshPromise()).toBeUndefined();
     });
   });
 
@@ -326,34 +358,34 @@ describe("Backend Caching", () => {
 
       // Populate cache
       await shortCacheBackend.releases();
-      shortCacheBackend.fetchCount.should.equal(1);
+      expect(shortCacheBackend.fetchCount).toBe(1);
 
       // Advance time by 2 seconds (beyond 1 second max age)
       advanceTime(2000);
 
       // Should trigger new fetch
       await shortCacheBackend.releases();
-      shortCacheBackend.fetchCount.should.equal(2);
+      expect(shortCacheBackend.fetchCount).toBe(2);
     });
 
     it("should use default cache max age when not specified", async () => {
       // Populate cache
       await backend.releases();
-      backend.fetchCount.should.equal(1);
+      expect(backend.fetchCount).toBe(1);
 
       // Advance time by default max age minus 1 second
       advanceTime(7200000 - 1000);
 
       // Should still use cache
       await backend.releases();
-      backend.fetchCount.should.equal(1);
+      expect(backend.fetchCount).toBe(1);
 
       // Advance past default max age
       advanceTime(2000);
 
       // Should trigger new fetch
       await backend.releases();
-      backend.fetchCount.should.equal(2);
+      expect(backend.fetchCount).toBe(2);
     });
   });
 
@@ -372,14 +404,14 @@ describe("Backend Caching", () => {
       // Before refresh completes, another call should get stale cache
       const staleReleases = await backend.releases();
 
-      staleReleases.should.equal(originalReleases); // Same object reference
+      expect(staleReleases).toBe(originalReleases); // Same object reference
 
       // Complete the refresh
       advanceTime(1000);
       const freshReleases = await refreshPromise;
 
-      freshReleases.should.be.instanceOf(PecansReleases);
-      backend.fetchCount.should.equal(2);
+      expect(freshReleases).toBeInstanceOf(PecansReleases);
+      expect(backend.fetchCount).toBe(2);
     });
 
     it("should update cache after background refresh completes", async () => {
@@ -396,8 +428,8 @@ describe("Backend Caching", () => {
 
       // Cache should be updated and refresh promise should be cleared
       const finalTimestamp = backend.getCacheTimestamp();
-      finalTimestamp.should.be.greaterThanOrEqual(originalTimestamp);
-      should(backend.getCacheRefreshPromise()).be.undefined();
+      expect(finalTimestamp).toBeGreaterThanOrEqual(originalTimestamp);
+      expect(backend.getCacheRefreshPromise()).toBeUndefined();
     });
   });
 });
