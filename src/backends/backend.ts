@@ -5,6 +5,8 @@ import { Buffer } from "buffer";
 import { PecansAsset, PecansAssetDTO } from "../models/PecansAsset";
 import { PecansReleases } from "../models";
 
+const DEFAULT_CACHE_MAX_AGE = 60 * 60 * 2; // 2 hours in seconds
+
 export interface BackendOpts {
   refreshSecret?: string;
   cacheMaxAge?: number;
@@ -12,7 +14,7 @@ export interface BackendOpts {
 
 export class BackendSettings implements BackendOpts {
   public refreshSecret = undefined;
-  public cacheMaxAge = 60 * 60 * 2; // 2 hours in seconds
+  public cacheMaxAge = DEFAULT_CACHE_MAX_AGE;
 }
 
 function cleanup(stream: NodeJS.ReadableStream) {
@@ -61,11 +63,14 @@ export abstract class Backend {
   async releases(): Promise<PecansReleases> {
     const now = Date.now();
     const cacheAge = now - this.cacheTimestamp;
-    const cacheMaxAgeMs = this.opts.cacheMaxAge! * 1000;
+    const cacheMaxAgeMs =
+      (this.opts.cacheMaxAge ?? DEFAULT_CACHE_MAX_AGE) * 1000;
 
     // check if we need to refresh the cache.
     if (!this.cache || cacheAge > cacheMaxAgeMs) {
-      const promise = this.refreshCache();
+      // return the existing promise if we are already refreshing
+      // otherwise start a new refresh.
+      const promise = this.cacheRefreshPromise ?? this.refreshCache();
       // If we don't have any cache, wait for the refresh to complete
       if (!this.cache) return promise;
     }
@@ -88,8 +93,13 @@ export abstract class Backend {
       if (this.hash != req.params.secret) {
         next("bad secret");
       }
-      this.refreshCache();
-      res.send(200);
+      this.refreshCache()
+        .then(() => {
+          next();
+        })
+        .catch((err) => {
+          next(err);
+        });
     };
     return middleware;
   }
