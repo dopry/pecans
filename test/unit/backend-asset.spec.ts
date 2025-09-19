@@ -1,8 +1,8 @@
-import { describe, it, expect, beforeEach, vi, MockedFunction } from "vitest";
 import { Readable } from "stream";
+import { beforeEach, describe, expect, it } from "vitest";
 import { Backend, BackendOpts } from "../../src/backends/backend";
-import { PecansReleases } from "../../src/models/PecansReleases";
 import { PecansAsset } from "../../src/models/PecansAsset";
+import { PecansReleases } from "../../src/models/PecansReleases";
 
 // Mock stream class for testing various scenarios
 class MockReadableStream extends Readable {

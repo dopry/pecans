@@ -1,11 +1,11 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Backend, BackendOpts } from "../../src/backends/backend";
-import { PecansReleases } from "../../src/models/PecansReleases";
+import { PecansAssetDTO } from "../../src/models/PecansAsset";
 import {
   PecansRelease,
   PecansReleaseDTO,
 } from "../../src/models/PecansRelease";
-import { PecansAssetDTO } from "../../src/models/PecansAsset";
+import { PecansReleases } from "../../src/models/PecansReleases";
 
 // Test implementation of Backend with controllable behavior
 class TestBackend extends Backend {
@@ -386,6 +386,20 @@ describe("Backend Caching", () => {
       // Should trigger new fetch
       await backend.releases();
       expect(backend.fetchCount).toBe(2);
+    });
+
+    it("should use default cache max age when cacheMaxAge is null", async () => {
+      // Force null value to hit the ?? branch
+      backend = new TestBackend({ cacheMaxAge: null as any });
+
+      // This should use DEFAULT_CACHE_MAX_AGE via the ?? operator
+      const releases1 = await backend.releases();
+      expect(backend.fetchCount).toBe(1);
+
+      // Should still be cached (not expired immediately)
+      const releases2 = await backend.releases();
+      expect(backend.fetchCount).toBe(1);
+      expect(releases2).toBe(releases1);
     });
   });
 

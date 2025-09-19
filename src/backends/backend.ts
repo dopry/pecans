@@ -83,11 +83,18 @@ export abstract class Backend {
     // the default refresh callback expects a base64 encoded sha256 hash of the refreshSecret.
     // the secret is to prevent DOS attacks against update infrastructure.
     const middleware = (req: Request, res: Response, next: NextFunction) => {
-      // on do stuff is a secret was provided, otherwise just call next.
-      if (!this.hash) next();
-      if (req.path !== path) next();
+      // only do stuff if a secret was provided, otherwise just call next.
+      if (!this.hash) {
+        next();
+        return;
+      }
+      if (req.path !== path) {
+        next();
+        return;
+      }
       if (this.hash != req.params.secret) {
         next("bad secret");
+        return;
       }
       this.refreshCache()
         .then(() => {
