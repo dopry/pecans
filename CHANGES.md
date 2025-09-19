@@ -1,3 +1,10 @@
+# [2.0.0-next.16](https://github.com/dopry/pecans/compare/v2.0.0-next.15...v2.0.0-next.16) (2025-09-19)
+
+
+### Features
+
+* cache releases in abstract Backend class with stale-while-revalidate strategy ([#19](https://github.com/dopry/pecans/issues/19)) ([173e74c](https://github.com/dopry/pecans/commit/173e74c043dbee2b087d125d0804dfda171e4960))
+
 # [2.0.0-next.15](https://github.com/dopry/pecans/compare/v2.0.0-next.14...v2.0.0-next.15) (2025-05-09)
 
 
