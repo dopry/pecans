@@ -14,12 +14,13 @@ export default defineConfig({
     },
 
     // Test output
-    reporter: ["verbose"],
+    reporters: ["verbose"],
 
     // Coverage (optional)
     coverage: {
       provider: "v8",
       reporter: ["text", "json", "html"],
+      include: ["src/**/*.ts"],
       exclude: [
         "node_modules/",
         "dist/",
