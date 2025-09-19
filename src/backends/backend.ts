@@ -23,9 +23,9 @@ function cleanup(stream: NodeJS.ReadableStream) {
 export abstract class Backend {
   protected opts: BackendSettings;
   private hash?: string;
-  protected releasesCache: PecansReleases | null = null;
-  protected releaseCacheTimestamp: number = 0;
-  protected releaseCacheRefreshPromise: Promise<PecansReleases> | null = null;
+  protected cache: PecansReleases | null = null;
+  protected cacheTimestamp: number = 0;
+  protected cacheRefreshPromise?: Promise<PecansReleases> = undefined;
 
   constructor(opts?: BackendOpts) {
     this.opts = Object.assign({}, new BackendSettings(), opts);
@@ -36,67 +36,41 @@ export abstract class Backend {
     }
   }
 
-  // New release? clear cache and repopulate
-  onRelease() {
-    this.releasesCache = null;
-    this.releaseCacheTimestamp = 0;
-    this.releaseCacheRefreshPromise = null;
-    // Trigger background cache repopulation
-    this.repopulateCache();
-  }
-
-  private async repopulateCache(): Promise<void> {
-    try {
-      await this.releases();
-    } catch (error) {
-      console.warn('Cache repopulation failed:', error);
-    }
+  public async refreshCache(): Promise<PecansReleases> {
+    // reset the caches, so next call to releases() will fetch new data.
+    // but do not delete the existing cache, so we still serve stale data
+    // until new data is fetched.
+    const promise = this.fetchReleases()
+      .then((releases) => {
+        this.cache = releases;
+        this.cacheTimestamp = Date.now();
+        this.cacheRefreshPromise = undefined;
+        return releases;
+      })
+      .catch((error) => {
+        console.warn("Cache refresh failed:", error);
+        // Reset the promise so we can try again later
+        this.cacheRefreshPromise = undefined;
+        throw error;
+      });
+    this.cacheRefreshPromise = promise;
+    return promise;
   }
 
   // List all releases for this repository with caching
   async releases(): Promise<PecansReleases> {
     const now = Date.now();
-    const cacheAge = now - this.releaseCacheTimestamp;
+    const cacheAge = now - this.cacheTimestamp;
     const cacheMaxAgeMs = this.opts.cacheMaxAge! * 1000;
-    
-    // If we have cached data
-    if (this.releasesCache) {
-      // If cache is still fresh, return it immediately
-      if (cacheAge < cacheMaxAgeMs) {
-        return this.releasesCache;
-      }
-      
-      // Cache is stale - return it immediately but trigger background refresh
-      if (!this.releaseCacheRefreshPromise) {
-        this.releaseCacheRefreshPromise = this.fetchReleases().then(releases => {
-          this.releasesCache = releases;
-          this.releaseCacheTimestamp = Date.now();
-          this.releaseCacheRefreshPromise = null;
-          return releases;
-        }).catch(error => {
-          console.warn('Background cache refresh failed:', error);
-          // Reset the promise so we can try again later
-          this.releaseCacheRefreshPromise = null;
-          // Return the existing cache data rather than throwing
-          return this.releasesCache!;
-        });
-      }
-      
-      // Return stale cache immediately
-      return this.releasesCache;
+
+    // check if we need to refresh the cache.
+    if (!this.cache || cacheAge > cacheMaxAgeMs) {
+      const promise = this.refreshCache();
+      // If we don't have any cache, wait for the refresh to complete
+      if (!this.cache) return promise;
     }
-    
-    // No cache exists - fetch synchronously
-    if (!this.releaseCacheRefreshPromise) {
-      this.releaseCacheRefreshPromise = this.fetchReleases().then(releases => {
-        this.releasesCache = releases;
-        this.releaseCacheTimestamp = Date.now();
-        this.releaseCacheRefreshPromise = null;
-        return releases;
-      });
-    }
-    
-    return this.releaseCacheRefreshPromise;
+    // Cache is present, return it
+    return this.cache;
   }
 
   // return an express middlware to catch a specific path
@@ -114,7 +88,7 @@ export abstract class Backend {
       if (this.hash != req.params.secret) {
         next("bad secret");
       }
-      this.onRelease();
+      this.refreshCache();
       res.send(200);
     };
     return middleware;
