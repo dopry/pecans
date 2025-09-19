@@ -8,6 +8,9 @@ import {
   PackageFormat,
   Platform,
   platforms,
+  platformToType,
+  mapLegacyPlatform,
+  isPlatform,
 } from "../../src/utils";
 import { resolveReleaseAssetForVersion } from "../../src/utils/resolveForVersion";
 import { filenameToPackageFormat } from "../../src/utils/PackageFormat";
@@ -394,6 +397,90 @@ describe("Platforms", function () {
           expect(target.filename).toBe(filename);
         }
       });
+    });
+  });
+
+  describe("platformToType", () => {
+    it("should extract OS from platform strings", () => {
+      expect(platformToType("linux")).toBe("linux");
+      expect(platformToType("linux_64")).toBe("linux");
+      expect(platformToType("linux_deb_32")).toBe("linux");
+      expect(platformToType("osx")).toBe("osx");
+      expect(platformToType("osx_64")).toBe("osx");
+      expect(platformToType("osx_arm64")).toBe("osx");
+      expect(platformToType("windows")).toBe("windows");
+      expect(platformToType("windows_32")).toBe("windows");
+    });
+
+    it("should throw error for invalid platform strings", () => {
+      expect(() => platformToType("invalid_64" as Platform)).toThrow(
+        "Unrecognized OS in platform string"
+      );
+      expect(() => platformToType("unknown" as Platform)).toThrow(
+        "Unrecognized OS in platform string"
+      );
+    });
+  });
+
+  describe("mapLegacyPlatform", () => {
+    it("should map legacy OSX platform names", () => {
+      expect(mapLegacyPlatform("osx")).toBe(platforms.OSX_64);
+      expect(mapLegacyPlatform("osx-x64")).toBe(platforms.OSX_64);
+      expect(mapLegacyPlatform("osx-amd64")).toBe(platforms.OSX_64);
+      expect(mapLegacyPlatform("osx-arm64")).toBe(platforms.OSX_ARM64);
+      expect(mapLegacyPlatform("darwin")).toBe(platforms.OSX_64);
+      expect(mapLegacyPlatform("darwin-x64")).toBe(platforms.OSX_64);
+      expect(mapLegacyPlatform("darwin-amd64")).toBe(platforms.OSX_64);
+      expect(mapLegacyPlatform("darwin-arm64")).toBe(platforms.OSX_ARM64);
+      expect(mapLegacyPlatform("mac")).toBe(platforms.OSX_64);
+      expect(mapLegacyPlatform("mac-amd64")).toBe(platforms.OSX_64);
+      expect(mapLegacyPlatform("mac-x64")).toBe(platforms.OSX_64);
+      expect(mapLegacyPlatform("mac-arm64")).toBe(platforms.OSX_ARM64);
+    });
+
+    it("should map legacy Windows platform names", () => {
+      expect(mapLegacyPlatform("win")).toBe(platforms.WINDOWS_64);
+      expect(mapLegacyPlatform("win-32")).toBe(platforms.WINDOWS_32);
+      expect(mapLegacyPlatform("win-i386")).toBe(platforms.WINDOWS_32);
+      expect(mapLegacyPlatform("win-ia32")).toBe(platforms.WINDOWS_32);
+      expect(mapLegacyPlatform("win-x64")).toBe(platforms.WINDOWS_64);
+      expect(mapLegacyPlatform("win-amd64")).toBe(platforms.WINDOWS_64);
+      expect(mapLegacyPlatform("win32")).toBe(platforms.WINDOWS_32);
+      expect(mapLegacyPlatform("win32-x64")).toBe(platforms.WINDOWS_64);
+      expect(mapLegacyPlatform("win32-amd64")).toBe(platforms.WINDOWS_64);
+    });
+
+    it("should return original string for unmapped platforms", () => {
+      expect(mapLegacyPlatform("unknown-platform")).toBe("unknown-platform");
+      expect(mapLegacyPlatform("linux")).toBe("linux");
+      expect(mapLegacyPlatform("")).toBe("");
+    });
+  });
+
+  describe("isPlatform", () => {
+    it("should return true for valid platform strings", () => {
+      expect(isPlatform("linux")).toBe(true);
+      expect(isPlatform("linux_64")).toBe(true);
+      expect(isPlatform("linux_deb_32")).toBe(true);
+      expect(isPlatform("osx")).toBe(true);
+      expect(isPlatform("osx_universal")).toBe(true);
+      expect(isPlatform("windows_32")).toBe(true);
+    });
+
+    it("should return false for invalid platform strings", () => {
+      expect(isPlatform("invalid")).toBe(false);
+      expect(isPlatform("android")).toBe(false);
+      expect(isPlatform("")).toBe(false);
+      expect(isPlatform("LINUX")).toBe(false); // case sensitive
+    });
+
+    it("should return false for non-string values", () => {
+      expect(isPlatform(null)).toBe(false);
+      expect(isPlatform(undefined)).toBe(false);
+      expect(isPlatform(123)).toBe(false);
+      expect(isPlatform({})).toBe(false);
+      expect(isPlatform([])).toBe(false);
+      expect(isPlatform(true)).toBe(false);
     });
   });
 });
