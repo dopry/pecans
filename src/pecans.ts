@@ -173,7 +173,6 @@ export function getArchFromUserAgent(
 
 export class Pecans extends EventEmitter {
   protected startTime = Date.now();
-  protected cacheId = 1;
   protected opts: PecansSettings;
 
   static defaults: PecansSettings = {
@@ -183,8 +182,6 @@ export class Pecans extends EventEmitter {
     preferUniversal: true,
     includeVersionInReleaseNotes: false,
   };
-
-  protected releasesCache: Record<string, Promise<PecansReleases>> = {};
 
   public router: Router;
 
@@ -199,8 +196,6 @@ export class Pecans extends EventEmitter {
     if (!this.opts.cacheMaxAge) this.opts.cacheMaxAge = 60 * 60 * 2;
     if (!this.opts.timeout) this.opts.timeout = 60 * 60 * 1000;
     if (!this.opts.basePath) this.opts.basePath = "";
-
-    this.releasesCache[this.getCacheKey()] = backend.releases();
 
     // Create backend
     this.versions = new Versions(this.backend);
@@ -370,11 +365,6 @@ export class Pecans extends EventEmitter {
     return;
   }
 
-  protected getCacheKey(): number {
-    // use a time based key to ensure the cached releases are update when cacheMaxAge is reached.
-    return this.cacheId + Math.ceil(Date.now() / this.opts.cacheMaxAge);
-  }
-
   protected getBaseUrl(req: Request) {
     return req.protocol + "://" + req.get("host") + this.opts.basePath;
   }
@@ -384,11 +374,7 @@ export class Pecans extends EventEmitter {
   }
 
   public async getReleases(): Promise<PecansReleases> {
-    const key = this.getCacheKey();
-    if (!this.releasesCache[key]) {
-      this.releasesCache[key] = this.backend.releases();
-    }
-    return this.releasesCache[key];
+    return this.backend.releases();
   }
 
   protected async handleApiChannels(
