@@ -86,11 +86,15 @@ export class PecansGitHubBackend extends Backend {
     return env;
   }
 
-  static FromEnv(env: PecansGithubBackendEnvironment): PecansGitHubBackend {
+  static FromEnv(
+    env: PecansGithubBackendEnvironment,
+    opts: PecansGitHubBackendOpts = {}
+  ): PecansGitHubBackend {
     return new PecansGitHubBackend(
       env.GITHUB_OWNER,
       env.GITHUB_REPO,
-      env.GITHUB_TOKEN
+      env.GITHUB_TOKEN,
+      opts
     );
   }
 
@@ -132,18 +136,19 @@ export class PecansGitHubBackend extends Backend {
     if (!this.opts.refreshSecret) {
       return (req: Request, res: Response, next: NextFunction) => next();
     }
+    // handle github webhooks authentication and event parsing.
     const webhook = new Webhooks({
       secret: this.opts.refreshSecret,
     });
     // Webhook from GitHub
     webhook.on("release", () => {
-      this.onRelease();
+      this.refreshCache();
     });
     return createNodeMiddleware(webhook, { path });
   }
 
-  // List all releases for this repository
-  async releases() {
+  // Implement fetchReleases abstract method from Backend class
+  async fetchReleases(): Promise<PecansReleases> {
     const { owner, repo } = this;
 
     // const reponse = await this.octokit.rest.repos.listReleases({ owner, repo });
