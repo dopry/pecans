@@ -1,9 +1,10 @@
-import destroy from "destroy";
+import { Buffer } from "buffer";
 import { createHash } from "crypto";
 import { NextFunction, Request, Response } from "express";
-import { Buffer } from "buffer";
-import { PecansAsset, PecansAssetDTO } from "../models/PecansAsset";
+import { pipeline, Writable } from "stream";
+import { promisify } from "util";
 import { PecansReleases } from "../models";
+import { PecansAsset, PecansAssetDTO } from "../models/PecansAsset";
 
 const DEFAULT_CACHE_MAX_AGE = 60 * 60 * 2; // 2 hours in seconds
 
@@ -15,11 +16,6 @@ export interface BackendOpts {
 export class BackendSettings implements BackendOpts {
   public refreshSecret = undefined;
   public cacheMaxAge = DEFAULT_CACHE_MAX_AGE;
-}
-
-function cleanup(stream: NodeJS.ReadableStream) {
-  destroy(stream);
-  stream.removeAllListeners();
 }
 
 export abstract class Backend {
@@ -87,11 +83,18 @@ export abstract class Backend {
     // the default refresh callback expects a base64 encoded sha256 hash of the refreshSecret.
     // the secret is to prevent DOS attacks against update infrastructure.
     const middleware = (req: Request, res: Response, next: NextFunction) => {
-      // on do stuff is a secret was provided, otherwise just call next.
-      if (!this.hash) next();
-      if (req.path !== path) next();
+      // only do stuff if a secret was provided, otherwise just call next.
+      if (!this.hash) {
+        next();
+        return;
+      }
+      if (req.path !== path) {
+        next();
+        return;
+      }
       if (this.hash != req.params.secret) {
         next("bad secret");
+        return;
       }
       this.refreshCache()
         .then(() => {
@@ -111,6 +114,7 @@ export abstract class Backend {
   async serveAsset(asset: PecansAssetDTO, res: Response) {
     throw Error("Abstract Method");
   }
+
   // Return stream for an asset
   async getAssetStream(
     asset: PecansAsset
@@ -118,27 +122,40 @@ export abstract class Backend {
     throw Error("Abstract Method");
   }
 
-  // Return stream for an asset
+  // Return buffer for an asset stream
+  // Requires Node.js 22+ for proper stream handling with pipeline()
   async readAsset(asset: PecansAsset): Promise<Buffer> {
     const stream = await this.getAssetStream(asset);
     if (stream == null) {
       return Buffer.from("");
     }
-    return new Promise((resolve, reject) => {
-      let output = Buffer.alloc(0);
 
-      stream
-        .on("data", (buf) => {
-          output = Buffer.concat([output, buf]);
-        })
-        .on("error", (err) => {
-          cleanup(stream);
-          reject(err);
-        })
-        .on("end", () => {
-          cleanup(stream);
-          resolve(output);
-        });
+    const chunks: Buffer[] = [];
+    const writable = new Writable({
+      write(chunk, encoding, callback) {
+        chunks.push(chunk);
+        callback();
+      },
+      // Handle destroy properly for Node.js 22+ compatibility
+      destroy(error, callback) {
+        callback(error);
+      },
     });
+
+    try {
+      await promisify(pipeline)(stream, writable);
+      return Buffer.concat(chunks);
+    } catch (error) {
+      // Enhance error messages for better debugging in Node.js 22+
+      if (error instanceof Error) {
+        if (error.message.includes("Premature close")) {
+          throw new Error(
+            `Stream closed unexpectedly while reading asset ${asset.id}: ${error.message}`
+          );
+        }
+        throw new Error(`Failed to read asset ${asset.id}: ${error.message}`);
+      }
+      throw error;
+    }
   }
 }
