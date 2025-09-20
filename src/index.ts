@@ -8,12 +8,12 @@ export * from "./utils/";
 export * from "./versions";
 
 export function configure() {
-  const PECANS_BACKEND = "PecansGithubBackend";
+  const PECANS_BACKEND = process.env.PECANS_BACKEND || "PecansGithubBackend";
   const basePath = process.env.PECANS_BASE_PATH || "";
-  const cacheMaxAge = process.env.PECANS_CACHE_MAX_AGE ? 
-    parseInt(process.env.PECANS_CACHE_MAX_AGE) : 
-    60 * 60 * 2; // Default 2 hours
-  
+  const cacheMaxAge = process.env.PECANS_CACHE_MAX_AGE
+    ? parseInt(process.env.PECANS_CACHE_MAX_AGE)
+    : 60 * 60 * 2; // Default 2 hours
+
   const pecansOpts: PecansOptions = {
     // base path to inject between host and relative path. use for D.O. app service where
     // app is proxied through / api and the original url isn't passed by the proxy.
@@ -34,37 +34,8 @@ export function configure() {
   }
 }
 
-if (require.main === module) {
+export function main() {
   const { pecans } = configure();
-
-  // Log download
-  pecans.on("beforeDownload", (download) => {
-    console.log(
-      "before download",
-      download.platform.filename,
-      "for version",
-      download.version.version,
-      "on channel",
-      download.version.channel,
-      "for",
-      download.platform.type
-    );
-  });
-  pecans.on("afterDownload", (download) => {
-    console.log(
-      "after download",
-      download.platform.filename,
-      "for version",
-      download.version.version,
-      "on channel",
-      download.version.channel,
-      "for",
-      download.platform.type
-    );
-  });
-  console.log("listeners", pecans.listeners("beforeDownload"));
-  console.log("listeners", pecans.listeners("afterDownload"));
-
   const port = process.env.PORT || 5000;
 
   const app = express();
@@ -105,4 +76,8 @@ if (require.main === module) {
       );
     }
   });
+}
+
+if (require.main === module) {
+  main();
 }

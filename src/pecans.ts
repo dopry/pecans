@@ -1,7 +1,6 @@
+import Debug from "debug";
 import { NextFunction, Request, Response, Router } from "express";
 import useragent from "express-useragent";
-import Debug from "debug";
-
 import EventEmitter from "node:events";
 import { ParsedQs } from "qs";
 import { validRange } from "semver";
@@ -54,7 +53,7 @@ export interface PecansSettings {
   includeVersionInReleaseNotes: boolean;
 }
 
-export interface PecansOptions extends Partial<PecansSettings> { }
+export interface PecansOptions extends Partial<PecansSettings> {}
 
 export class UnsupportedPlatformError extends Error {
   constructor(platform: unknown) {
@@ -90,7 +89,7 @@ export function validateReqQueryChannel(
 //
 export function validateReqQueryPlatform(
   platform: string | ParsedQs | string[] | ParsedQs[] | undefined
-): Platform | undefined {
+): Platform {
   if (!isPlatform(platform)) throw new UnsupportedPlatformError(platform);
   return platform;
 }
@@ -152,7 +151,9 @@ export function getFiletypeFromQuery(
   const value = getStringValueFromRequestQuery(query, "filetype");
   if (!value) return undefined;
   const ext = value.startsWith(".") ? value : `.${value}`;
-  return isSupportedFileExtension(ext) ? ext : undefined;
+  if (!isSupportedFileExtension(ext))
+    throw new Error("Unsupported FileType Requested");
+  return ext;
 }
 
 export function getPlatformFromQuery(query: ParsedQs): Platform | undefined {
@@ -271,6 +272,9 @@ export class Pecans extends EventEmitter {
       }
       const release = matchingReleases[0];
       const matchingAssets = release.queryAssets(query);
+      // Defensive check kept as safety net, the following should never be true with the current implementation of
+      // queryReleases. queryReleases calls queryAssets internally with the same query.  So the matchingAssets should
+      // always be > 0
       if (matchingAssets.length == 0) {
         return res.status(404).send(`${filename} not found`);
       }
@@ -288,9 +292,6 @@ export class Pecans extends EventEmitter {
 
   async dl(req: Request, res: Response, next: NextFunction) {
     try {
-      const channel = req.params.channel;
-      this.validateChannelName(channel);
-
       const os = req.params.os;
       if (!isOperatingSystem(os)) {
         res
@@ -309,6 +310,10 @@ export class Pecans extends EventEmitter {
         return;
       }
 
+      const channel = req.query.channel
+        ? validateReqQueryChannel(req.query.channel)
+        : "stable";
+      await this.validateChannelName(channel);
       const version = getVersionFromQuery(req.query);
       const pkg = getPkgFromQuery(req.query);
 
@@ -437,18 +442,14 @@ export class Pecans extends EventEmitter {
       const filename = req.params.filename;
       const filetype = getFiletypeFromQuery(req.query);
 
-      if (filetype && !isSupportedFileExtension(filetype)) {
-        throw new Error("Unsupported FileType Requested");
-      }
-
       const _platform = filename
         ? filenameToPlatform(filename)
         : req.params.platform || getPlatformFromUserAgent(req);
       const mapped_platform = mapLegacyPlatform(_platform || "");
-      const platform = validateReqQueryPlatform(mapped_platform);
-      if (platform == undefined) {
+      if (!mapped_platform) {
         throw new Error("Platform is required");
       }
+      const platform = validateReqQueryPlatform(mapped_platform);
 
       // If specific version, don't enforce a channel
       if (tag != "latest") channel = "*";
@@ -457,18 +458,22 @@ export class Pecans extends EventEmitter {
       try {
         release = await this.versions.resolve({
           channel: channel,
-          platform: platform,
+          platform,
           versionRange: tag,
           preferUniversal: this.opts.preferUniversal,
         });
       } catch (err) {
-        if (channel || tag != "latest") throw err;
+        // if we didn't restrict by channel or we specified a specific tag
+        // don't try to fallback to any channel
+        if (channel == "*" || tag != "latest") throw err;
       }
 
+      // we weren't able to find a release with the specified channel
+      // try again without the channel restriction
       if (!release) {
         release = await this.versions.resolve({
           channel: "*",
-          platform: platform,
+          platform,
           versionRange: tag,
           preferUniversal: this.opts.preferUniversal,
         });
@@ -477,21 +482,21 @@ export class Pecans extends EventEmitter {
       const asset = filename
         ? release.assets.find((i) => i.filename == filename)
         : resolveReleaseAssetForVersion(
-          release,
-          platform,
-          this.opts.preferUniversal,
-          filetype
-        );
+            release,
+            platform,
+            this.opts.preferUniversal,
+            filetype
+          );
 
       if (!asset)
         throw new Error(
           "No download available for platform " +
-          platform +
-          " for version " +
-          release.version +
-          " (" +
-          (channel || "beta") +
-          ")"
+            platform +
+            " for version " +
+            release.version +
+            " (" +
+            channel +
+            ")"
         );
 
       // Call analytic middleware, then serve
@@ -547,8 +552,9 @@ export class Pecans extends EventEmitter {
 
       const notesSlice =
         versions.length === 1 ? [latest] : versions.slice(0, -1);
-      const url = `${this.getBaseUrl(req)}/download/version/${latest.version
-        }/${platform}?filetype=${filetype}`;
+      const url = `${this.getBaseUrl(req)}/download/version/${
+        latest.version
+      }/${platform}?filetype=${filetype}`;
       const releaseNotes = mergeReleaseNotes(
         notesSlice,
         this.opts.includeVersionInReleaseNotes
@@ -574,16 +580,12 @@ export class Pecans extends EventEmitter {
     next: NextFunction
   ) {
     try {
-      const _platform = req.params.platform || "windows_32";
-      const mapped_platform = mapLegacyPlatform(_platform || "");
+      const _platform = req.params.platform;
+      const mapped_platform = mapLegacyPlatform(_platform);
       const platform = validateReqQueryPlatform(mapped_platform);
 
       const channel = req.params.channel || "stable";
       const tag = req.params.version;
-
-      if (!isPlatform(platform)) {
-        throw new Error();
-      }
 
       const versions = await this.versions.filter({
         versionRange: ">=" + tag,
@@ -597,7 +599,6 @@ export class Pecans extends EventEmitter {
 
       // File exists
       const asset = latest.assets.find((i) => i.filename == "RELEASES");
-      if (!asset) throw new Error("File not found");
       if (!asset) {
         throw new Error(`RELEASES File not found for ${latest.version}`);
       }

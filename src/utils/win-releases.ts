@@ -77,10 +77,7 @@ export async function parseRELEASES(
   const goodlines = lines.filter((line) => !!releaseRe.exec(line));
 
   return goodlines.map((line) => {
-    const parts = releaseRe.exec(line);
-    if (parts == null) {
-      throw new Error("Invalid Releases Entry");
-    }
+    const parts = releaseRe.exec(line)!; // Non-null assertion since goodlines are pre-filtered
     const filename = parts[2] || "";
     const isDelta = filename.indexOf("-full.nupkg") == -1;
     const filenameParts = filename

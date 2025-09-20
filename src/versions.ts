@@ -2,7 +2,7 @@ import semver from "semver";
 import { Backend } from "./backends/";
 import { PecansRelease } from "./models/PecansRelease";
 import { sortReleaseBySemVerDescending } from "./utils/sortReleaseBySemVerDescending";
-import { isPlatform, Platform, satisfiesPlatform } from "./utils";
+import { isPlatform, Platform } from "./utils";
 import { UnsupportedPlatformError } from "./pecans";
 import { reset } from "express-useragent";
 
@@ -27,7 +27,7 @@ export class Versions {
     preferUniversal: true,
   };
 
-  constructor(protected backend: Backend) { }
+  constructor(protected backend: Backend) {}
 
   // Filter versions with criteria
   async filter(opts: VersionFilterOpts): Promise<PecansRelease[]> {
@@ -56,7 +56,9 @@ export class Versions {
         }
         const availableForPlatform = release.assets.some((a) => {
           if (a.filename === "RELEASES") return false;
-          const match = platforms.includes(a.type) || platforms.some(p => a.type.startsWith(p));
+          const match =
+            platforms.includes(a.type) ||
+            platforms.some((p) => a.type.startsWith(p));
           return match;
         });
         if (!availableForPlatform) return false;

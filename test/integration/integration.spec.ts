@@ -1,7 +1,6 @@
 import express from "express";
-import { describe } from "mocha";
+import { describe, it, expect, afterEach } from "vitest";
 import nock from "nock";
-import assert from "node:assert";
 import supertest from "supertest";
 import { Pecans, PecansGitHubBackend } from "../../src";
 import {
@@ -53,15 +52,15 @@ describe("Integration Tests: Github Backend", () => {
     nock.cleanAll();
   });
 
-  describe("deprecated endpoints", () => {
-    // These endpoints are deprecated, but still in use by my projects so I will write tests for them
-    // to support releases during the deprecation cycle.
-    describe("/download/:platform?", () => {});
-    describe("/update/:platform/:version", () => {});
-    describe("/update/:platform/:version/RELEASES", () => {});
-  });
+  // TODO: Implement tests for deprecated endpoints when needed
+  // describe("deprecated endpoints", () => {
+  //   describe("/download/:platform?", () => {});
+  //   describe("/update/:platform/:version", () => {});
+  //   describe("/update/:platform/:version/RELEASES", () => {});
+  // });
 
-  describe("/webhook/refresh", () => {});
+  // TODO: Implement webhook refresh tests
+  // describe("/webhook/refresh", () => {});
   describe("/dl/:filename", () => {
     it("requires filename", async () => {
       const { env, backend } = configurePecansGitHubBackend();
@@ -84,22 +83,25 @@ describe("Integration Tests: Github Backend", () => {
       const url = `/dl/${filename}`;
       const request = supertest(app).get(url).expect(302);
       const reponse = await request;
-      assert.match(reponse.headers.location, new RegExp(`${filename}`));
+      expect(reponse.headers.location).toMatch(new RegExp(`${filename}`));
     });
   });
-  describe("/dl/:os/:arch", () => {
-    describe("/dl/windows/x64", () => {});
-    describe("/dl/osx/x64", () => {});
-    describe("/dl/osx/arm64", () => {});
-    describe("/dl/osx/universal", () => {});
-    describe("/dl/linux/x64", () => {});
-    describe("/dl/linux/arm64", () => {});
-  });
+  // TODO: Implement tests for OS/arch specific downloads
+  // describe("/dl/:os/:arch", () => {
+  //   describe("/dl/windows/x64", () => {});
+  //   describe("/dl/osx/x64", () => {});
+  //   describe("/dl/osx/arm64", () => {});
+  //   describe("/dl/osx/universal", () => {});
+  //   describe("/dl/linux/x64", () => {});
+  //   describe("/dl/linux/arm64", () => {});
+  // });
 
-  describe("/api", () => {
-    describe("/api/channels", () => {});
-    describe("/api/versions", () => {});
-  });
+  // TODO: Implement API endpoint tests
+  // describe("/api", () => {
+  //   describe("/api/channels", () => {});
+  //   describe("/api/versions", () => {});
+  // });
 
-  describe("/notes/:version?", () => {});
+  // TODO: Implement notes endpoint tests
+  // describe("/notes/:version?", () => {});
 });
