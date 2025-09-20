@@ -1,3 +1,10 @@
+# [2.0.0-next.17](https://github.com/dopry/pecans/compare/v2.0.0-next.16...v2.0.0-next.17) (2025-09-20)
+
+
+### Bug Fixes
+
+* tests switch to vitest and expand test coverage.  ([#22](https://github.com/dopry/pecans/issues/22)) ([bbd4ccb](https://github.com/dopry/pecans/commit/bbd4ccbe70601e96c77732244b8537dac1cb6c49))
+
 # [2.0.0-next.16](https://github.com/dopry/pecans/compare/v2.0.0-next.15...v2.0.0-next.16) (2025-09-19)
 
 
