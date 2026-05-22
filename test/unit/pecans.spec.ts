@@ -1665,6 +1665,76 @@ describe("Pecans", () => {
           );
         });
 
+        it("should produce Squirrel.Mac-shaped JSON for Windows MSIX clients", async () => {
+          // Electron 41+'s autoUpdater for MSIX consumes the same JSON shape
+          // Squirrel.Mac uses ({url, name, notes, pub_date}). A Windows MSIX
+          // client hits this same route with ?filetype=msix and expects the
+          // URL to point at a .msix download.
+          const pubDate = new Date("2026-05-22T00:00:00.000Z");
+          const mockReleases = [
+            {
+              version: "5.0.13",
+              published_at: pubDate,
+              notes: "MSIX release notes",
+            },
+          ];
+          vi.spyOn(pecans.versions, "filter").mockResolvedValueOnce(
+            mockReleases as any
+          );
+
+          const req = createMockRequest({
+            params: {
+              channel: "stable",
+              platform: "windows_64",
+              version: "5.0.12",
+            },
+            query: { filetype: "msix" },
+          });
+          const res = createMockResponse();
+          const next = createMockNext();
+
+          await (pecans as any).handleUpdateOSX(req, res, next);
+
+          expect(res.status).toHaveBeenCalledWith(200);
+          expect(res.send).toHaveBeenCalledWith({
+            url: expect.stringContaining("filetype=msix"),
+            name: "5.0.13",
+            notes: expect.any(String),
+            pub_date: pubDate.toISOString(),
+          });
+          const sent = (res.send as any).mock.calls[0][0];
+          // The download URL must target the windows_64 platform asset
+          expect(sent.url).toContain("/download/version/5.0.13/windows_64");
+        });
+
+        it("should support filetype=msixbundle for multi-arch MSIX clients", async () => {
+          const mockReleases = [
+            {
+              version: "5.0.13",
+              published_at: new Date(),
+              notes: "Bundle release",
+            },
+          ];
+          vi.spyOn(pecans.versions, "filter").mockResolvedValueOnce(
+            mockReleases as any
+          );
+
+          const req = createMockRequest({
+            params: { platform: "windows_64", version: "5.0.12" },
+            query: { filetype: "msixbundle" },
+          });
+          const res = createMockResponse();
+          const next = createMockNext();
+
+          await (pecans as any).handleUpdateOSX(req, res, next);
+
+          expect(res.send).toHaveBeenCalledWith(
+            expect.objectContaining({
+              url: expect.stringContaining("filetype=msixbundle"),
+            })
+          );
+        });
+
         it("should call next with error on failure", async () => {
           vi.spyOn(pecans.versions, "filter").mockRejectedValueOnce(
             new Error("Filter error")

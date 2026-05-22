@@ -11,6 +11,8 @@ export const SUPPORTED_FILE_EXTENSIONS = [
   ".tar.gz",
   ".zip",
   ".nupkg",
+  ".msix",
+  ".msixbundle",
 ] as const;
 export type SupportedFileExtension = typeof SUPPORTED_FILE_EXTENSIONS[number];
 export function isSupportedFileExtension(
@@ -22,7 +24,8 @@ export function isSupportedFileExtension(
   );
 }
 
-// we need special handling for .tar.gz
+// we need special handling for .tar.gz and .msixbundle (extname returns
+// .msixbundle, but for symmetry with .tar.gz we explicitly check)
 export function getSupportedExt(
   filename: string
 ): SupportedFileExtension | undefined {
@@ -40,7 +43,15 @@ export function getDownloadExtensionsByOs(
     case "osx":
       return [".dmg"];
     case "windows":
-      return [".exe"];
+      switch (pkg) {
+        case "msix":
+          // .msixbundle preferred over .msix when both are present, since a
+          // bundle covers multiple architectures; the resolver falls back to
+          // a single-arch .msix when no bundle exists.
+          return [".msixbundle", ".msix"];
+        default:
+          return [".exe"];
+      }
     case "linux":
       switch (pkg) {
         case "deb":

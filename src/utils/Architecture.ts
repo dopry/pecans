@@ -16,6 +16,8 @@ export function filenameToArchitecture(
 ): Architecture {
   const name = filename.toLowerCase();
   if (name == "releases") return "universal";
+  // .msixbundle is a multi-architecture bundle by definition
+  if (name.endsWith(".msixbundle")) return "universal";
   if (name.includes("universal") || name.includes("univ")) return "universal";
   // do arm64 berfore 64 other wise it will always be 64, since both contain 64
   if (name.includes("arm64")) return "arm64";

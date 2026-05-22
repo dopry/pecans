@@ -11,7 +11,7 @@ import { ParsedQs } from "qs";
 describe("PackageFormat", () => {
   describe("PACKAGE_FORMATS constant", () => {
     it("should contain all expected package formats", () => {
-      expect(PACKAGE_FORMATS).toEqual(["deb", "rpm"]);
+      expect(PACKAGE_FORMATS).toEqual(["deb", "rpm", "msix"]);
     });
   });
 
@@ -19,6 +19,7 @@ describe("PackageFormat", () => {
     it("should return true for valid package formats", () => {
       expect(isPackageFormat("deb")).toBe(true);
       expect(isPackageFormat("rpm")).toBe(true);
+      expect(isPackageFormat("msix")).toBe(true);
     });
 
     it("should return false for invalid package formats", () => {
@@ -26,9 +27,11 @@ describe("PackageFormat", () => {
       expect(isPackageFormat("dmg")).toBe(false);
       expect(isPackageFormat("tar")).toBe(false);
       expect(isPackageFormat("nupkg")).toBe(false);
+      expect(isPackageFormat("appx")).toBe(false);
       expect(isPackageFormat("invalid")).toBe(false);
       expect(isPackageFormat("")).toBe(false);
       expect(isPackageFormat("DEB")).toBe(false); // case sensitive
+      expect(isPackageFormat("MSIX")).toBe(false); // case sensitive
     });
 
     it("should return false for non-string values", () => {
@@ -56,12 +59,20 @@ describe("PackageFormat", () => {
       expect(filenameToPackageFormat("APP.RPM")).toBe("rpm"); // case insensitive
     });
 
+    it("should detect msix packages", () => {
+      expect(filenameToPackageFormat("Visibox_5.0.13.0_x64.msix")).toBe("msix");
+      expect(filenameToPackageFormat("Visibox-5.0.13.msixbundle")).toBe("msix");
+      expect(filenameToPackageFormat("APP.MSIX")).toBe("msix"); // case insensitive
+      expect(filenameToPackageFormat("APP.MSIXBUNDLE")).toBe("msix");
+    });
+
     it("should return undefined for unsupported formats", () => {
       expect(filenameToPackageFormat("package.zip")).toBe(undefined);
       expect(filenameToPackageFormat("installer.dmg")).toBe(undefined);
       expect(filenameToPackageFormat("archive.tar.gz")).toBe(undefined);
       expect(filenameToPackageFormat("update.nupkg")).toBe(undefined);
       expect(filenameToPackageFormat("app.exe")).toBe(undefined);
+      expect(filenameToPackageFormat("legacy.appx")).toBe(undefined);
     });
 
     it("should return undefined for files without extensions", () => {
@@ -90,6 +101,11 @@ describe("PackageFormat", () => {
     it("should return valid rpm package format from query", () => {
       const query: ParsedQs = { pkg: "rpm" };
       expect(getPkgFromQuery(query)).toBe("rpm");
+    });
+
+    it("should return valid msix package format from query", () => {
+      const query: ParsedQs = { pkg: "msix" };
+      expect(getPkgFromQuery(query)).toBe("msix");
     });
 
     it("should return undefined for invalid package formats", () => {

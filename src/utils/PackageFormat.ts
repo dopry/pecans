@@ -2,7 +2,8 @@ import { ParsedQs } from "qs";
 // TODO: more consistent use of explicit package name instead of assuming based on context
 export const PACKAGE_FORMATS = [
   "deb",
-  "rpm" /*"zip", "dmg", "tar", "nupkg"*/,
+  "rpm",
+  "msix" /*"zip", "dmg", "tar", "nupkg"*/,
 ] as const;
 export type PackageFormat = typeof PACKAGE_FORMATS[number];
 // check if a string is an Package type identifier
@@ -18,6 +19,7 @@ export function filenameToPackageFormat(
   const name = filename.toLowerCase();
   if (name.endsWith(".deb")) return "deb";
   if (name.endsWith(".rpm")) return "rpm";
+  if (name.endsWith(".msix") || name.endsWith(".msixbundle")) return "msix";
 }
 
 export function getPkgFromQuery(query: ParsedQs): PackageFormat | undefined {

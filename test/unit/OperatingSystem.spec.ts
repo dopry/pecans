@@ -65,6 +65,17 @@ describe("OperatingSystem", () => {
         expect(filenameToOperatingSystem("update.nupkg")).toBe("windows");
         expect(filenameToOperatingSystem("app-1.0.0.NUPKG")).toBe("windows");
       });
+
+      it("should detect Windows from .msix and .msixbundle extensions", () => {
+        expect(filenameToOperatingSystem("Visibox_5.0.13.0_x64.msix")).toBe(
+          "windows"
+        );
+        expect(filenameToOperatingSystem("Visibox-5.0.13.msixbundle")).toBe(
+          "windows"
+        );
+        expect(filenameToOperatingSystem("APP.MSIX")).toBe("windows");
+        expect(filenameToOperatingSystem("APP.MSIXBUNDLE")).toBe("windows");
+      });
     });
 
     describe("Linux detection", () => {

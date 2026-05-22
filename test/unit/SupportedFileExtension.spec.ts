@@ -21,6 +21,8 @@ describe("SupportedFileExtension", () => {
         ".tar.gz",
         ".zip",
         ".nupkg",
+        ".msix",
+        ".msixbundle",
       ]);
     });
   });
@@ -35,15 +37,20 @@ describe("SupportedFileExtension", () => {
       expect(isSupportedFileExtension(".tar.gz")).toBe(true);
       expect(isSupportedFileExtension(".zip")).toBe(true);
       expect(isSupportedFileExtension(".nupkg")).toBe(true);
+      expect(isSupportedFileExtension(".msix")).toBe(true);
+      expect(isSupportedFileExtension(".msixbundle")).toBe(true);
     });
 
     it("should return false for invalid file extensions", () => {
       expect(isSupportedFileExtension(".txt")).toBe(false);
       expect(isSupportedFileExtension(".pdf")).toBe(false);
       expect(isSupportedFileExtension(".msi")).toBe(false);
+      expect(isSupportedFileExtension(".appx")).toBe(false);
+      expect(isSupportedFileExtension(".appxbundle")).toBe(false);
       expect(isSupportedFileExtension(".appimage")).toBe(false);
       expect(isSupportedFileExtension("")).toBe(false);
       expect(isSupportedFileExtension(".EXE")).toBe(false); // case sensitive
+      expect(isSupportedFileExtension(".MSIX")).toBe(false); // case sensitive
     });
 
     it("should return false for non-string values", () => {
@@ -71,6 +78,8 @@ describe("SupportedFileExtension", () => {
       expect(getSupportedExt("archive.tgz")).toBe(".tgz");
       expect(getSupportedExt("release.zip")).toBe(".zip");
       expect(getSupportedExt("update.nupkg")).toBe(".nupkg");
+      expect(getSupportedExt("Visibox-5.0.13_x64.msix")).toBe(".msix");
+      expect(getSupportedExt("Visibox-5.0.13.msixbundle")).toBe(".msixbundle");
     });
 
     it("should return undefined for unsupported extensions", () => {
@@ -109,10 +118,19 @@ describe("SupportedFileExtension", () => {
     });
 
     describe("windows", () => {
-      it("should return exe for windows", () => {
+      it("should return exe for windows by default", () => {
         expect(getDownloadExtensionsByOs("windows")).toEqual([".exe"]);
         expect(getDownloadExtensionsByOs("windows", "deb")).toEqual([".exe"]);
         expect(getDownloadExtensionsByOs("windows", "rpm")).toEqual([".exe"]);
+      });
+
+      it("should return msix extensions for windows when pkg=msix", () => {
+        // .msixbundle is preferred (covers multiple architectures);
+        // .msix is the single-arch fallback when no bundle is published.
+        expect(getDownloadExtensionsByOs("windows", "msix")).toEqual([
+          ".msixbundle",
+          ".msix",
+        ]);
       });
     });
 
