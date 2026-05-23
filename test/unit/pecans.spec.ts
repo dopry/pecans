@@ -1720,7 +1720,11 @@ describe("Pecans", () => {
           );
 
           const req = createMockRequest({
-            params: { platform: "windows_64", version: "5.0.12" },
+            params: {
+              channel: "stable",
+              platform: "windows_64",
+              version: "5.0.12",
+            },
             query: { filetype: "msixbundle" },
           });
           const res = createMockResponse();

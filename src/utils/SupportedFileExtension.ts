@@ -24,8 +24,7 @@ export function isSupportedFileExtension(
   );
 }
 
-// we need special handling for .tar.gz and .msixbundle (extname returns
-// .msixbundle, but for symmetry with .tar.gz we explicitly check)
+// we need special handling for .tar.gz
 export function getSupportedExt(
   filename: string
 ): SupportedFileExtension | undefined {
