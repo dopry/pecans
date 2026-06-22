@@ -1,7 +1,7 @@
 import { Octokit } from "@octokit/rest";
 import { Webhooks, createNodeMiddleware } from "@octokit/webhooks";
 import { Response } from "express";
-import fetch from "node-fetch";
+import { Readable } from "node:stream";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   GitHubBackend,
@@ -28,10 +28,6 @@ vi.mock("@octokit/webhooks", () => ({
   createNodeMiddleware: vi.fn(),
 }));
 
-vi.mock("node-fetch", () => ({
-  default: vi.fn(),
-}));
-
 describe("PecansGitHubBackend", () => {
   let backend: PecansGitHubBackend;
   let consoleWarnSpy: ReturnType<typeof vi.spyOn>;
@@ -41,10 +37,13 @@ describe("PecansGitHubBackend", () => {
   let mockOctokit: any;
   let mockWebhooks: any;
   const mockCreateNodeMiddleware = vi.mocked(createNodeMiddleware);
-  const mockFetch = vi.mocked(fetch);
+  // The backend uses the runtime's native global fetch; stub it per-test.
+  let mockFetch: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockFetch = vi.fn();
+    vi.stubGlobal("fetch", mockFetch);
     consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
     consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
@@ -57,6 +56,10 @@ describe("PecansGitHubBackend", () => {
 
     vi.mocked(Octokit).mockReturnValue(mockOctokit);
     vi.mocked(Webhooks).mockReturnValue(mockWebhooks);
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
   });
 
   describe("getEnvironment", () => {
@@ -424,9 +427,12 @@ describe("PecansGitHubBackend", () => {
       await backend.serveAsset(asset, mockResponse as Response);
 
       expect(mockFetch).toHaveBeenCalledWith(
-        "https://token@api.github.com/repos/owner/repo/releases/assets/1",
+        "https://api.github.com/repos/owner/repo/releases/assets/1",
         {
-          headers: { Accept: "application/octet-stream" },
+          headers: {
+            Accept: "application/octet-stream",
+            Authorization: "token token",
+          },
           redirect: "manual",
         }
       );
@@ -481,7 +487,14 @@ describe("PecansGitHubBackend", () => {
         },
       };
 
-      const mockBody = { pipe: vi.fn() };
+      // native fetch resolves `body` to a web ReadableStream; the backend wraps
+      // it as a Node Readable so downstream stream.pipeline() keeps working.
+      const mockBody = new ReadableStream<Uint8Array>({
+        start(controller) {
+          controller.enqueue(new TextEncoder().encode("payload"));
+          controller.close();
+        },
+      });
       const mockFetchResponse = { body: mockBody } as any;
       mockFetch.mockResolvedValue(mockFetchResponse);
 
@@ -495,7 +508,12 @@ describe("PecansGitHubBackend", () => {
           Authorization: "token token",
         },
       });
-      expect(result).toBe(mockBody);
+      expect(result).toBeInstanceOf(Readable);
+      const chunks: Buffer[] = [];
+      for await (const chunk of result as Readable) {
+        chunks.push(Buffer.from(chunk));
+      }
+      expect(Buffer.concat(chunks).toString()).toBe("payload");
     });
 
     it("should fetch asset stream without token", async () => {
@@ -512,7 +530,11 @@ describe("PecansGitHubBackend", () => {
         },
       };
 
-      const mockBody = { pipe: vi.fn() };
+      const mockBody = new ReadableStream<Uint8Array>({
+        start(controller) {
+          controller.close();
+        },
+      });
       const mockFetchResponse = { body: mockBody } as any;
       mockFetch.mockResolvedValue(mockFetchResponse);
 

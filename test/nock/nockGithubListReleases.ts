@@ -100,3 +100,43 @@ export function nockGithubListReleases(
     .get(`/repos/${owner}/${repo}/releases`)
     .reply(200, releases, ["Content-Type", "application/json; charset=utf-8"]);
 }
+
+/**
+ * Mock a multi-page list-releases response using GitHub's `Link: rel="next"`
+ * pagination, so `octokit.paginate()` must follow every page and concatenate
+ * the results. This reproduces the scenario that the node-fetch@2 override
+ * silently broke (paginate resolving to [] / a single page) on large repos.
+ *
+ * @param pages one array of releases per page, in order.
+ */
+export function nockGithubListReleasesPaginated(
+  nock: Nock,
+  owner: string,
+  repo: string,
+  pages: Partial<GithubRelease>[][]
+) {
+  pages.forEach((pageReleases, index) => {
+    const headers: string[] = [
+      "Content-Type",
+      "application/json; charset=utf-8",
+    ];
+    const isLast = index === pages.length - 1;
+    if (!isLast) {
+      const nextPage = index + 2; // 1-based page numbers; the page after this
+      headers.push(
+        "Link",
+        `<https://api.github.com/repos/${owner}/${repo}/releases?page=${nextPage}>; rel="next"`
+      );
+    }
+
+    const interceptor = nock("https://api.github.com:443", {
+      encodedQueryParams: true,
+    }).get(`/repos/${owner}/${repo}/releases`);
+    // The first request carries no query string; subsequent pages are fetched
+    // from the `Link` header URL, which carries `?page=N`.
+    if (index > 0) {
+      interceptor.query({ page: String(index + 1) });
+    }
+    interceptor.reply(200, pageReleases, headers);
+  });
+}

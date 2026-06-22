@@ -54,7 +54,7 @@ The server provides several endpoint patterns:
 ### Testing Approach
 
 - Tests are located in `/test/` directory
-- Use Mocha with Should.js assertions
+- Use vitest with its built-in `expect` assertions
 - Mock external dependencies (GitHub API) using nock
 - Test both success and error scenarios
 - Run tests with `npm test`
