@@ -6,6 +6,7 @@ import { Pecans, PecansGitHubBackend } from "../../src";
 import {
   mockTypicalReleases,
   nockGithubListReleases,
+  nockGithubListReleasesPaginated,
 } from "../nock/nockGithubListReleases";
 import { nockGithubReleasesAssetRedirect } from "../nock/nockGithubReleaseAsset";
 
@@ -58,6 +59,34 @@ describe("Integration Tests: Github Backend", () => {
   //   describe("/update/:platform/:version", () => {});
   //   describe("/update/:platform/:version/RELEASES", () => {});
   // });
+
+  // Regression test for the node-fetch@2 override bug: octokit.paginate() must
+  // walk every page (via the `Link: rel="next"` header) and return the union of
+  // all releases. With node-fetch@2 hard-wired into octokit, paginate() silently
+  // resolved to an empty/partial list for large, multi-page responses (observed
+  // on DigitalOcean App Platform with ~390 releases), breaking release listing.
+  describe("fetchReleases pagination", () => {
+    it("follows Link headers and concatenates every page", async () => {
+      const { env, backend } = configurePecansGitHubBackend();
+      const { GITHUB_OWNER: owner, GITHUB_REPO: repo } = env;
+
+      const page1 = mockTypicalReleases(owner, repo, ["3.0.0", "2.9.0"]);
+      const page2 = mockTypicalReleases(owner, repo, ["2.8.0", "2.7.0"]);
+      const page3 = mockTypicalReleases(owner, repo, ["2.6.0"]);
+      nockGithubListReleasesPaginated(nock, owner, repo, [page1, page2, page3]);
+
+      const releases = await backend.fetchReleases();
+      const versions = releases.getReleases().map((r) => r.version);
+
+      // All five releases across the three pages must be present — not just the
+      // first page (the failure mode the node-fetch override caused).
+      expect(versions).toHaveLength(5);
+      expect(versions).toEqual(
+        expect.arrayContaining(["3.0.0", "2.9.0", "2.8.0", "2.7.0", "2.6.0"])
+      );
+      expect(nock.isDone()).toBe(true);
+    });
+  });
 
   // TODO: Implement webhook refresh tests
   // describe("/webhook/refresh", () => {});

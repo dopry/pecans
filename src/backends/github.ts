@@ -1,7 +1,7 @@
 import { Octokit } from "@octokit/rest";
 import { Endpoints } from "@octokit/types";
 import { Webhooks, createNodeMiddleware } from "@octokit/webhooks";
-import fetch, { RequestInfo, RequestInit } from "node-fetch";
+import { Readable } from "node:stream";
 import { NextFunction, Request, Response } from "express";
 import { Backend, BackendOpts, BackendSettings } from "./backend";
 import {
@@ -64,7 +64,7 @@ export class PecansGitHubBackend extends Backend {
     }
     if (!GITHUB_TOKEN) {
       console.warn(
-        `${tokenEnv} environment variable was not provided, if your repo is private you will need to provide a token.`
+        `${tokenEnv} environment variable was not provided, if your repo is private you will need to provide a token.`,
       );
     }
     const env = {
@@ -88,13 +88,13 @@ export class PecansGitHubBackend extends Backend {
 
   static FromEnv(
     env: PecansGithubBackendEnvironment,
-    opts: PecansGitHubBackendOpts = {}
+    opts: PecansGitHubBackendOpts = {},
   ): PecansGitHubBackend {
     return new PecansGitHubBackend(
       env.GITHUB_OWNER,
       env.GITHUB_REPO,
       env.GITHUB_TOKEN,
-      opts
+      opts,
     );
   }
 
@@ -102,7 +102,7 @@ export class PecansGitHubBackend extends Backend {
     protected owner: string,
     protected repo: string,
     protected token?: string,
-    opts: PecansGitHubBackendOpts = {}
+    opts: PecansGitHubBackendOpts = {},
   ) {
     if (!owner) {
       throw new Error("Github Owner Required");
@@ -122,15 +122,12 @@ export class PecansGitHubBackend extends Backend {
       auth: token,
       baseUrl,
       userAgent: "Pecans Github Backend",
-      request: {
-        fetch: fetch,
-      },
     };
     this.octokit = new Octokit(octokitOptions);
   }
 
   getRefreshWebhookMiddleware(
-    path: string
+    path: string,
   ): (req: Request, res: Response, next: NextFunction) => void {
     // provide a no-op if no secret provided.
     if (!this.opts.refreshSecret) {
@@ -155,7 +152,7 @@ export class PecansGitHubBackend extends Backend {
     // console.debug({ data: reponse.data });
     const releases = await this.octokit.paginate(
       this.octokit.rest.repos.listReleases,
-      { owner, repo }
+      { owner, repo },
     );
 
     const publishedReleases = releases.filter((releases) => {
@@ -163,7 +160,7 @@ export class PecansGitHubBackend extends Backend {
     });
 
     const normalizedReleases = publishedReleases.map((release) =>
-      this.normalizeRelease(release)
+      this.normalizeRelease(release),
     );
     const pecansReleases = new PecansReleases(normalizedReleases);
     return pecansReleases;
@@ -175,15 +172,19 @@ export class PecansGitHubBackend extends Backend {
       res.redirect(asset.raw.browser_download_url);
       return;
     } else {
+      // native fetch follows redirects by default; "manual" returns the 302 so
+      // we can hand the caller the limited-use download URL from the Location
+      // header.
       const redirect = "manual";
-      const headers = { Accept: "application/octet-stream" };
+      const headers: Record<string, string> = {
+        Accept: "application/octet-stream",
+      };
+      if (this.token) {
+        headers["Authorization"] = `token ${this.token}`;
+      }
       const options: RequestInit = { headers, redirect };
-      const finalUrl = asset.raw.url.replace(
-        "https://api.github.com/",
-        `https://${this.token}@api.github.com/`
-      );
       // get private url from github.
-      const assetRes = await fetch(finalUrl, options);
+      const assetRes = await fetch(asset.raw.url, options);
       const location = assetRes.headers.get("Location");
       if (location !== null) {
         // redirect user to limited use download url.
@@ -195,7 +196,7 @@ export class PecansGitHubBackend extends Backend {
   }
   // Return stream for an asset
   async getAssetStream(
-    asset: PecansAssetDTO
+    asset: PecansAssetDTO,
   ): Promise<NodeJS.ReadableStream | null> {
     const headers: Record<string, string> = {
       "User-Agent": "pecans",
@@ -206,13 +207,15 @@ export class PecansGitHubBackend extends Backend {
       headers["Authorization"] = `token ${this.token}`;
     }
 
-    const url: RequestInfo = asset.raw.url;
+    const url = asset.raw.url;
     const opts: RequestInit = {
       method: "get",
       headers: headers,
     };
     const response = await fetch(url, opts);
-    return response.body;
+    // native fetch resolves `body` to a web ReadableStream; wrap it as a Node
+    // Readable so callers (readAsset's stream.pipeline) keep working unchanged.
+    return response.body ? Readable.fromWeb(response.body) : null;
   }
 
   normalizeRelease(release: GithubRelease): PecansRelease {
@@ -276,10 +279,10 @@ export class GitHubBackend extends PecansGitHubBackend {
     protected token: string,
     protected owner: string,
     protected repo: string,
-    opts: PecansGitHubBackendOpts = {}
+    opts: PecansGitHubBackendOpts = {},
   ) {
     console.warn(
-      "GitHubBackend has been deprecated in favor of the namespaced PecansGithubBackend"
+      "GitHubBackend has been deprecated in favor of the namespaced PecansGithubBackend",
     );
     if (!token) {
       throw new Error("Github Token Required");
