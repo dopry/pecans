@@ -20,7 +20,6 @@ import {
 // Import types and dependencies
 import { Backend } from "../../src/backends/backend";
 import { PecansRelease, PecansReleases } from "../../src/models";
-import { platforms } from "../../src/utils";
 
 // Mock all external dependencies
 vi.mock("debug", () => ({

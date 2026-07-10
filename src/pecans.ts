@@ -12,7 +12,6 @@ import {
   PecansReleases,
 } from "./models/index";
 import {
-  Architecture,
   OPERATING_SYSTEMS,
   PLATFORMS,
   Platform,
@@ -22,7 +21,6 @@ import {
   isPlatform,
   isValidArchForOS,
   mapLegacyPlatform,
-  platforms,
 } from "./utils/";
 import {
   SupportedFileExtension,
