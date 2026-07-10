@@ -3,24 +3,47 @@ name: Test, Build, and Release
 on:
   pull_request:
   push:
+    branches:
+      - main
+      - next
+      # maintenance branches, e.g. 1.x / 1.2.x (see release.branches)
+      - "*.x"
 
 jobs:
-  test_build_release:
-    runs-on: ubuntu-22.04
+  test:
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v3
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v3
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: "npm"
       - run: npm ci
-      # - run: npm run lint
+      - run: npm run lint
+      - run: npm run format:check
+      - run: npm run typecheck
       - run: npm test
         env:
           GITHUB_OWNER: owner-nock-mocked
           GITHUB_REPO: repo-nock-mocked
           GITHUB_TOKEN: token-nock-mocked
+      - run: npm run build
+
+  release:
+    # release only from pushes to release branches, after tests pass;
+    # semantic-release's own branches config decides the version/channel
+    if: github.event_name == 'push'
+    needs: test
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "npm"
+      - run: npm ci
       - run: npm run build
       - run: npm run semantic-release
         env:
