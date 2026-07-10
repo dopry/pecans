@@ -542,15 +542,14 @@ export class Pecans extends EventEmitter {
     next: NextFunction,
   ) {
     try {
-      if (!req.params.version) throw new Error('Requires "version" parameter');
-      if (!req.params.platform)
-        throw new Error('Requires "platform" parameter');
+      const versionParam = getStringParam(req, "version");
+      const platformParam = getStringParam(req, "platform");
+      if (!versionParam) throw new Error('Requires "version" parameter');
+      if (!platformParam) throw new Error('Requires "platform" parameter');
 
-      const mapped_platform = mapLegacyPlatform(
-        getStringParam(req, "platform") || "",
-      );
+      const mapped_platform = mapLegacyPlatform(platformParam);
       const platform = validateReqQueryPlatform(mapped_platform);
-      const tag = getStringParam(req, "version");
+      const tag = versionParam;
 
       const channel = getStringParam(req, "channel") || "stable";
       const filetype = req.query.filetype ? req.query.filetype : "zip";
@@ -600,6 +599,7 @@ export class Pecans extends EventEmitter {
 
       const channel = getStringParam(req, "channel") || "stable";
       const tag = getStringParam(req, "version");
+      if (!tag) throw new Error('Requires "version" parameter');
 
       const versions = await this.versions.filter({
         versionRange: ">=" + tag,
