@@ -1,6 +1,5 @@
 import Debug from "debug";
 import { NextFunction, Request, Response, Router } from "express";
-import useragent from "express-useragent";
 import EventEmitter from "node:events";
 import { ParsedQs } from "qs";
 import { validRange } from "semver";
@@ -13,7 +12,6 @@ import {
   PecansReleases,
 } from "./models/index";
 import {
-  Architecture,
   OPERATING_SYSTEMS,
   PLATFORMS,
   Platform,
@@ -23,7 +21,6 @@ import {
   isPlatform,
   isValidArchForOS,
   mapLegacyPlatform,
-  platforms,
 } from "./utils/";
 import {
   SupportedFileExtension,
@@ -72,14 +69,21 @@ export class UnsupportedChannelError extends Error {
 
 export class UnsupportedTagError extends Error {
   constructor(tag: unknown) {
-    const message = `Unsupported channel (${tag}), expected a single string`;
+    const message = `Unsupported tag (${tag}), expected 'latest' or a semver range`;
     super(message);
   }
 }
 
-export function validateReqQueryChannel(
-  channel: string | ParsedQs | string[] | ParsedQs[],
-): string {
+export type ReqQueryValue =
+  string | ParsedQs | (string | ParsedQs)[] | string[] | ParsedQs[] | undefined;
+
+/** single-segment route params are strings; anything else is treated as absent */
+export function getStringParam(req: Request, name: string): string | undefined {
+  const value = req.params[name];
+  return typeof value === "string" ? value : undefined;
+}
+
+export function validateReqQueryChannel(channel: ReqQueryValue): string {
   if (typeof channel !== "string") {
     throw new UnsupportedChannelError(channel);
   }
@@ -87,44 +91,23 @@ export function validateReqQueryChannel(
 }
 
 //
-export function validateReqQueryPlatform(
-  platform: string | ParsedQs | string[] | ParsedQs[] | undefined,
-): Platform {
+export function validateReqQueryPlatform(platform: ReqQueryValue): Platform {
   if (!isPlatform(platform)) throw new UnsupportedPlatformError(platform);
   return platform;
 }
 
-export function validateReqQueryTag(
-  tag?: string | ParsedQs | string[] | ParsedQs[],
-): string | undefined {
+export function validateReqQueryTag(tag?: ReqQueryValue): string | undefined {
   if (tag == undefined) return;
   if (typeof tag !== "string") {
     throw new UnsupportedTagError(tag);
   }
-  validRange(tag);
+  // 'latest' is a pecans keyword, everything else must be a semver range
+  if (tag !== "latest" && !validRange(tag)) {
+    throw new UnsupportedTagError(tag);
+  }
   return tag;
 }
 
-export interface ExpressUserAgent {
-  isMac: boolean;
-  isWindows: boolean;
-  isLinux: boolean;
-  isLinux64: boolean;
-}
-export interface ExpressRequestUserAgent {
-  useragent?: useragent.Details;
-}
-
-export function getPlatformFromUserAgent(
-  req: Request & ExpressRequestUserAgent,
-) {
-  // requires useragent middleware.
-  if (!req.useragent) return;
-  if (req.useragent.isMac) return platforms.OSX;
-  if (req.useragent.isWindows) return platforms.WINDOWS;
-  if (req.useragent.isLinux) return platforms.LINUX;
-  if (req.useragent.isLinux64) return platforms.LINUX_64;
-}
 // return a string value from the req.query if it is a single string,
 // otherwise return undefined
 export function getStringValueFromRequestQuery(
@@ -159,17 +142,6 @@ export function getFiletypeFromQuery(
 export function getPlatformFromQuery(query: ParsedQs): Platform | undefined {
   const value = getStringValueFromRequestQuery(query, "platform");
   return value && isPlatform(value) ? value : undefined;
-}
-
-export function getArchFromUserAgent(
-  useragent?: useragent.Details,
-): Architecture | undefined {
-  // these are arbitrary defaults
-  if (!useragent) return;
-  if (useragent.isMac) return "64";
-  if (useragent.isWindows) return "32";
-  if (useragent.isLinux) return "32";
-  if (useragent.isLinux64) return "64";
 }
 
 export class Pecans extends EventEmitter {
@@ -208,9 +180,6 @@ export class Pecans extends EventEmitter {
       return next();
     });
 
-    // Bind routes
-    this.router.use(useragent.express());
-
     // this will need to be called by the backends webhook infrastructure,
     // the semantic will vary by backend.
     this.router.use(
@@ -218,18 +187,17 @@ export class Pecans extends EventEmitter {
     );
 
     // #region download endpoints
-    this.router.get("/", this.handleDownload.bind(this));
     this.router.get(
-      "/download/channel/:channel/:platform?",
+      "/download/channel/:channel{/:platform}",
       this.handleDownload.bind(this),
     );
     // /download/version must register before /download/:tag/:filename or the
     // literal "version" segment is captured as :tag and the request 500s.
     this.router.get(
-      "/download/version/:tag/:platform?",
+      "/download/version/:tag{/:platform}",
       this.handleDownload.bind(this),
     );
-    this.router.get("/download/:platform?", this.handleDownload.bind(this));
+    this.router.get("/download{/:platform}", this.handleDownload.bind(this));
     this.router.get("/download/:tag/:filename", this.handleDownload.bind(this));
 
     // the /dl path will supersede the /download/**  paths
@@ -243,7 +211,7 @@ export class Pecans extends EventEmitter {
     // ?channel?platform?version
     this.router.get("/api/versions", this.handleApiVersions.bind(this));
 
-    this.router.get("/notes/:version?", this.handleServeNotes.bind(this));
+    this.router.get("/notes{/:version}", this.handleServeNotes.bind(this));
     // @deprecated - the /update endpoint is deprecated, please use /update/:platform/:version
     this.router.get("/update", this.handleUpdateRedirect.bind(this));
     this.router.get(
@@ -266,7 +234,12 @@ export class Pecans extends EventEmitter {
 
   async dlfilename(req: Request, res: Response, next: NextFunction) {
     try {
-      const filename = req.params.filename;
+      const filename = getStringParam(req, "filename");
+      // an absent filename must not fall through to queryReleases, where an
+      // undefined filename matches every release
+      if (!filename) {
+        return res.status(404).send("filename is required");
+      }
       const query = { filename };
       const releases = await this.getReleases();
       const matchingReleases = releases.queryReleases(query);
@@ -295,7 +268,7 @@ export class Pecans extends EventEmitter {
 
   async dl(req: Request, res: Response, next: NextFunction) {
     try {
-      const os = req.params.os;
+      const os = getStringParam(req, "os");
       if (!isOperatingSystem(os)) {
         res
           .status(404)
@@ -307,8 +280,8 @@ export class Pecans extends EventEmitter {
         return;
       }
 
-      const arch = req.params.arch;
-      if (!isValidArchForOS(os, arch)) {
+      const arch = getStringParam(req, "arch");
+      if (!arch || !isValidArchForOS(os, arch)) {
         res.status(404).send(`Unsupported Arch (${arch}) for OS (${os})`);
         return;
       }
@@ -441,20 +414,28 @@ export class Pecans extends EventEmitter {
   ) {
     try {
       let channel = validateReqQueryChannel(
-        req.params.channel || req.query.channel || "stable",
+        getStringParam(req, "channel") || req.query.channel || "stable",
       );
-      const tag = validateReqQueryTag(req.params.tag ?? req.query.tag);
-      const filename = req.params.filename;
+      const tag = validateReqQueryTag(
+        getStringParam(req, "tag") ?? req.query.tag,
+      );
+      const filename = getStringParam(req, "filename");
       const filetype = getFiletypeFromQuery(req.query);
 
+      // platform autodetection from the user agent was removed in 2.0;
+      // selecting a platform is the client's responsibility
       const _platform = filename
         ? filenameToPlatform(filename)
-        : req.params.platform || getPlatformFromUserAgent(req);
-      const mapped_platform = mapLegacyPlatform(_platform || "");
-      if (!mapped_platform) {
-        throw new Error("Platform is required");
+        : getStringParam(req, "platform");
+      if (!_platform) {
+        res
+          .status(400)
+          .send(
+            "Platform is required. Specify a platform in the URL, e.g. /download/osx_64.",
+          );
+        return;
       }
-      const platform = validateReqQueryPlatform(mapped_platform);
+      const platform = validateReqQueryPlatform(mapLegacyPlatform(_platform));
 
       // If a specific version was requested, don't enforce a channel; an
       // absent tag means "latest" and keeps the requested/default channel.
@@ -537,15 +518,16 @@ export class Pecans extends EventEmitter {
     next: NextFunction,
   ) {
     try {
-      if (!req.params.version) throw new Error('Requires "version" parameter');
-      if (!req.params.platform)
-        throw new Error('Requires "platform" parameter');
+      const versionParam = getStringParam(req, "version");
+      const platformParam = getStringParam(req, "platform");
+      if (!versionParam) throw new Error('Requires "version" parameter');
+      if (!platformParam) throw new Error('Requires "platform" parameter');
 
-      const mapped_platform = mapLegacyPlatform(req.params.platform);
+      const mapped_platform = mapLegacyPlatform(platformParam);
       const platform = validateReqQueryPlatform(mapped_platform);
-      const tag = req.params.version;
+      const tag = versionParam;
 
-      const channel = req.params.channel || "stable";
+      const channel = getStringParam(req, "channel") || "stable";
       const filetype = req.query.filetype ? req.query.filetype : "zip";
 
       const versions = await this.versions.filter({
@@ -587,12 +569,13 @@ export class Pecans extends EventEmitter {
     next: NextFunction,
   ) {
     try {
-      const _platform = req.params.platform;
+      const _platform = getStringParam(req, "platform") || "";
       const mapped_platform = mapLegacyPlatform(_platform);
       const platform = validateReqQueryPlatform(mapped_platform);
 
-      const channel = req.params.channel || "stable";
-      const tag = req.params.version;
+      const channel = getStringParam(req, "channel") || "stable";
+      const tag = getStringParam(req, "version");
+      if (!tag) throw new Error('Requires "version" parameter');
 
       const versions = await this.versions.filter({
         versionRange: ">=" + tag,

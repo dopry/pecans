@@ -44,7 +44,8 @@ describe("Backend Complete Coverage", () => {
 
   describe("getRefreshWebhookMiddleware", () => {
     let backend: TestBackend;
-    let mockReq: Partial<Request>;
+    // express 5 declares Request.path readonly; the mock needs a mutable one
+    let mockReq: Omit<Partial<Request>, "path"> & { path?: string };
     let mockRes: Partial<Response>;
     let mockNext: NextFunction;
 

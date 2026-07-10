@@ -1,14 +1,10 @@
 import { NextFunction, Request, Response } from "express";
-import useragent from "express-useragent";
 import { ParsedQs } from "qs";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
-  ExpressRequestUserAgent,
-  getArchFromUserAgent,
   getFilenameFromQuery,
   getFiletypeFromQuery,
   getPlatformFromQuery,
-  getPlatformFromUserAgent,
   getStringValueFromRequestQuery,
   getVersionFromQuery,
   Pecans,
@@ -24,22 +20,8 @@ import {
 // Import types and dependencies
 import { Backend } from "../../src/backends/backend";
 import { PecansRelease, PecansReleases } from "../../src/models";
-import { platforms } from "../../src/utils";
 
 // Mock all external dependencies
-vi.mock("express-useragent", () => ({
-  default: {
-    express: () => (req: any, res: any, next: any) => {
-      req.useragent = {
-        isMac: false,
-        isWindows: false,
-        isLinux: false,
-        isLinux64: false,
-      };
-      next();
-    },
-  },
-}));
 vi.mock("debug", () => ({
   default: () => () => {},
 }));
@@ -124,7 +106,6 @@ const createMockRequest = (overrides: Partial<Request> = {}): Request =>
     get: vi.fn().mockReturnValue("localhost:3000"),
     params: {},
     query: {},
-    useragent: undefined,
     ...overrides,
   }) as any;
 
@@ -209,13 +190,13 @@ describe("Pecans", () => {
     describe("UnsupportedTagError", () => {
       it("should create error with tag message", () => {
         const error = new UnsupportedTagError(123);
-        expect(error.message).toContain("Unsupported channel (123)");
-        expect(error.message).toContain("expected a single string");
+        expect(error.message).toContain("Unsupported tag (123)");
+        expect(error.message).toContain("expected 'latest' or a semver range");
       });
 
       it("should handle array tag", () => {
         const error = new UnsupportedTagError(["v1.0.0"]);
-        expect(error.message).toContain("Unsupported channel");
+        expect(error.message).toContain("Unsupported tag");
       });
     });
   });
@@ -304,76 +285,16 @@ describe("Pecans", () => {
         );
       });
 
-      it("should handle invalid semver gracefully", () => {
-        // validRange is called but doesn't throw for invalid ranges
-        expect(validateReqQueryTag("invalid-version")).toBe("invalid-version");
-      });
-    });
-
-    describe("getPlatformFromUserAgent", () => {
-      it("should detect Mac platform", () => {
-        const req = {
-          useragent: {
-            isMac: true,
-            isWindows: false,
-            isLinux: false,
-            isLinux64: false,
-          },
-        } as Request & ExpressRequestUserAgent;
-        expect(getPlatformFromUserAgent(req)).toBe(platforms.OSX);
+      it("should allow the 'latest' keyword", () => {
+        expect(validateReqQueryTag("latest")).toBe("latest");
       });
 
-      it("should detect Windows platform", () => {
-        const req = {
-          useragent: {
-            isMac: false,
-            isWindows: true,
-            isLinux: false,
-            isLinux64: false,
-          },
-        } as Request & ExpressRequestUserAgent;
-        expect(getPlatformFromUserAgent(req)).toBe(platforms.WINDOWS);
-      });
-
-      it("should detect Linux platform", () => {
-        const req = {
-          useragent: {
-            isMac: false,
-            isWindows: false,
-            isLinux: true,
-            isLinux64: false,
-          },
-        } as Request & ExpressRequestUserAgent;
-        expect(getPlatformFromUserAgent(req)).toBe(platforms.LINUX);
-      });
-
-      it("should detect Linux64 platform", () => {
-        const req = {
-          useragent: {
-            isMac: false,
-            isWindows: false,
-            isLinux: false,
-            isLinux64: true,
-          },
-        } as Request & ExpressRequestUserAgent;
-        expect(getPlatformFromUserAgent(req)).toBe(platforms.LINUX_64);
-      });
-
-      it("should return undefined when no useragent", () => {
-        const req = {} as Request & ExpressRequestUserAgent;
-        expect(getPlatformFromUserAgent(req)).toBeUndefined();
-      });
-
-      it("should return undefined for unknown user agents", () => {
-        const req = {
-          useragent: {
-            isMac: false,
-            isWindows: false,
-            isLinux: false,
-            isLinux64: false,
-          },
-        } as Request & ExpressRequestUserAgent;
-        expect(getPlatformFromUserAgent(req)).toBeUndefined();
+      it("should throw UnsupportedTagError for invalid semver ranges", () => {
+        // previously validRange's result was discarded and invalid tags only
+        // failed deep in release matching with a generic error
+        expect(() => validateReqQueryTag("invalid-version")).toThrow(
+          UnsupportedTagError,
+        );
       });
     });
 
@@ -501,62 +422,6 @@ describe("Pecans", () => {
       it("should return undefined for non-string platform", () => {
         const query = { platform: ["osx_64"] };
         expect(getPlatformFromQuery(query)).toBeUndefined();
-      });
-    });
-
-    describe("getArchFromUserAgent", () => {
-      it("should return '64' for Mac", () => {
-        const useragent = {
-          isMac: true,
-          isWindows: false,
-          isLinux: false,
-          isLinux64: false,
-        } as useragent.Details;
-        expect(getArchFromUserAgent(useragent)).toBe("64");
-      });
-
-      it("should return '32' for Windows", () => {
-        const useragent = {
-          isMac: false,
-          isWindows: true,
-          isLinux: false,
-          isLinux64: false,
-        } as useragent.Details;
-        expect(getArchFromUserAgent(useragent)).toBe("32");
-      });
-
-      it("should return '32' for Linux", () => {
-        const useragent = {
-          isMac: false,
-          isWindows: false,
-          isLinux: true,
-          isLinux64: false,
-        } as useragent.Details;
-        expect(getArchFromUserAgent(useragent)).toBe("32");
-      });
-
-      it("should return '64' for Linux64", () => {
-        const useragent = {
-          isMac: false,
-          isWindows: false,
-          isLinux: false,
-          isLinux64: true,
-        } as useragent.Details;
-        expect(getArchFromUserAgent(useragent)).toBe("64");
-      });
-
-      it("should return undefined when no useragent", () => {
-        expect(getArchFromUserAgent(undefined)).toBeUndefined();
-      });
-
-      it("should return undefined for unknown agents", () => {
-        const useragent = {
-          isMac: false,
-          isWindows: false,
-          isLinux: false,
-          isLinux64: false,
-        } as useragent.Details;
-        expect(getArchFromUserAgent(useragent)).toBeUndefined();
       });
     });
   });
@@ -1271,24 +1136,14 @@ describe("Pecans", () => {
       });
 
       describe("handleDownload", () => {
-        it("should handle download with platform detection from user agent", async () => {
-          const req = createMockRequest({
-            query: {},
-            useragent: {
-              isMac: true,
-              isWindows: false,
-              isLinux: false,
-              isLinux64: false,
-            } as any,
-          });
+        it("should 400 when no platform is specified (autodetection removed in 2.0)", async () => {
+          const req = createMockRequest({ query: {} });
           const res = createMockResponse();
           const next = createMockNext();
 
-          vi.spyOn(pecans as any, "serveAsset").mockResolvedValue(undefined);
-
           await (pecans as any).handleDownload(req, res, next);
 
-          expect((pecans as any).serveAsset).toHaveBeenCalled();
+          expect(res.status).toHaveBeenCalledWith(400);
         });
 
         it("should handle download with explicit platform parameter", async () => {
@@ -1380,7 +1235,7 @@ describe("Pecans", () => {
           expect(next).toHaveBeenCalledWith(expect.any(Error));
         });
 
-        it("should throw error when platform is required but not provided", async () => {
+        it("should 400 when platform is required but not provided", async () => {
           pecans = new Pecans(mockBackend);
           const req = createMockRequest({
             query: {},
@@ -1389,11 +1244,8 @@ describe("Pecans", () => {
           const res = createMockResponse();
           const next = createMockNext();
           await (pecans as any).handleDownload(req, res, next);
-          expect(next).toHaveBeenCalledWith(
-            expect.objectContaining({
-              message: expect.stringMatching(/Platform is required/),
-            }),
-          );
+          expect(res.status).toHaveBeenCalledWith(400);
+          expect(next).not.toHaveBeenCalled();
         });
 
         it("should throw error when no asset found", async () => {
