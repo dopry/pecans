@@ -128,6 +128,21 @@ describe("Versions", () => {
       expect(result).toHaveLength(0);
     });
 
+    it("should count windows_universal (.msixbundle) assets toward arch-specific windows availability", async () => {
+      const bundleOnlyBackend = new MockBackend([
+        createMockRelease("3.0.0", "stable", [
+          { type: "windows_universal", filename: "app-3.0.0.msixbundle" },
+        ]),
+      ]);
+      const bundleOnlyVersions = new Versions(bundleOnlyBackend);
+
+      const result = await bundleOnlyVersions.filter({
+        platform: "windows_64",
+      });
+      expect(result).toHaveLength(1);
+      expect(result[0].version).toBe("3.0.0");
+    });
+
     it("should prefer universal binary for osx platforms when preferUniversal is true", async () => {
       const result = await versions.filter({
         platform: "osx_64",

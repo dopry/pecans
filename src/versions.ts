@@ -54,6 +54,11 @@ export class Versions {
         if (_opts.platform.startsWith("osx") && _opts.preferUniversal) {
           platforms.push("osx_universal");
         }
+        // .msixbundle assets are typed windows_universal and satisfy any
+        // windows arch, so they count toward platform availability.
+        if (_opts.platform.startsWith("windows")) {
+          platforms.push("windows_universal");
+        }
         const availableForPlatform = release.assets.some((a) => {
           if (a.filename === "RELEASES") return false;
           const match =

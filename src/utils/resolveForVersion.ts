@@ -27,6 +27,17 @@ export function resolveReleaseAssetForVersion(
     platforms.push("osx_universal");
   }
 
+  // .msixbundle assets are typed windows_universal (a bundle is multi-arch by
+  // definition). Make them reachable from arch-specific windows requests, but
+  // only when an msix filetype is explicitly requested so that default
+  // windows flows keep resolving to arch-specific .exe installers.
+  if (
+    platform.startsWith("windows") &&
+    (wanted === ".msix" || wanted === ".msixbundle")
+  ) {
+    platforms.push("windows_universal");
+  }
+
   const compatibleAssets = version.assets.filter((asset) => {
     const ext = getSupportedExt(asset.filename) || "";
     return prefs.includes(ext) && platforms.some(p => asset.type.startsWith(p));

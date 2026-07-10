@@ -204,6 +204,82 @@ describe("resolveForVersion", () => {
       });
     });
 
+    describe("msix resolution", () => {
+      it("should resolve a single-arch .msix when filetype=msix is requested", () => {
+        const assets = [
+          createAsset("Visibox-Setup-5.0.13.exe", "windows_64"),
+          createAsset("Visibox_5.0.13.0_x64.msix", "windows_64"),
+        ];
+        const release = createRelease(assets);
+
+        const result = resolveReleaseAssetForVersion(
+          release,
+          "windows_64",
+          true,
+          ".msix"
+        );
+        expect(result).toBe(assets[1]);
+      });
+
+      it("should resolve a .msixbundle for arch-specific windows requests when filetype=msix", () => {
+        const assets = [
+          createAsset("Visibox-Setup-5.0.13.exe", "windows_64"),
+          createAsset("Visibox-5.0.13.msixbundle", "windows_universal"),
+        ];
+        const release = createRelease(assets);
+
+        const msix = resolveReleaseAssetForVersion(
+          release,
+          "windows_64",
+          true,
+          ".msix"
+        );
+        expect(msix).toBe(assets[1]);
+
+        const bundle = resolveReleaseAssetForVersion(
+          release,
+          "windows_64",
+          true,
+          ".msixbundle"
+        );
+        expect(bundle).toBe(assets[1]);
+      });
+
+      it("should prefer the .msixbundle over a single-arch .msix", () => {
+        const assets = [
+          createAsset("Visibox_5.0.13.0_x64.msix", "windows_64"),
+          createAsset("Visibox-5.0.13.msixbundle", "windows_universal"),
+        ];
+        const release = createRelease(assets);
+
+        const result = resolveReleaseAssetForVersion(
+          release,
+          "windows_64",
+          true,
+          ".msix"
+        );
+        expect(result).toBe(assets[1]);
+      });
+
+      it("should keep resolving the .exe for default windows requests when msix assets exist", () => {
+        const assets = [
+          createAsset("Visibox-Setup-5.0.13.exe", "windows_64"),
+          createAsset("Visibox_5.0.13.0_x64.msix", "windows_64"),
+          createAsset("Visibox-5.0.13.msixbundle", "windows_universal"),
+        ];
+        const release = createRelease(assets);
+
+        // no filetype requested: existing Squirrel.Windows clients must keep
+        // getting the .exe even when msix assets are published alongside it.
+        const result = resolveReleaseAssetForVersion(
+          release,
+          "windows_64",
+          true
+        );
+        expect(result).toBe(assets[0]);
+      });
+    });
+
     describe("complex scenarios", () => {
       it("should handle mixed platforms and extensions", () => {
         const assets = [

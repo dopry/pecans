@@ -28,6 +28,7 @@ export const PLATFORMS = [
   "windows",
   "windows_32",
   "windows_64",
+  "windows_universal",
 ] as const;
 
 export type Platform = (typeof PLATFORMS)[number];
@@ -51,6 +52,7 @@ export const platforms: Record<string, Platform> = {
   WINDOWS: "windows",
   WINDOWS_32: "windows_32",
   WINDOWS_64: "windows_64",
+  WINDOWS_UNIVERSAL: "windows_universal",
 };
 
 // legacy arch suffixes,
@@ -108,8 +110,10 @@ export function filenameToPlatform(filename: string): Platform {
   const os = filenameToOperatingSystem(name);
   parts.push(os);
   const pkg = filenameToPackageFormat(name);
-  // pkg is optional and typically only with linux.
-  pkg && parts.push(pkg);
+  // pkg is optional and typically only with linux. msix is excluded because
+  // windows platform ids don't encode pkg (there is no windows_msix_64);
+  // msix assets resolve by filetype instead.
+  pkg && pkg !== "msix" && parts.push(pkg);
   const arch = filenameToArchitecture(name, os);
   parts.push(arch);
   const platformKey = parts.join("_").toUpperCase();
