@@ -143,6 +143,20 @@ describe("resolveForVersion", () => {
         expect(result).toBe(assets[1]); // should prefer .dmg (earlier in prefs)
       });
 
+      it("should rank .tar.gz by its full double extension", () => {
+        // regression: path.extname reports ".gz" for .tar.gz, which ranked
+        // the asset at prefs.indexOf(-1) and beat every real preference;
+        // .tgz precedes .tar.gz in SUPPORTED_FILE_EXTENSIONS and must win
+        const assets = [
+          createAsset("app-linux-x64.tar.gz", "linux_64"),
+          createAsset("app-linux-x64.tgz", "linux_64"),
+        ];
+        const release = createRelease(assets);
+
+        const result = resolveReleaseAssetForVersion(release, "linux_64");
+        expect(result).toBe(assets[1]);
+      });
+
       it("should handle platforms that do not start with osx", () => {
         const assets = [
           createAsset("app.exe", "windows_32"),
