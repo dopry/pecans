@@ -144,11 +144,12 @@ describe("SupportedFileExtension", () => {
     });
 
     describe("edge cases", () => {
-      it("should handle unknown operating systems", () => {
-        // Testing the fall-through case - unknown OS should not match any case
-        // This tests that the function handles unexpected input gracefully
-        const result = getDownloadExtensionsByOs("unknown" as OperatingSystem);
-        expect(result).toBe(undefined);
+      it("should throw for unknown operating systems", () => {
+        // an invalid OS cast in at runtime must fail loudly rather than
+        // silently returning undefined against the declared return type
+        expect(() =>
+          getDownloadExtensionsByOs("unknown" as OperatingSystem),
+        ).toThrow("Unsupported operating system");
       });
     });
   });

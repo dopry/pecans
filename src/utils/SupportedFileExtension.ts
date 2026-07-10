@@ -50,5 +50,9 @@ export function getDownloadExtensionsByOs(
         default:
           return [".tgz", ".tar.gz"];
       }
+    default:
+      // unreachable for the OperatingSystem union; guards against invalid
+      // values cast in at runtime so the return type stays honest
+      throw new Error(`Unsupported operating system (${os})`);
   }
 }
