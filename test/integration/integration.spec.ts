@@ -48,7 +48,7 @@ describe("Integration Tests: Github Backend", () => {
       // first page (the failure mode the node-fetch override caused).
       expect(versions).toHaveLength(5);
       expect(versions).toEqual(
-        expect.arrayContaining(["3.0.0", "2.9.0", "2.8.0", "2.7.0", "2.6.0"])
+        expect.arrayContaining(["3.0.0", "2.9.0", "2.8.0", "2.7.0", "2.6.0"]),
       );
       expect(nock.isDone()).toBe(true);
     });

@@ -3,6 +3,7 @@ import { PecansGitHubBackend } from "./backends";
 import { Pecans, PecansOptions } from "./pecans";
 
 export * from "./backends";
+export * from "./models";
 export * from "./pecans";
 export * from "./utils/";
 export * from "./versions";
@@ -22,15 +23,17 @@ export function configure() {
   };
 
   switch (PECANS_BACKEND) {
-    case "PecansGithubBackend":
+    case "PecansGithubBackend": {
       const backendEnv = PecansGitHubBackend.getEnvironment();
       // Pass cacheMaxAge to the backend
       const backend = PecansGitHubBackend.FromEnv(backendEnv, { cacheMaxAge });
       const pecans = new Pecans(backend, pecansOpts);
       return { env: backendEnv, backend, pecans };
-
+    }
     default:
-      throw "Unrecognized PECANS_BACKEND. Must be one of ['PecansGithubBackend']";
+      throw new Error(
+        "Unrecognized PECANS_BACKEND. Must be one of ['PecansGithubBackend']",
+      );
   }
 }
 
@@ -69,15 +72,17 @@ export function main() {
     const address = server.address() || "0.0.0.0";
 
     if (typeof address == "string") {
-      console.log(`Lisening at ${address}`);
+      console.log(`Listening at ${address}`);
     } else {
       console.log(
-        `Listening at http://${address.address || "0.0.0.0"}:${port}`
+        `Listening at http://${address.address || "0.0.0.0"}:${port}`,
       );
     }
   });
 }
 
-if (require.main === module) {
+// run the server when executed directly (node dist/index.js); the typeof
+// guard keeps the ESM build importable, where `require` does not exist
+if (typeof require !== "undefined" && require.main === module) {
   main();
 }

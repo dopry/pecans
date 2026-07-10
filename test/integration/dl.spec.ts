@@ -33,7 +33,7 @@ describe("/dl/:os/:arch", () => {
 
   it.each(cases)("%s redirects to %s", async (url, filename) => {
     const { app, backend } = configureTestAppWithReleases(
-      buildStableReleaseSet(OWNER, REPO)
+      buildStableReleaseSet(OWNER, REPO),
     );
     const asset = await findAsset(backend, "2.7.0", filename);
     nockGithubReleasesAssetRedirect(nock, OWNER, REPO, asset);
@@ -43,7 +43,7 @@ describe("/dl/:os/:arch", () => {
 
   it("?version selects an older release", async () => {
     const { app, backend } = configureTestAppWithReleases(
-      buildStableReleaseSet(OWNER, REPO)
+      buildStableReleaseSet(OWNER, REPO),
     );
     const asset = await findAsset(backend, "2.6.0", "app-2.6.0-x64.dmg");
     nockGithubReleasesAssetRedirect(nock, OWNER, REPO, asset);
@@ -55,23 +55,21 @@ describe("/dl/:os/:arch", () => {
 
   it("?channel=beta selects the latest beta release", async () => {
     const { app, backend } = configureTestAppWithReleases(
-      buildMixedChannelReleaseSet(OWNER, REPO)
+      buildMixedChannelReleaseSet(OWNER, REPO),
     );
     const asset = await findAsset(
       backend,
       "2.8.0-beta.2",
-      "app-2.8.0-beta.2-x64.dmg"
+      "app-2.8.0-beta.2-x64.dmg",
     );
     nockGithubReleasesAssetRedirect(nock, OWNER, REPO, asset);
-    const res = await supertest(app)
-      .get("/dl/osx/64?channel=beta")
-      .expect(302);
+    const res = await supertest(app).get("/dl/osx/64?channel=beta").expect(302);
     expect(res.headers.location).toContain("app-2.8.0-beta.2-x64.dmg");
   });
 
   it("defaults to the stable channel when prereleases exist", async () => {
     const { app, backend } = configureTestAppWithReleases(
-      buildMixedChannelReleaseSet(OWNER, REPO)
+      buildMixedChannelReleaseSet(OWNER, REPO),
     );
     const asset = await findAsset(backend, "2.7.0", "app-2.7.0-x64.dmg");
     nockGithubReleasesAssetRedirect(nock, OWNER, REPO, asset);
@@ -81,7 +79,7 @@ describe("/dl/:os/:arch", () => {
 
   it("404s on an unrecognized os", async () => {
     const { app } = configureTestAppWithReleases(
-      buildStableReleaseSet(OWNER, REPO)
+      buildStableReleaseSet(OWNER, REPO),
     );
     const res = await supertest(app).get("/dl/freebsd/64").expect(404);
     expect(res.text).toContain("Unrecognized OS");
@@ -89,7 +87,7 @@ describe("/dl/:os/:arch", () => {
 
   it("404s on an unsupported arch for the os", async () => {
     const { app } = configureTestAppWithReleases(
-      buildStableReleaseSet(OWNER, REPO)
+      buildStableReleaseSet(OWNER, REPO),
     );
     const res = await supertest(app).get("/dl/linux/arm64").expect(404);
     expect(res.text).toContain("Unsupported Arch");
@@ -97,7 +95,7 @@ describe("/dl/:os/:arch", () => {
 
   it("404s when no release matches the version", async () => {
     const { app } = configureTestAppWithReleases(
-      buildStableReleaseSet(OWNER, REPO)
+      buildStableReleaseSet(OWNER, REPO),
     );
     const res = await supertest(app)
       .get("/dl/osx/64?version=99.0.0")
@@ -107,7 +105,7 @@ describe("/dl/:os/:arch", () => {
 
   it("404s when no asset matches the os/arch", async () => {
     const { app } = configureTestAppWithReleases(
-      buildStableReleaseSet(OWNER, REPO)
+      buildStableReleaseSet(OWNER, REPO),
     );
     // windows 32-bit assets are not part of the fixture
     await supertest(app).get("/dl/windows/32").expect(404);
@@ -117,7 +115,7 @@ describe("/dl/:os/:arch", () => {
   // Phase 6 (typed errors) will turn this into a 4xx.
   it("500s on an unknown channel (until typed error handling lands)", async () => {
     const { app } = configureTestAppWithReleases(
-      buildStableReleaseSet(OWNER, REPO)
+      buildStableReleaseSet(OWNER, REPO),
     );
     await supertest(app).get("/dl/osx/64?channel=nightly").expect(500);
   });
@@ -130,7 +128,7 @@ describe("/dl/:filename", () => {
 
   it("redirects to the asset with that filename", async () => {
     const { app, backend } = configureTestAppWithReleases(
-      buildStableReleaseSet(OWNER, REPO)
+      buildStableReleaseSet(OWNER, REPO),
     );
     const asset = await findAsset(backend, "2.6.0", "app-2.6.0-x64-full.nupkg");
     nockGithubReleasesAssetRedirect(nock, OWNER, REPO, asset);
@@ -142,7 +140,7 @@ describe("/dl/:filename", () => {
 
   it("404s for a filename that matches no asset", async () => {
     const { app } = configureTestAppWithReleases(
-      buildStableReleaseSet(OWNER, REPO)
+      buildStableReleaseSet(OWNER, REPO),
     );
     const res = await supertest(app).get("/dl/no-such-file.dmg").expect(404);
     expect(res.text).toContain("not found");

@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
   SUPPORTED_FILE_EXTENSIONS,
-  SupportedFileExtension,
   isSupportedFileExtension,
   getSupportedExt,
   getDownloadExtensionsByOs,
@@ -90,10 +89,10 @@ describe("SupportedFileExtension", () => {
     it("should handle complex filenames", () => {
       expect(getSupportedExt("my-app-v1.2.3-win32-x64.exe")).toBe(".exe");
       expect(getSupportedExt("software-2.0.0-darwin-universal.dmg")).toBe(
-        ".dmg"
+        ".dmg",
       );
       expect(getSupportedExt("package-1.5.0-linux-amd64.tar.gz")).toBe(
-        ".tar.gz"
+        ".tar.gz",
       );
       expect(getSupportedExt("app-3.1.0.linux.x86_64.rpm")).toBe(".rpm");
     });
@@ -139,17 +138,18 @@ describe("SupportedFileExtension", () => {
 
       it("should return default linux extensions for unknown package format", () => {
         expect(
-          getDownloadExtensionsByOs("linux", "unknown" as PackageFormat)
+          getDownloadExtensionsByOs("linux", "unknown" as PackageFormat),
         ).toEqual([".tgz", ".tar.gz"]);
       });
     });
 
     describe("edge cases", () => {
-      it("should handle unknown operating systems", () => {
-        // Testing the fall-through case - unknown OS should not match any case
-        // This tests that the function handles unexpected input gracefully
-        const result = getDownloadExtensionsByOs("unknown" as OperatingSystem);
-        expect(result).toBe(undefined);
+      it("should throw for unknown operating systems", () => {
+        // an invalid OS cast in at runtime must fail loudly rather than
+        // silently returning undefined against the declared return type
+        expect(() =>
+          getDownloadExtensionsByOs("unknown" as OperatingSystem),
+        ).toThrow("Unsupported operating system");
       });
     });
   });

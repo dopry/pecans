@@ -51,7 +51,7 @@ describe("OperatingSystem", () => {
       it("should detect Windows from win32/win64 patterns", () => {
         expect(filenameToOperatingSystem("myapp-win32.zip")).toBe("windows");
         expect(filenameToOperatingSystem("software-win64-x64.zip")).toBe(
-          "windows"
+          "windows",
         );
         expect(filenameToOperatingSystem("app-WIN32.exe")).toBe("windows");
       });
@@ -71,14 +71,14 @@ describe("OperatingSystem", () => {
       it("should detect Linux from linux keyword", () => {
         expect(filenameToOperatingSystem("myapp-linux.tar.gz")).toBe("linux");
         expect(filenameToOperatingSystem("software-LINUX-amd64.tgz")).toBe(
-          "linux"
+          "linux",
         );
       });
 
       it("should detect Linux from ubuntu keyword", () => {
         expect(filenameToOperatingSystem("myapp-ubuntu.deb")).toBe("linux");
         expect(filenameToOperatingSystem("software-UBUNTU-18.04.deb")).toBe(
-          "linux"
+          "linux",
         );
       });
 
@@ -107,7 +107,7 @@ describe("OperatingSystem", () => {
       it("should detect OSX from mac keyword", () => {
         expect(filenameToOperatingSystem("myapp-mac.zip")).toBe("osx");
         expect(filenameToOperatingSystem("software-MAC-universal.dmg")).toBe(
-          "osx"
+          "osx",
         );
       });
 
@@ -119,7 +119,7 @@ describe("OperatingSystem", () => {
       it("should detect OSX from darwin keyword", () => {
         expect(filenameToOperatingSystem("myapp-darwin.zip")).toBe("osx");
         expect(filenameToOperatingSystem("software-DARWIN-arm64.dmg")).toBe(
-          "osx"
+          "osx",
         );
       });
 
@@ -132,13 +132,13 @@ describe("OperatingSystem", () => {
     describe("Error handling", () => {
       it("should throw error for unrecognizable filenames", () => {
         expect(() => filenameToOperatingSystem("unknown-file.txt")).toThrow(
-          "Unable to determine OS from filename."
+          "Unable to determine OS from filename.",
         );
         expect(() => filenameToOperatingSystem("README")).toThrow(
-          "Unable to determine OS from filename."
+          "Unable to determine OS from filename.",
         );
         expect(() => filenameToOperatingSystem("config.json")).toThrow(
-          "Unable to determine OS from filename."
+          "Unable to determine OS from filename.",
         );
       });
     });

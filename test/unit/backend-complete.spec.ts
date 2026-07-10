@@ -160,7 +160,7 @@ describe("Backend Complete Coverage", () => {
       const mockResponse = {} as Response;
 
       await expect(
-        backend.serveAsset(mockAssetDTO, mockResponse)
+        backend.serveAsset(mockAssetDTO, mockResponse),
       ).rejects.toThrow("Abstract Method");
     });
 
@@ -175,7 +175,7 @@ describe("Backend Complete Coverage", () => {
       });
 
       await expect(backend.getAssetStream(mockAsset)).rejects.toThrow(
-        "Abstract Method"
+        "Abstract Method",
       );
     });
   });
@@ -243,7 +243,7 @@ describe("Backend Complete Coverage", () => {
       vi.spyOn(backend, "getAssetStream").mockResolvedValue(errorStream);
 
       await expect(backend.readAsset(mockAsset)).rejects.toThrow(
-        "Failed to read asset test-asset-123: Network timeout occurred"
+        "Failed to read asset test-asset-123: Network timeout occurred",
       );
     });
 
@@ -270,7 +270,7 @@ describe("Backend Complete Coverage", () => {
 
       // The non-Error should be re-thrown as-is (hitting line 158)
       await expect(backend.readAsset(mockAsset)).rejects.toBe(
-        "Non-Error string from stream"
+        "Non-Error string from stream",
       );
     });
 
@@ -326,7 +326,7 @@ describe("Backend Complete Coverage", () => {
       middleware(
         { path: "/test", params: {} } as Request,
         {} as Response,
-        mockNext
+        mockNext,
       );
 
       expect(mockNext).toHaveBeenCalledWith();

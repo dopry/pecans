@@ -42,7 +42,7 @@ export class PecansRelease implements PecansReleaseDTO {
         } catch (err) {
           console.error(
             `Error parsing asset: ${assetDTO.filename} for release ${dto.version}/${this.channel}`,
-            err
+            err,
           );
         }
       })

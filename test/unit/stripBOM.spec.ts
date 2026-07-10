@@ -58,21 +58,21 @@ describe("stripBom", () => {
   it("should throw TypeError for non-string input - null", () => {
     expect(() => stripBom(null as any)).toThrow(TypeError);
     expect(() => stripBom(null as any)).toThrow(
-      "Expected a string, got object"
+      "Expected a string, got object",
     );
   });
 
   it("should throw TypeError for non-string input - undefined", () => {
     expect(() => stripBom(undefined as any)).toThrow(TypeError);
     expect(() => stripBom(undefined as any)).toThrow(
-      "Expected a string, got undefined"
+      "Expected a string, got undefined",
     );
   });
 
   it("should throw TypeError for non-string input - boolean", () => {
     expect(() => stripBom(true as any)).toThrow(TypeError);
     expect(() => stripBom(true as any)).toThrow(
-      "Expected a string, got boolean"
+      "Expected a string, got boolean",
     );
   });
 

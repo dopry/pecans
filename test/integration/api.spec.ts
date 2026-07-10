@@ -18,7 +18,7 @@ describe("/api/channels", () => {
 
   it("lists the stable channel with its latest version", async () => {
     const { app } = configureTestAppWithReleases(
-      buildStableReleaseSet(OWNER, REPO)
+      buildStableReleaseSet(OWNER, REPO),
     );
     const res = await supertest(app).get("/api/channels").expect(200);
     expect(res.body).toHaveLength(1);
@@ -30,7 +30,7 @@ describe("/api/channels", () => {
 
   it("lists every channel when prereleases exist", async () => {
     const { app } = configureTestAppWithReleases(
-      buildMixedChannelReleaseSet(OWNER, REPO)
+      buildMixedChannelReleaseSet(OWNER, REPO),
     );
     const res = await supertest(app).get("/api/channels").expect(200);
     const names = res.body.map((c: { name: string }) => c.name).sort();
@@ -45,7 +45,7 @@ describe("/api/versions", () => {
 
   it("lists all releases sorted by version descending", async () => {
     const { app } = configureTestAppWithReleases(
-      buildStableReleaseSet(OWNER, REPO)
+      buildStableReleaseSet(OWNER, REPO),
     );
     const res = await supertest(app).get("/api/versions").expect(200);
     const versions = res.body.map((r: { version: string }) => r.version);
@@ -54,7 +54,7 @@ describe("/api/versions", () => {
 
   it("?channel filters to that channel", async () => {
     const { app } = configureTestAppWithReleases(
-      buildMixedChannelReleaseSet(OWNER, REPO)
+      buildMixedChannelReleaseSet(OWNER, REPO),
     );
     const res = await supertest(app)
       .get("/api/versions?channel=beta")
@@ -65,7 +65,7 @@ describe("/api/versions", () => {
 
   it("?version=latest collapses to the newest release", async () => {
     const { app } = configureTestAppWithReleases(
-      buildStableReleaseSet(OWNER, REPO)
+      buildStableReleaseSet(OWNER, REPO),
     );
     const res = await supertest(app)
       .get("/api/versions?version=latest")
@@ -76,7 +76,7 @@ describe("/api/versions", () => {
 
   it("?version=<range> filters by semver range", async () => {
     const { app } = configureTestAppWithReleases(
-      buildStableReleaseSet(OWNER, REPO)
+      buildStableReleaseSet(OWNER, REPO),
     );
     const res = await supertest(app)
       .get("/api/versions?version=%3E%3D2.6.0") // >=2.6.0
@@ -87,7 +87,7 @@ describe("/api/versions", () => {
 
   it("?platform filters to releases with assets for that platform", async () => {
     const { app } = configureTestAppWithReleases(
-      buildStableReleaseSet(OWNER, REPO)
+      buildStableReleaseSet(OWNER, REPO),
     );
     const res = await supertest(app)
       .get("/api/versions?platform=osx_64")
@@ -98,7 +98,7 @@ describe("/api/versions", () => {
   it("silently ignores an unknown platform value", async () => {
     // getPlatformFromQuery returns undefined for junk, so no filter applies
     const { app } = configureTestAppWithReleases(
-      buildStableReleaseSet(OWNER, REPO)
+      buildStableReleaseSet(OWNER, REPO),
     );
     const res = await supertest(app)
       .get("/api/versions?platform=amiga")
@@ -108,7 +108,7 @@ describe("/api/versions", () => {
 
   it("returns an empty list for an unknown channel", async () => {
     const { app } = configureTestAppWithReleases(
-      buildStableReleaseSet(OWNER, REPO)
+      buildStableReleaseSet(OWNER, REPO),
     );
     const res = await supertest(app)
       .get("/api/versions?channel=nightly")
@@ -122,7 +122,7 @@ describe("/api/status", () => {
 
   it("reports uptime", async () => {
     const { app } = configureTestAppWithReleases(
-      buildStableReleaseSet(OWNER, REPO)
+      buildStableReleaseSet(OWNER, REPO),
     );
     const res = await supertest(app).get("/api/status").expect(200);
     expect(res.body.uptime).toBeTypeOf("number");
@@ -134,7 +134,7 @@ describe("/notes", () => {
 
   it("returns the latest release's notes by default", async () => {
     const { app } = configureTestAppWithReleases(
-      buildStableReleaseSet(OWNER, REPO)
+      buildStableReleaseSet(OWNER, REPO),
     );
     const res = await supertest(app)
       .get("/notes")
@@ -145,7 +145,7 @@ describe("/notes", () => {
 
   it("?version returns that release's notes", async () => {
     const { app } = configureTestAppWithReleases(
-      buildStableReleaseSet(OWNER, REPO)
+      buildStableReleaseSet(OWNER, REPO),
     );
     const res = await supertest(app)
       .get("/notes?version=2.6.0")
@@ -156,7 +156,7 @@ describe("/notes", () => {
 
   it("serves plain text when json is not requested", async () => {
     const { app } = configureTestAppWithReleases(
-      buildStableReleaseSet(OWNER, REPO)
+      buildStableReleaseSet(OWNER, REPO),
     );
     const res = await supertest(app)
       .get("/notes?version=2.6.0")
@@ -169,7 +169,7 @@ describe("/notes", () => {
   // -> 500. Phase 6 turns this into a 404.
   it("500s for an unknown version (until typed error handling lands)", async () => {
     const { app } = configureTestAppWithReleases(
-      buildStableReleaseSet(OWNER, REPO)
+      buildStableReleaseSet(OWNER, REPO),
     );
     await supertest(app).get("/notes?version=99.0.0").expect(500);
   });

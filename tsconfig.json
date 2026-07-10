@@ -2,24 +2,21 @@
   "compilerOptions": {
     "allowJs": true,
     "allowSyntheticDefaultImports": true,
-    "baseUrl": "src",
     "declaration": true,
     "esModuleInterop": true,
-    "inlineSourceMap": false,
     "lib": ["esnext"],
-    "listEmittedFiles": false,
-    "listFiles": false,
+    "module": "commonjs",
     "moduleResolution": "node",
+    "noEmit": true,
     "noFallthroughCasesInSwitch": true,
     "pretty": true,
     "resolveJsonModule": true,
-    "rootDir": "src",
+    "rootDir": ".",
     "skipLibCheck": true,
     "strict": true,
-    "traceResolution": false,
+    "target": "es2022",
     "types": ["node"]
   },
-  "compileOnSave": false,
-  "exclude": ["node_modules", "dist"],
-  "include": ["src"]
+  "include": ["src", "test", "tsup.config.ts", "vitest.config.ts"],
+  "exclude": ["node_modules", "dist"]
 }

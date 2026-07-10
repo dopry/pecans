@@ -23,27 +23,27 @@ describe("/update/:platform/:version (Squirrel.Mac)", () => {
 
   it("204s when the client is on the latest version", async () => {
     const { app } = configureTestAppWithReleases(
-      buildStableReleaseSet(OWNER, REPO)
+      buildStableReleaseSet(OWNER, REPO),
     );
     await supertest(app).get("/update/osx/2.7.0").expect(204);
   });
 
   it("204s when the client is ahead of every release", async () => {
     const { app } = configureTestAppWithReleases(
-      buildStableReleaseSet(OWNER, REPO)
+      buildStableReleaseSet(OWNER, REPO),
     );
     await supertest(app).get("/update/osx/999.0.0").expect(204);
   });
 
   it("200s with the update descriptor when behind", async () => {
     const { app } = configureTestAppWithReleases(
-      buildStableReleaseSet(OWNER, REPO)
+      buildStableReleaseSet(OWNER, REPO),
     );
     const res = await supertest(app).get("/update/osx/2.5.0").expect(200);
     expectSquirrelMacResponse(res.body);
     expect(res.body.name).toBe("2.7.0");
     expect(res.body.url).toMatch(
-      /\/download\/version\/2\.7\.0\/osx_64\?filetype=zip$/
+      /\/download\/version\/2\.7\.0\/osx_64\?filetype=zip$/,
     );
     expect(res.body.pub_date).toBe(publishedAtForVersion("2.7.0"));
     // notes aggregate every version newer than the client, newest first,
@@ -53,7 +53,7 @@ describe("/update/:platform/:version (Squirrel.Mac)", () => {
 
   it("accepts legacy platform aliases like darwin", async () => {
     const { app } = configureTestAppWithReleases(
-      buildStableReleaseSet(OWNER, REPO)
+      buildStableReleaseSet(OWNER, REPO),
     );
     const res = await supertest(app).get("/update/darwin/2.6.0").expect(200);
     expectSquirrelMacResponse(res.body);
@@ -62,7 +62,7 @@ describe("/update/:platform/:version (Squirrel.Mac)", () => {
 
   it("the update url resolves to a zip download", async () => {
     const { app, backend } = configureTestAppWithReleases(
-      buildStableReleaseSet(OWNER, REPO)
+      buildStableReleaseSet(OWNER, REPO),
     );
     const res = await supertest(app).get("/update/osx/2.5.0").expect(200);
     expectSquirrelMacResponse(res.body);
@@ -75,7 +75,7 @@ describe("/update/:platform/:version (Squirrel.Mac)", () => {
 
   it("ignores prereleases for clients on the stable channel", async () => {
     const { app } = configureTestAppWithReleases(
-      buildMixedChannelReleaseSet(OWNER, REPO)
+      buildMixedChannelReleaseSet(OWNER, REPO),
     );
     // 2.8.0-beta.2 exists and is higher, but stable clients stay on 2.7.0
     await supertest(app).get("/update/osx/2.7.0").expect(204);
@@ -83,14 +83,14 @@ describe("/update/:platform/:version (Squirrel.Mac)", () => {
 
   it("500s on an unknown platform", async () => {
     const { app } = configureTestAppWithReleases(
-      buildStableReleaseSet(OWNER, REPO)
+      buildStableReleaseSet(OWNER, REPO),
     );
     await supertest(app).get("/update/amiga/2.5.0").expect(500);
   });
 
   it("500s on an invalid version", async () => {
     const { app } = configureTestAppWithReleases(
-      buildStableReleaseSet(OWNER, REPO)
+      buildStableReleaseSet(OWNER, REPO),
     );
     await supertest(app).get("/update/osx/not-a-version").expect(500);
   });
@@ -101,7 +101,7 @@ describe("/update/channel/:channel/:platform/:version (Squirrel.Mac)", () => {
 
   it("serves updates from the named channel", async () => {
     const { app } = configureTestAppWithReleases(
-      buildMixedChannelReleaseSet(OWNER, REPO)
+      buildMixedChannelReleaseSet(OWNER, REPO),
     );
     const res = await supertest(app)
       .get("/update/channel/beta/osx/2.8.0-beta.1")
@@ -109,13 +109,13 @@ describe("/update/channel/:channel/:platform/:version (Squirrel.Mac)", () => {
     expectSquirrelMacResponse(res.body);
     expect(res.body.name).toBe("2.8.0-beta.2");
     expect(res.body.url).toMatch(
-      /\/download\/version\/2\.8\.0-beta\.2\/osx_64\?filetype=zip$/
+      /\/download\/version\/2\.8\.0-beta\.2\/osx_64\?filetype=zip$/,
     );
   });
 
   it("204s when the client is on the latest channel version", async () => {
     const { app } = configureTestAppWithReleases(
-      buildMixedChannelReleaseSet(OWNER, REPO)
+      buildMixedChannelReleaseSet(OWNER, REPO),
     );
     await supertest(app)
       .get("/update/channel/beta/osx/2.8.0-beta.2")
@@ -128,7 +128,7 @@ describe("/update (deprecated redirect)", () => {
 
   it("redirects to /update/:platform/:version", async () => {
     const { app } = configureTestAppWithReleases(
-      buildStableReleaseSet(OWNER, REPO)
+      buildStableReleaseSet(OWNER, REPO),
     );
     const res = await supertest(app)
       .get("/update?platform=osx&version=2.5.0")
@@ -138,7 +138,7 @@ describe("/update (deprecated redirect)", () => {
 
   it("500s when version or platform is missing", async () => {
     const { app } = configureTestAppWithReleases(
-      buildStableReleaseSet(OWNER, REPO)
+      buildStableReleaseSet(OWNER, REPO),
     );
     await supertest(app).get("/update?platform=osx").expect(500);
     await supertest(app).get("/update?version=2.5.0").expect(500);

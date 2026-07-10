@@ -4,7 +4,7 @@ export const PACKAGE_FORMATS = [
   "deb",
   "rpm" /*"zip", "dmg", "tar", "nupkg"*/,
 ] as const;
-export type PackageFormat = typeof PACKAGE_FORMATS[number];
+export type PackageFormat = (typeof PACKAGE_FORMATS)[number];
 // check if a string is an Package type identifier
 export function isPackageFormat(obj: unknown): obj is PackageFormat {
   return (
@@ -13,7 +13,7 @@ export function isPackageFormat(obj: unknown): obj is PackageFormat {
 }
 
 export function filenameToPackageFormat(
-  filename: string
+  filename: string,
 ): PackageFormat | undefined {
   const name = filename.toLowerCase();
   if (name.endsWith(".deb")) return "deb";

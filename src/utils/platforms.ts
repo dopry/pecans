@@ -1,4 +1,3 @@
-import { platform } from "os";
 import { filenameToArchitecture } from "./Architecture";
 import {
   filenameToOperatingSystem,
@@ -109,7 +108,7 @@ export function filenameToPlatform(filename: string): Platform {
   parts.push(os);
   const pkg = filenameToPackageFormat(name);
   // pkg is optional and typically only with linux.
-  pkg && parts.push(pkg);
+  if (pkg) parts.push(pkg);
   const arch = filenameToArchitecture(name, os);
   parts.push(arch);
   const platformKey = parts.join("_").toUpperCase();

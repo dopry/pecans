@@ -82,7 +82,7 @@ describe("resolveForVersion", () => {
         const result = resolveReleaseAssetForVersion(
           release,
           "osx_arm64",
-          true
+          true,
         );
         expect(result).toBe(assets[1]); // should prefer universal
       });
@@ -100,7 +100,7 @@ describe("resolveForVersion", () => {
           release,
           "osx_64",
           true,
-          ".zip"
+          ".zip",
         );
         expect(result).toBe(assets[1]); // should prefer .zip as wanted
       });
@@ -113,7 +113,7 @@ describe("resolveForVersion", () => {
           release,
           "osx_64",
           true,
-          ".zip"
+          ".zip",
         );
         expect(result).toBe(assets[0]); // should fall back to .dmg
       });
@@ -143,6 +143,20 @@ describe("resolveForVersion", () => {
         expect(result).toBe(assets[1]); // should prefer .dmg (earlier in prefs)
       });
 
+      it("should rank .tar.gz by its full double extension", () => {
+        // regression: path.extname reports ".gz" for .tar.gz, which ranked
+        // the asset at prefs.indexOf(-1) and beat every real preference;
+        // .tgz precedes .tar.gz in SUPPORTED_FILE_EXTENSIONS and must win
+        const assets = [
+          createAsset("app-linux-x64.tar.gz", "linux_64"),
+          createAsset("app-linux-x64.tgz", "linux_64"),
+        ];
+        const release = createRelease(assets);
+
+        const result = resolveReleaseAssetForVersion(release, "linux_64");
+        expect(result).toBe(assets[1]);
+      });
+
       it("should handle platforms that do not start with osx", () => {
         const assets = [
           createAsset("app.exe", "windows_32"),
@@ -154,14 +168,14 @@ describe("resolveForVersion", () => {
         const result1 = resolveReleaseAssetForVersion(
           release,
           "windows_32",
-          true
+          true,
         );
         expect(result1).toBe(assets[0]);
 
         const result2 = resolveReleaseAssetForVersion(
           release,
           "linux_deb_64",
-          true
+          true,
         );
         expect(result2).toBe(assets[1]);
       });
@@ -223,7 +237,7 @@ describe("resolveForVersion", () => {
         // Test Linux with deb preference
         const linuxResult = resolveReleaseAssetForVersion(
           release,
-          "linux_deb_64"
+          "linux_deb_64",
         );
         expect(linuxResult).toBe(assets[2]);
 
@@ -231,7 +245,7 @@ describe("resolveForVersion", () => {
         const osxResult = resolveReleaseAssetForVersion(
           release,
           "osx_64",
-          true
+          true,
         );
         expect(osxResult).toBe(assets[5]); // should get universal
       });

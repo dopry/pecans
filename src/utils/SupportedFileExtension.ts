@@ -12,9 +12,9 @@ export const SUPPORTED_FILE_EXTENSIONS = [
   ".zip",
   ".nupkg",
 ] as const;
-export type SupportedFileExtension = typeof SUPPORTED_FILE_EXTENSIONS[number];
+export type SupportedFileExtension = (typeof SUPPORTED_FILE_EXTENSIONS)[number];
 export function isSupportedFileExtension(
-  obj: unknown
+  obj: unknown,
 ): obj is SupportedFileExtension {
   return (
     typeof obj == "string" &&
@@ -24,7 +24,7 @@ export function isSupportedFileExtension(
 
 // we need special handling for .tar.gz
 export function getSupportedExt(
-  filename: string
+  filename: string,
 ): SupportedFileExtension | undefined {
   const ext = filename.endsWith(".tar.gz")
     ? ".tar.gz"
@@ -34,7 +34,7 @@ export function getSupportedExt(
 
 export function getDownloadExtensionsByOs(
   os: OperatingSystem,
-  pkg?: PackageFormat
+  pkg?: PackageFormat,
 ): SupportedFileExtension[] {
   switch (os) {
     case "osx":
@@ -50,5 +50,9 @@ export function getDownloadExtensionsByOs(
         default:
           return [".tgz", ".tar.gz"];
       }
+    default:
+      // unreachable for the OperatingSystem union; guards against invalid
+      // values cast in at runtime so the return type stays honest
+      throw new Error(`Unsupported operating system (${os})`);
   }
 }

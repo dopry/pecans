@@ -19,7 +19,7 @@ export function mock_github_asset(
   owner: string,
   repo: string,
   filename: string,
-  opts: MockGithubAssetOpts = {}
+  opts: MockGithubAssetOpts = {},
 ): Partial<GithubReleaseAsset> {
   const id = parseInt(numericId(8));
   const content_type = opts.content_type ?? get_mock_content_type(filename);
@@ -47,11 +47,11 @@ export function mock_github_release(
   draft = false,
   prerelease = false,
   body: string | null = null,
-  published: string | null = null
+  published: string | null = null,
 ): Partial<GithubRelease> {
   const id = parseInt(numericId(8));
   const created_at = published ?? new Date().toISOString();
-  const published_at = draft ? null : published ?? new Date().toISOString();
+  const published_at = draft ? null : (published ?? new Date().toISOString());
   const url = `https://api.github.com/repos/${owner}/${repo}/releases/${id}`;
 
   return {
@@ -75,7 +75,7 @@ export function mock_github_release(
 export function mockTypicalAssets(
   owner: string,
   repo: string,
-  version: string
+  version: string,
 ): Partial<GithubReleaseAsset>[] {
   return [
     mock_github_asset(owner, repo, `app-${version}-x64-setup.exe`),
@@ -89,7 +89,7 @@ export function mockTypicalAssets(
 export function mockTypicalReleases(
   owner: string,
   repo: string,
-  versions: string[] = ["2.7.0", "2.6.0", "2.5.0"]
+  versions: string[] = ["2.7.0", "2.6.0", "2.5.0"],
 ): Partial<GithubRelease>[] {
   return versions.map((version) => {
     const assets = mockTypicalAssets(owner, repo, version);
@@ -102,7 +102,7 @@ export function nockGithubListReleases(
   nock: Nock,
   owner: string,
   repo: string,
-  releases: Partial<GithubRelease>[] = mockTypicalReleases(owner, repo)
+  releases: Partial<GithubRelease>[] = mockTypicalReleases(owner, repo),
 ) {
   nock("https://api.github.com:443", { encodedQueryParams: true })
     .get(`/repos/${owner}/${repo}/releases`)
@@ -121,7 +121,7 @@ export function nockGithubListReleasesPaginated(
   nock: Nock,
   owner: string,
   repo: string,
-  pages: Partial<GithubRelease>[][]
+  pages: Partial<GithubRelease>[][],
 ) {
   pages.forEach((pageReleases, index) => {
     const headers: string[] = [
@@ -133,7 +133,7 @@ export function nockGithubListReleasesPaginated(
       const nextPage = index + 2; // 1-based page numbers; the page after this
       headers.push(
         "Link",
-        `<https://api.github.com/repos/${owner}/${repo}/releases?page=${nextPage}>; rel="next"`
+        `<https://api.github.com/repos/${owner}/${repo}/releases?page=${nextPage}>; rel="next"`,
       );
     }
 

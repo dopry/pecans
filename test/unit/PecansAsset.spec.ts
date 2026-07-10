@@ -4,7 +4,7 @@ import { PecansAssetQuery } from "../../src/models/PecansAssetQuery.js";
 
 describe("PecansAsset", () => {
   const createMockAssetDTO = (
-    overrides: Partial<PecansAssetDTO> = {}
+    overrides: Partial<PecansAssetDTO> = {},
   ): PecansAssetDTO => ({
     content_type: "application/octet-stream",
     filename: "test-app-osx_64.dmg",
@@ -32,7 +32,7 @@ describe("PecansAsset", () => {
       const asset = new PecansAsset(
         createMockAssetDTO({
           filename: "app-darwin-x64.dmg",
-        })
+        }),
       );
       expect(asset.os).toBe("osx");
     });
@@ -41,7 +41,7 @@ describe("PecansAsset", () => {
       const asset = new PecansAsset(
         createMockAssetDTO({
           filename: "app-darwin-x64.dmg",
-        })
+        }),
       );
       expect(asset.arch).toBe("64");
     });
@@ -50,7 +50,7 @@ describe("PecansAsset", () => {
       const asset = new PecansAsset(
         createMockAssetDTO({
           filename: "app-linux-amd64.deb",
-        })
+        }),
       );
       expect(asset.pkg).toBe("deb");
     });
@@ -59,7 +59,7 @@ describe("PecansAsset", () => {
       const asset = new PecansAsset(
         createMockAssetDTO({
           filename: "app-osx.dmg",
-        })
+        }),
       );
       expect(asset.pkg).toBeUndefined();
     });
@@ -75,7 +75,7 @@ describe("PecansAsset", () => {
       const asset = new PecansAsset(
         createMockAssetDTO({
           filename: "test-linux-amd64.deb",
-        })
+        }),
       );
       const query: PecansAssetQuery = {
         os: "linux",
@@ -91,7 +91,7 @@ describe("PecansAsset", () => {
       const asset = new PecansAsset(
         createMockAssetDTO({
           filename: "test-osx.dmg",
-        })
+        }),
       );
       const query: PecansAssetQuery = {
         os: "linux", // Asset is osx, query wants linux
@@ -104,7 +104,7 @@ describe("PecansAsset", () => {
     const asset = new PecansAsset(
       createMockAssetDTO({
         filename: "test-osx.dmg", // This will set os to "osx"
-      })
+      }),
     );
 
     it("should return true when os is undefined", () => {
@@ -124,7 +124,7 @@ describe("PecansAsset", () => {
     const asset = new PecansAsset(
       createMockAssetDTO({
         filename: "test-osx-arm64.dmg", // This will set arch to "arm64"
-      })
+      }),
     );
 
     it("should return true when arch is undefined", () => {
@@ -144,13 +144,13 @@ describe("PecansAsset", () => {
     const assetWithPkg = new PecansAsset(
       createMockAssetDTO({
         filename: "test-linux.deb", // This will set pkg to "deb"
-      })
+      }),
     );
 
     const assetWithoutPkg = new PecansAsset(
       createMockAssetDTO({
         filename: "test-osx.dmg", // This will have undefined pkg
-      })
+      }),
     );
 
     it("should return true when pkg is undefined", () => {
@@ -175,7 +175,7 @@ describe("PecansAsset", () => {
     const asset = new PecansAsset(
       createMockAssetDTO({
         filename: "test-app.dmg",
-      })
+      }),
     );
 
     it("should return true when filename is undefined", () => {
@@ -195,7 +195,7 @@ describe("PecansAsset", () => {
     const asset = new PecansAsset(
       createMockAssetDTO({
         filename: "test-app.dmg",
-      })
+      }),
     );
 
     it("should return true when extensions is undefined", () => {
@@ -214,7 +214,7 @@ describe("PecansAsset", () => {
       const assetNoExt = new PecansAsset(
         createMockAssetDTO({
           filename: "RELEASES",
-        })
+        }),
       );
       expect(assetNoExt.satisfiesExtensions([".dmg"])).toBe(false);
       // Files without extension should return false for any extension list
@@ -227,7 +227,7 @@ describe("PecansAsset", () => {
       const asset = new PecansAsset(
         createMockAssetDTO({
           filename: "my-app-v1.2.3-darwin-universal.dmg",
-        })
+        }),
       );
       expect(asset.os).toBe("osx");
       expect(asset.arch).toBe("universal");
@@ -237,7 +237,7 @@ describe("PecansAsset", () => {
       const asset = new PecansAsset(
         createMockAssetDTO({
           filename: "MyAppSetup.exe",
-        })
+        }),
       );
       expect(asset.os).toBe("windows");
       expect(asset.arch).toBe("64");
@@ -247,7 +247,7 @@ describe("PecansAsset", () => {
       const asset = new PecansAsset(
         createMockAssetDTO({
           filename: "myapp-1.0.0-x86_64.rpm",
-        })
+        }),
       );
       expect(asset.os).toBe("linux");
       expect(asset.pkg).toBe("rpm");

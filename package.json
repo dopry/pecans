@@ -8,36 +8,44 @@
   "files": [
     "dist/"
   ],
-  "main": "dist/cjs/index.js",
-  "module": "dist/mjs/index.js",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
   "homepage": "https://github.com/dopry/pecans",
   "license": "Apache-2.0",
   "dependencies": {
     "@octokit/rest": "^20.0.1",
     "@octokit/webhooks": "^12.0.3",
+    "debug": "^4.4.3",
     "express": "^4.18.1",
     "express-useragent": "^1.0.15",
-    "semver": "^7.3.7",
-    "ts-node": "^10.8.1"
+    "qs": "^6.15.3",
+    "semver": "^7.3.7"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@semantic-release/changelog": "^6.0.1",
     "@semantic-release/git": "^10.0.1",
     "@types/debug": "^4.1.8",
     "@types/destroy": "^1.0.0",
     "@types/express": "^4.17.13",
     "@types/express-useragent": "^1.0.2",
+    "@types/node": "^26.1.1",
     "@types/semver": "^7.3.9",
     "@types/supertest": "^6.0.3",
     "@vitest/coverage-v8": "^3.2.4",
     "@vitest/ui": "^3.2.4",
+    "eslint": "^10.6.0",
+    "eslint-config-prettier": "^10.1.8",
     "nanoid": "^3.3.6",
     "nock": "^14.0.16",
-    "nodemon": "^2.0.16",
+    "prettier": "^3.9.5",
     "semantic-release": "^21.1.1",
     "sinon": "^14.0.0",
     "supertest": "^7.2.2",
+    "tsup": "^8.5.1",
+    "tsx": "^4.23.0",
     "typescript": "^5.9.2",
+    "typescript-eslint": "^8.63.0",
     "vitest": "^3.2.4"
   },
   "bugs": {
@@ -50,12 +58,16 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/dopry/pecans.git"
+    "url": "git+https://github.com/dopry/pecans.git"
   },
   "scripts": {
-    "build": "rm -fr dist/* && tsc -p tsconfig.mjs.json && tsc -p tsconfig.cjs.json && ./fixup.sh",
-    "dev": "nodemon -e ts,json --watch src --exec \"npm start\"",
-    "start": "ts-node -P tsconfig.cjs.json src/index.ts",
+    "build": "tsup",
+    "dev": "tsx watch src/index.ts",
+    "start": "node dist/index.js",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
@@ -94,5 +106,21 @@
         }
       ]
     ]
-  }
+  },
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    },
+    "./package.json": "./package.json"
+  },
+  "type": "commonjs",
+  "sideEffects": false
 }

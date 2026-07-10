@@ -98,7 +98,7 @@ describe("Index", () => {
       expect(() => {
         configure();
       }).toThrow(
-        "Unrecognized PECANS_BACKEND. Must be one of ['PecansGithubBackend']"
+        "Unrecognized PECANS_BACKEND. Must be one of ['PecansGithubBackend']",
       );
 
       // Clean up

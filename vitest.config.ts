@@ -10,7 +10,7 @@ export default defineConfig({
 
     // TypeScript configuration
     typecheck: {
-      tsconfig: "./tsconfig.test.json",
+      tsconfig: "./tsconfig.json",
     },
 
     // Test output

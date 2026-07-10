@@ -53,7 +53,7 @@ export interface PecansSettings {
   includeVersionInReleaseNotes: boolean;
 }
 
-export interface PecansOptions extends Partial<PecansSettings> {}
+export type PecansOptions = Partial<PecansSettings>;
 
 export class UnsupportedPlatformError extends Error {
   constructor(platform: unknown) {
@@ -78,7 +78,7 @@ export class UnsupportedTagError extends Error {
 }
 
 export function validateReqQueryChannel(
-  channel: string | ParsedQs | string[] | ParsedQs[]
+  channel: string | ParsedQs | string[] | ParsedQs[],
 ): string {
   if (typeof channel !== "string") {
     throw new UnsupportedChannelError(channel);
@@ -88,14 +88,14 @@ export function validateReqQueryChannel(
 
 //
 export function validateReqQueryPlatform(
-  platform: string | ParsedQs | string[] | ParsedQs[] | undefined
+  platform: string | ParsedQs | string[] | ParsedQs[] | undefined,
 ): Platform {
   if (!isPlatform(platform)) throw new UnsupportedPlatformError(platform);
   return platform;
 }
 
 export function validateReqQueryTag(
-  tag?: string | ParsedQs | string[] | ParsedQs[]
+  tag?: string | ParsedQs | string[] | ParsedQs[],
 ): string | undefined {
   if (tag == undefined) return;
   if (typeof tag !== "string") {
@@ -116,7 +116,7 @@ export interface ExpressRequestUserAgent {
 }
 
 export function getPlatformFromUserAgent(
-  req: Request & ExpressRequestUserAgent
+  req: Request & ExpressRequestUserAgent,
 ) {
   // requires useragent middleware.
   if (!req.useragent) return;
@@ -129,7 +129,7 @@ export function getPlatformFromUserAgent(
 // otherwise return undefined
 export function getStringValueFromRequestQuery(
   query: ParsedQs,
-  param: string
+  param: string,
 ): string | undefined {
   if (!query[param]) return undefined;
   const value = query[param];
@@ -146,7 +146,7 @@ export function getFilenameFromQuery(query: ParsedQs): string | undefined {
 }
 
 export function getFiletypeFromQuery(
-  query: ParsedQs
+  query: ParsedQs,
 ): SupportedFileExtension | undefined {
   const value = getStringValueFromRequestQuery(query, "filetype");
   if (!value) return undefined;
@@ -162,7 +162,7 @@ export function getPlatformFromQuery(query: ParsedQs): Platform | undefined {
 }
 
 export function getArchFromUserAgent(
-  useragent?: useragent.Details
+  useragent?: useragent.Details,
 ): Architecture | undefined {
   // these are arbitrary defaults
   if (!useragent) return;
@@ -190,7 +190,7 @@ export class Pecans extends EventEmitter {
 
   constructor(
     protected backend: Backend,
-    opts: PecansOptions = Pecans.defaults
+    opts: PecansOptions = Pecans.defaults,
   ) {
     super();
     this.opts = Object.assign({}, Pecans.defaults, opts);
@@ -214,20 +214,20 @@ export class Pecans extends EventEmitter {
     // this will need to be called by the backends webhook infrastructure,
     // the semantic will vary by backend.
     this.router.use(
-      this.backend.getRefreshWebhookMiddleware("/webhook/refresh")
+      this.backend.getRefreshWebhookMiddleware("/webhook/refresh"),
     );
 
     // #region download endpoints
     this.router.get("/", this.handleDownload.bind(this));
     this.router.get(
       "/download/channel/:channel/:platform?",
-      this.handleDownload.bind(this)
+      this.handleDownload.bind(this),
     );
     // /download/version must register before /download/:tag/:filename or the
     // literal "version" segment is captured as :tag and the request 500s.
     this.router.get(
       "/download/version/:tag/:platform?",
-      this.handleDownload.bind(this)
+      this.handleDownload.bind(this),
     );
     this.router.get("/download/:platform?", this.handleDownload.bind(this));
     this.router.get("/download/:tag/:filename", this.handleDownload.bind(this));
@@ -248,19 +248,19 @@ export class Pecans extends EventEmitter {
     this.router.get("/update", this.handleUpdateRedirect.bind(this));
     this.router.get(
       "/update/:platform/:version",
-      this.handleUpdateOSX.bind(this)
+      this.handleUpdateOSX.bind(this),
     );
     this.router.get(
       "/update/channel/:channel/:platform/:version",
-      this.handleUpdateOSX.bind(this)
+      this.handleUpdateOSX.bind(this),
     );
     this.router.get(
       "/update/:platform/:version/RELEASES",
-      this.handleUpdateWin.bind(this)
+      this.handleUpdateWin.bind(this),
     );
     this.router.get(
       "/update/channel/:channel/:platform/:version/RELEASES",
-      this.handleUpdateWin.bind(this)
+      this.handleUpdateWin.bind(this),
     );
   }
 
@@ -301,8 +301,8 @@ export class Pecans extends EventEmitter {
           .status(404)
           .send(
             `Unrecognized OS (${os}) expecting one of ${OPERATING_SYSTEMS.join(
-              ", "
-            )} `
+              ", ",
+            )} `,
           );
         return;
       }
@@ -388,7 +388,7 @@ export class Pecans extends EventEmitter {
   protected async handleApiChannels(
     req: Request,
     res: Response,
-    next: NextFunction
+    next: NextFunction,
   ) {
     try {
       const releases = await this.getReleases();
@@ -402,7 +402,7 @@ export class Pecans extends EventEmitter {
   protected async handleApiStatus(
     req: Request,
     res: Response,
-    next: NextFunction
+    next: NextFunction,
   ) {
     try {
       res.send({ uptime: (Date.now() - this.startTime) / 1000 });
@@ -414,7 +414,7 @@ export class Pecans extends EventEmitter {
   protected async handleApiVersions(
     req: Request,
     res: Response,
-    next: NextFunction
+    next: NextFunction,
   ) {
     try {
       const channel = validateReqQueryChannel(req.query.channel || "*");
@@ -437,11 +437,11 @@ export class Pecans extends EventEmitter {
   protected async handleDownload(
     req: Request,
     res: Response,
-    next: NextFunction
+    next: NextFunction,
   ) {
     try {
       let channel = validateReqQueryChannel(
-        req.params.channel || req.query.channel || "stable"
+        req.params.channel || req.query.channel || "stable",
       );
       const tag = validateReqQueryTag(req.params.tag ?? req.query.tag);
       const filename = req.params.filename;
@@ -492,7 +492,7 @@ export class Pecans extends EventEmitter {
             release,
             platform,
             this.opts.preferUniversal,
-            filetype
+            filetype,
           );
 
       if (!asset)
@@ -503,7 +503,7 @@ export class Pecans extends EventEmitter {
             release.version +
             " (" +
             channel +
-            ")"
+            ")",
         );
 
       // Call analytic middleware, then serve
@@ -517,13 +517,13 @@ export class Pecans extends EventEmitter {
   protected handleUpdateRedirect(
     req: Request,
     res: Response,
-    next: NextFunction
+    next: NextFunction,
   ) {
     try {
       if (!req.query.version) throw new Error('Requires "version" parameter');
       if (!req.query.platform) throw new Error('Requires "platform" parameter');
       return res.redirect(
-        "/update/" + req.query.platform + "/" + req.query.version
+        "/update/" + req.query.platform + "/" + req.query.version,
       );
     } catch (err) {
       next(err);
@@ -534,7 +534,7 @@ export class Pecans extends EventEmitter {
   protected async handleUpdateOSX(
     req: Request,
     res: Response,
-    next: NextFunction
+    next: NextFunction,
   ) {
     try {
       if (!req.params.version) throw new Error('Requires "version" parameter');
@@ -548,7 +548,7 @@ export class Pecans extends EventEmitter {
       const channel = req.params.channel || "stable";
       const filetype = req.query.filetype ? req.query.filetype : "zip";
 
-      let versions = await this.versions.filter({
+      const versions = await this.versions.filter({
         versionRange: ">=" + tag,
         platform,
         channel,
@@ -564,7 +564,7 @@ export class Pecans extends EventEmitter {
       }/${platform}?filetype=${filetype}`;
       const releaseNotes = mergeReleaseNotes(
         notesSlice,
-        this.opts.includeVersionInReleaseNotes
+        this.opts.includeVersionInReleaseNotes,
       );
 
       res.status(200).send({
@@ -584,7 +584,7 @@ export class Pecans extends EventEmitter {
   protected async handleUpdateWin(
     req: Request,
     res: Response,
-    next: NextFunction
+    next: NextFunction,
   ) {
     try {
       const _platform = req.params.platform;
@@ -634,7 +634,7 @@ export class Pecans extends EventEmitter {
   protected async handleServeNotes(
     req: Request,
     res: Response,
-    next: NextFunction
+    next: NextFunction,
   ) {
     try {
       const version = getVersionFromQuery(req.query);
@@ -664,7 +664,7 @@ export class Pecans extends EventEmitter {
     req: Request,
     res: Response,
     release: PecansReleaseDTO,
-    asset: PecansAssetDTO
+    asset: PecansAssetDTO,
   ) {
     this.emit("beforeDownload", {
       req: req,

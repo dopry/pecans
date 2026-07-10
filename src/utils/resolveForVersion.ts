@@ -1,9 +1,7 @@
-import path from "path";
 import { PecansReleaseDTO } from "../models";
 import { Platform } from "./platforms";
 import {
   getSupportedExt,
-  SupportedFileExtension,
   SUPPORTED_FILE_EXTENSIONS,
 } from "./SupportedFileExtension";
 
@@ -13,14 +11,14 @@ export function resolveReleaseAssetForVersion(
   version: PecansReleaseDTO,
   platform: Platform,
   preferUniversal = true,
-  wanted?: string
+  wanted?: string,
 ) {
   const prefs: string[] = [...SUPPORTED_FILE_EXTENSIONS];
 
   // Put wanted at the top of the list... will fallback to other extensions.
   if (wanted) prefs.unshift(wanted);
 
-  const platforms: Platform[] = [platform]
+  const platforms: Platform[] = [platform];
 
   // If we want a universal binary, add the other platform to the list.
   if (preferUniversal && platform.startsWith("osx")) {
@@ -29,7 +27,9 @@ export function resolveReleaseAssetForVersion(
 
   const compatibleAssets = version.assets.filter((asset) => {
     const ext = getSupportedExt(asset.filename) || "";
-    return prefs.includes(ext) && platforms.some(p => asset.type.startsWith(p));
+    return (
+      prefs.includes(ext) && platforms.some((p) => asset.type.startsWith(p))
+    );
   });
 
   const sorted = compatibleAssets.sort((p1, p2) => {
@@ -38,10 +38,12 @@ export function resolveReleaseAssetForVersion(
     if (p1.type.length > p2.type.length) return -1;
     if (p2.type.length > p1.type.length) return 1;
 
-    const ext1 = path.extname(p1.filename);
-    const ext2 = path.extname(p2.filename);
-    let pos1 = prefs.indexOf(ext1 as SupportedFileExtension);
-    let pos2 = prefs.indexOf(ext2 as SupportedFileExtension);
+    // getSupportedExt handles the ".tar.gz" double extension, which
+    // path.extname would report as ".gz" (mis-ranking it to -1)
+    const ext1 = getSupportedExt(p1.filename) ?? "";
+    const ext2 = getSupportedExt(p2.filename) ?? "";
+    const pos1 = prefs.indexOf(ext1);
+    const pos2 = prefs.indexOf(ext2);
     return pos1 - pos2;
   });
   return sorted[0];

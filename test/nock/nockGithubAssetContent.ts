@@ -13,7 +13,7 @@ export function nockGithubAssetContent(
   owner: string,
   repo: string,
   asset: PecansAsset,
-  content: string | Buffer
+  content: string | Buffer,
 ) {
   nock("https://api.github.com:443", { encodedQueryParams: true })
     .get(`/repos/${owner}/${repo}/releases/assets/${asset.id}`)

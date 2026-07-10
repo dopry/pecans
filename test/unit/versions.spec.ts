@@ -38,7 +38,7 @@ describe("Versions", () => {
   const createMockRelease = (
     version: string,
     channel: string = "stable",
-    assets: Array<{ type: string; filename: string }> = []
+    assets: Array<{ type: string; filename: string }> = [],
   ): PecansRelease => {
     return new PecansRelease({
       version,
@@ -112,14 +112,14 @@ describe("Versions", () => {
       expect(result.length).toBeGreaterThan(0);
       result.forEach((release) => {
         expect(release.assets.some((asset) => asset.type === "osx_64")).toBe(
-          true
+          true,
         );
       });
     });
 
     it("should throw UnsupportedPlatformError for invalid platform", async () => {
       await expect(
-        versions.filter({ platform: "invalid_platform" as any })
+        versions.filter({ platform: "invalid_platform" as any }),
       ).rejects.toThrow(UnsupportedPlatformError);
     });
 
@@ -248,7 +248,7 @@ describe("Versions", () => {
 
     it("should throw error when no releases match", async () => {
       await expect(
-        versions.resolve({ versionRange: ">=3.0.0" })
+        versions.resolve({ versionRange: ">=3.0.0" }),
       ).rejects.toThrow('Release not found: {"versionRange":">=3.0.0"}');
     });
 
@@ -259,7 +259,7 @@ describe("Versions", () => {
 
     it("should throw error when no releases match platform", async () => {
       await expect(versions.resolve({ platform: "linux_32" })).rejects.toThrow(
-        "Release not found"
+        "Release not found",
       );
     });
   });
@@ -302,7 +302,7 @@ describe("Versions", () => {
       });
       expect(result).toHaveLength(1);
       expect(
-        result[0].assets.some((asset) => asset.type === "osx_universal")
+        result[0].assets.some((asset) => asset.type === "osx_universal"),
       ).toBe(true);
     });
   });
