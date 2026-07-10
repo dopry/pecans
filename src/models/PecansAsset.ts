@@ -1,4 +1,3 @@
-import { extname } from "path";
 import {
   Architecture,
   filenameToArchitecture,
@@ -8,7 +7,10 @@ import {
   PackageFormat,
   Platform,
 } from "../utils";
-import { SupportedFileExtension } from "../utils/SupportedFileExtension";
+import {
+  getSupportedExt,
+  SupportedFileExtension,
+} from "../utils/SupportedFileExtension";
 import { PecansAssetQuery } from "./PecansAssetQuery";
 
 export interface PecansAssetDTO {
@@ -72,7 +74,9 @@ export class PecansAsset implements PecansAssetDTO {
 
   satisfiesExtensions(extensions?: SupportedFileExtension[]) {
     if (!extensions) return true;
-    const ext = extname(this.filename);
-    return extensions.includes(ext as SupportedFileExtension);
+    // getSupportedExt handles the ".tar.gz" double extension, which
+    // path.extname would report as ".gz"
+    const ext = getSupportedExt(this.filename);
+    return ext != undefined && extensions.includes(ext);
   }
 }

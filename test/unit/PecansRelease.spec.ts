@@ -6,6 +6,7 @@ import {
 } from "../../src/models/PecansRelease.js";
 import { PecansAsset, PecansAssetDTO } from "../../src/models/PecansAsset.js";
 import { PecansReleaseQuery } from "../../src/models/PecansReleaseQuery.js";
+import { channelFromVersion } from "../../src/utils/channelFromVersion.js";
 
 describe("PecansRelease", () => {
   const createMockAssetDTO = (
@@ -22,14 +23,19 @@ describe("PecansRelease", () => {
 
   const createMockReleaseDTO = (
     overrides: Partial<PecansReleaseDTO> = {}
-  ): PecansReleaseDTO => ({
-    assets: [createMockAssetDTO()],
-    channel: "stable",
-    notes: "Release notes",
-    published_at: new Date("2023-01-01"),
-    version: "1.0.0",
-    ...overrides,
-  });
+  ): PecansReleaseDTO => {
+    const version = overrides.version ?? "1.0.0";
+    return {
+      assets: [createMockAssetDTO()],
+      // keep the fixture internally consistent: an explicit channel override
+      // wins, otherwise derive it from the effective version
+      channel: channelFromVersion(version),
+      notes: "Release notes",
+      published_at: new Date("2023-01-01"),
+      version,
+      ...overrides,
+    };
+  };
 
   describe("constructor", () => {
     it("should create instance with all properties from DTO", () => {
@@ -47,6 +53,18 @@ describe("PecansRelease", () => {
       const release = new PecansRelease(
         createMockReleaseDTO({
           version: "1.0.0-beta.1",
+        })
+      );
+      expect(release.channel).toBe("beta");
+    });
+
+    it("should ignore dto.channel - the version string is the source of truth", () => {
+      // PecansReleaseDTO.channel is deprecated and deliberately ignored so
+      // channel and version can never disagree
+      const release = new PecansRelease(
+        createMockReleaseDTO({
+          version: "1.0.0-beta.1",
+          channel: "nightly",
         })
       );
       expect(release.channel).toBe("beta");

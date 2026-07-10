@@ -6,6 +6,7 @@ import {
 } from "../../src/models/PecansRelease.js";
 import { PecansAssetDTO } from "../../src/models/PecansAsset.js";
 import { PecansReleaseQuery } from "../../src/models/PecansReleaseQuery.js";
+import { channelFromVersion } from "../../src/utils/channelFromVersion.js";
 
 describe("PecansReleases", () => {
   const createMockAssetDTO = (filename: string): PecansAssetDTO => ({
@@ -21,14 +22,19 @@ describe("PecansReleases", () => {
     version: string,
     publishedAt: Date,
     overrides: Partial<PecansReleaseDTO> = {}
-  ): PecansReleaseDTO => ({
-    assets: [createMockAssetDTO(`${version}-app.dmg`)],
-    channel: "stable",
-    notes: `Release notes for ${version}`,
-    published_at: publishedAt,
-    version,
-    ...overrides,
-  });
+  ): PecansReleaseDTO => {
+    // derive dependent fields from the version an override may replace, so
+    // the fixture stays internally consistent
+    const effectiveVersion = overrides.version ?? version;
+    return {
+      assets: [createMockAssetDTO(`${effectiveVersion}-app.dmg`)],
+      channel: channelFromVersion(effectiveVersion),
+      notes: `Release notes for ${effectiveVersion}`,
+      published_at: publishedAt,
+      version: effectiveVersion,
+      ...overrides,
+    };
+  };
 
   describe("constructor", () => {
     it("should create instance with sorted releases", () => {
