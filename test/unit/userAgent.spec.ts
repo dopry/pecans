@@ -10,6 +10,9 @@ const UA = {
   linux32:
     "Mozilla/5.0 (X11; Linux i686; rv:109.0) Gecko/20100101 Firefox/115.0",
   ios: "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1",
+  // iPad-class webview: Macintosh + Mobile tokens, no iPad token
+  ipadWebview:
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/605.1.15",
   android:
     "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36",
   curl: "curl/8.5.0",
@@ -44,6 +47,13 @@ describe("parseUserAgent", () => {
 
   it("does not flag iOS as macOS despite 'like Mac OS X'", () => {
     const details = parseUserAgent(UA.ios);
+    expect(details.isMac).toBe(false);
+  });
+
+  it("does not flag Macintosh+Mobile webviews as macOS", () => {
+    // note: true iPadOS "desktop mode" UAs are byte-identical to Mac Safari
+    // (no Mobile token) and cannot be distinguished by any UA parser
+    const details = parseUserAgent(UA.ipadWebview);
     expect(details.isMac).toBe(false);
   });
 

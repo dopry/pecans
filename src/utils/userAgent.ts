@@ -18,8 +18,14 @@ export function parseUserAgent(source = ""): UserAgentDetails {
   const isWindows = /windows/i.test(source);
   const isIOS = /iphone|ipad|ipod/i.test(source);
   const isAndroid = /android/i.test(source);
+  // a "Mobile" token alongside Macintosh indicates an iPad-class webview
+  // masquerading as a Mac; genuine macOS browsers never send it
+  const isMobileToken = /mobile/i.test(source);
   const isMac =
-    !isWindows && !isIOS && /macintosh|mac os x|darwin/i.test(source);
+    !isWindows &&
+    !isIOS &&
+    !isMobileToken &&
+    /macintosh|mac os x|darwin/i.test(source);
   const isLinux =
     !isWindows && !isMac && !isAndroid && /linux|x11/i.test(source);
   const isLinux64 = isLinux && /x86_64|amd64|aarch64/i.test(source);
