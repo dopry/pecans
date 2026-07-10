@@ -41,7 +41,7 @@ import { VersionFilterOpts, Versions } from "./versions";
 const logger = Debug("pecans");
 
 export interface PecansSettings {
-  /** Timeout for releases cache (seconds) */
+  /** @deprecated accepted but never read; will be removed in 3.0 */
   timeout: number;
   /** Base path for all routes */
   basePath: string;
@@ -223,12 +223,14 @@ export class Pecans extends EventEmitter {
       "/download/channel/:channel/:platform?",
       this.handleDownload.bind(this)
     );
-    this.router.get("/download/:platform?", this.handleDownload.bind(this));
-    this.router.get("/download/:tag/:filename", this.handleDownload.bind(this));
+    // /download/version must register before /download/:tag/:filename or the
+    // literal "version" segment is captured as :tag and the request 500s.
     this.router.get(
       "/download/version/:tag/:platform?",
       this.handleDownload.bind(this)
     );
+    this.router.get("/download/:platform?", this.handleDownload.bind(this));
+    this.router.get("/download/:tag/:filename", this.handleDownload.bind(this));
 
     // the /dl path will supersede the /download/**  paths
     this.router.get("/dl/:filename", this.dlfilename.bind(this));
@@ -237,6 +239,7 @@ export class Pecans extends EventEmitter {
     // #endregion
 
     this.router.get("/api/channels", this.handleApiChannels.bind(this));
+    this.router.get("/api/status", this.handleApiStatus.bind(this));
     // ?channel?platform?version
     this.router.get("/api/versions", this.handleApiVersions.bind(this));
 
@@ -437,8 +440,10 @@ export class Pecans extends EventEmitter {
     next: NextFunction
   ) {
     try {
-      let channel = validateReqQueryChannel(req.query.channel || "stable");
-      const tag = validateReqQueryTag(req.query.tag);
+      let channel = validateReqQueryChannel(
+        req.params.channel || req.query.channel || "stable"
+      );
+      const tag = validateReqQueryTag(req.params.tag ?? req.query.tag);
       const filename = req.params.filename;
       const filetype = getFiletypeFromQuery(req.query);
 
@@ -451,8 +456,9 @@ export class Pecans extends EventEmitter {
       }
       const platform = validateReqQueryPlatform(mapped_platform);
 
-      // If specific version, don't enforce a channel
-      if (tag != "latest") channel = "*";
+      // If a specific version was requested, don't enforce a channel; an
+      // absent tag means "latest" and keeps the requested/default channel.
+      if (tag && tag != "latest") channel = "*";
 
       let release: PecansRelease | undefined = undefined;
       try {
@@ -465,7 +471,7 @@ export class Pecans extends EventEmitter {
       } catch (err) {
         // if we didn't restrict by channel or we specified a specific tag
         // don't try to fallback to any channel
-        if (channel == "*" || tag != "latest") throw err;
+        if (channel == "*" || (tag && tag != "latest")) throw err;
       }
 
       // we weren't able to find a release with the specified channel
@@ -614,7 +620,8 @@ export class Pecans extends EventEmitter {
 
       const output = generateRELEASES(releases);
 
-      res.header("Content-Length", output.length.toString());
+      // Content-Length is bytes, not UTF-16 code units
+      res.header("Content-Length", Buffer.byteLength(output).toString());
       res.attachment("RELEASES");
       res.send(output);
     } catch (err) {

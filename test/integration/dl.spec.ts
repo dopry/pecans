@@ -26,6 +26,7 @@ describe("/dl/:os/:arch", () => {
     ["/dl/osx/arm64", "app-2.7.0-arm64.dmg"],
     ["/dl/osx/universal", "app-2.7.0-univ.dmg"],
     ["/dl/windows/64", "app-2.7.0-x64-setup.exe"],
+    ["/dl/linux/64", "app-2.7.0-linux-x64.tar.gz"],
     ["/dl/linux/64?pkg=deb", "app-2.7.0-linux-x64.deb"],
     ["/dl/linux/64?pkg=rpm", "app-2.7.0-linux-x64.rpm"],
   ];
@@ -38,32 +39,6 @@ describe("/dl/:os/:arch", () => {
     nockGithubReleasesAssetRedirect(nock, OWNER, REPO, asset);
     const res = await supertest(app).get(url).expect(302);
     expect(res.headers.location).toContain(filename);
-  });
-
-  // BUG (fix in Phase 2): PecansAsset.satisfiesExtensions uses path.extname,
-  // which yields ".gz" for ".tar.gz" filenames, so a plain /dl/linux/64
-  // request can never match a .tar.gz asset. getSupportedExt() already handles
-  // the double extension and should be used instead.
-  it.fails("/dl/linux/64 redirects to the tar.gz asset (intended)", async () => {
-    const { app, backend } = configureTestAppWithReleases(
-      buildStableReleaseSet(OWNER, REPO)
-    );
-    const asset = await findAsset(
-      backend,
-      "2.7.0",
-      "app-2.7.0-linux-x64.tar.gz"
-    );
-    nockGithubReleasesAssetRedirect(nock, OWNER, REPO, asset);
-    const res = await supertest(app).get("/dl/linux/64").expect(302);
-    expect(res.headers.location).toContain("app-2.7.0-linux-x64.tar.gz");
-  });
-
-  it("/dl/linux/64 currently 404s on a .tar.gz-only fixture (see bug above)", async () => {
-    const { app } = configureTestAppWithReleases(
-      buildStableReleaseSet(OWNER, REPO)
-    );
-    const res = await supertest(app).get("/dl/linux/64").expect(404);
-    expect(res.text).toContain("No Matching Assets Found");
   });
 
   it("?version selects an older release", async () => {

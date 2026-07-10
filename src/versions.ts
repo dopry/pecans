@@ -4,7 +4,6 @@ import { PecansRelease } from "./models/PecansRelease";
 import { sortReleaseBySemVerDescending } from "./utils/sortReleaseBySemVerDescending";
 import { isPlatform, Platform } from "./utils";
 import { UnsupportedPlatformError } from "./pecans";
-import { reset } from "express-useragent";
 
 export type PlatformQuery = Platform | undefined;
 

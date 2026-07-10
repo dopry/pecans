@@ -120,8 +120,7 @@ describe("/api/versions", () => {
 describe("/api/status", () => {
   afterEach(() => nock.cleanAll());
 
-  // handleApiStatus exists but is not routed; Phase 2 wires it to /api/status
-  it.fails("reports uptime (intended - wired in Phase 2)", async () => {
+  it("reports uptime", async () => {
     const { app } = configureTestAppWithReleases(
       buildStableReleaseSet(OWNER, REPO)
     );

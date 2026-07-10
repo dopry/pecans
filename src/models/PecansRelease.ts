@@ -39,7 +39,7 @@ export class PecansRelease implements PecansReleaseDTO {
         }
       })
       .filter<PecansAsset>(isPecansAsset);
-    this.channel = channelFromVersion(dto.version);
+    this.channel = dto.channel || channelFromVersion(dto.version);
     this.notes = dto.notes;
     this.published_at = dto.published_at;
     this.version = dto.version;

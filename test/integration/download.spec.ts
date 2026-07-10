@@ -2,7 +2,9 @@ import nock from "nock";
 import supertest from "supertest";
 import { afterEach, describe, expect, it } from "vitest";
 import {
+  buildFullPlatformAssets,
   buildMixedChannelReleaseSet,
+  buildRelease,
   buildStableReleaseSet,
 } from "../fixtures/builders";
 import {
@@ -157,29 +159,36 @@ describe("/download/:platform?", () => {
     );
   });
 
-  // BUG (fix in Phase 2): when no tag is given, handleDownload widens the
-  // channel to "*" (the `tag != "latest"` check is true for undefined), so
-  // the newest release of ANY channel wins and stable users receive
-  // prereleases.
-  it.fails(
-    "/download/osx without a tag serves the latest STABLE release (intended)",
-    async () => {
-      const { app, backend } = configureTestAppWithReleases(
-        buildMixedChannelReleaseSet(OWNER, REPO)
-      );
-      const asset = await findAsset(backend, "2.7.0", "app-2.7.0-univ.dmg");
-      nockGithubReleasesAssetRedirect(nock, OWNER, REPO, asset);
-      // also mock the asset today's buggy resolution serves, so the request
-      // completes and the assertion fails fast instead of timing out
-      const actual = await findAsset(
-        backend,
-        "2.8.0-beta.2",
-        "app-2.8.0-beta.2-univ.dmg"
-      );
-      nockGithubReleasesAssetRedirect(nock, OWNER, REPO, actual);
-      await expectRedirectTo(app, "/download/osx", "app-2.7.0-univ.dmg");
-    }
-  );
+  // regression: an absent tag must not widen the channel to "*" - stable
+  // users must never be served prereleases (bug fixed in Phase 2)
+  it("/download/osx without a tag serves the latest STABLE release", async () => {
+    const { app, backend } = configureTestAppWithReleases(
+      buildMixedChannelReleaseSet(OWNER, REPO)
+    );
+    const asset = await findAsset(backend, "2.7.0", "app-2.7.0-univ.dmg");
+    nockGithubReleasesAssetRedirect(nock, OWNER, REPO, asset);
+    await expectRedirectTo(app, "/download/osx", "app-2.7.0-univ.dmg");
+  });
+
+  it("falls back to any channel when no stable release exists", async () => {
+    const beta = ["2.8.0-beta.2", "2.8.0-beta.1"].map((version) =>
+      buildRelease({
+        owner: OWNER,
+        repo: REPO,
+        version,
+        prerelease: true,
+        assets: buildFullPlatformAssets(OWNER, REPO, version),
+      })
+    );
+    const { app, backend } = configureTestAppWithReleases(beta);
+    const asset = await findAsset(
+      backend,
+      "2.8.0-beta.2",
+      "app-2.8.0-beta.2-univ.dmg"
+    );
+    nockGithubReleasesAssetRedirect(nock, OWNER, REPO, asset);
+    await expectRedirectTo(app, "/download/osx", "app-2.8.0-beta.2-univ.dmg");
+  });
 
   // README advertises /download/latest but "latest" parses as a platform and
   // 500s. Phase 2 aligns the README with the real route surface.
@@ -212,35 +221,22 @@ describe("/download/:platform?", () => {
 describe("/download/channel/:channel/:platform?", () => {
   afterEach(() => nock.cleanAll());
 
-  // BUG (fix in Phase 2): handleDownload reads the channel from the query
-  // string only; req.params.channel from this route is ignored, so the
-  // channel segment has no effect.
-  it.fails(
-    "/download/channel/stable/osx serves the latest stable release (intended)",
-    async () => {
-      const { app, backend } = configureTestAppWithReleases(
-        buildMixedChannelReleaseSet(OWNER, REPO)
-      );
-      const asset = await findAsset(backend, "2.7.0", "app-2.7.0-univ.dmg");
-      nockGithubReleasesAssetRedirect(nock, OWNER, REPO, asset);
-      // see note above: mock the wrongly-served beta asset to fail fast
-      const actual = await findAsset(
-        backend,
-        "2.8.0-beta.2",
-        "app-2.8.0-beta.2-univ.dmg"
-      );
-      nockGithubReleasesAssetRedirect(nock, OWNER, REPO, actual);
-      await expectRedirectTo(
-        app,
-        "/download/channel/stable/osx",
-        "app-2.7.0-univ.dmg"
-      );
-    }
-  );
+  // regression: the :channel path segment must be honored (bug fixed in
+  // Phase 2 - it was previously read from the query string only)
+  it("/download/channel/stable/osx serves the latest stable release", async () => {
+    const { app, backend } = configureTestAppWithReleases(
+      buildMixedChannelReleaseSet(OWNER, REPO)
+    );
+    const asset = await findAsset(backend, "2.7.0", "app-2.7.0-univ.dmg");
+    nockGithubReleasesAssetRedirect(nock, OWNER, REPO, asset);
+    await expectRedirectTo(
+      app,
+      "/download/channel/stable/osx",
+      "app-2.7.0-univ.dmg"
+    );
+  });
 
   it("serves the latest beta via the beta channel route", async () => {
-    // passes today only because channel "*" resolves to the beta, which is
-    // the highest semver overall - not because the path channel is honored.
     const { app, backend } = configureTestAppWithReleases(
       buildMixedChannelReleaseSet(OWNER, REPO)
     );
@@ -274,24 +270,19 @@ describe("/download/:tag/:filename", () => {
     );
   });
 
-  // BUG (fix in Phase 2): handleDownload never reads req.params.tag - the tag
-  // comes from the query string only - so files from anything but the newest
-  // release cannot be downloaded through this route.
-  it.fails(
-    "serves a file from an older release by its tag segment (intended)",
-    async () => {
-      const { app, backend } = configureTestAppWithReleases(
-        buildStableReleaseSet(OWNER, REPO)
-      );
-      const asset = await findAsset(backend, "2.6.0", "app-2.6.0-x64.dmg");
-      nockGithubReleasesAssetRedirect(nock, OWNER, REPO, asset);
-      await expectRedirectTo(
-        app,
-        "/download/2.6.0/app-2.6.0-x64.dmg",
-        "app-2.6.0-x64.dmg"
-      );
-    }
-  );
+  // regression: the :tag path segment must be honored (bug fixed in Phase 2)
+  it("serves a file from an older release by its tag segment", async () => {
+    const { app, backend } = configureTestAppWithReleases(
+      buildStableReleaseSet(OWNER, REPO)
+    );
+    const asset = await findAsset(backend, "2.6.0", "app-2.6.0-x64.dmg");
+    nockGithubReleasesAssetRedirect(nock, OWNER, REPO, asset);
+    await expectRedirectTo(
+      app,
+      "/download/2.6.0/app-2.6.0-x64.dmg",
+      "app-2.6.0-x64.dmg"
+    );
+  });
 });
 
 describe("/download/version/:tag/:platform?", () => {
@@ -310,17 +301,13 @@ describe("/download/version/:tag/:platform?", () => {
     );
   });
 
-  // BUG (fix in Phase 2): req.params.tag is ignored, so this route always
-  // resolves the newest release regardless of the version segment.
-  it.fails("serves the version named in the path (intended)", async () => {
+  // regression: the :tag path segment must be honored (bug fixed in Phase 2)
+  it("serves the version named in the path", async () => {
     const { app, backend } = configureTestAppWithReleases(
       buildStableReleaseSet(OWNER, REPO)
     );
     const asset = await findAsset(backend, "2.6.0", "app-2.6.0-univ.dmg");
     nockGithubReleasesAssetRedirect(nock, OWNER, REPO, asset);
-    // see note above: mock the wrongly-served latest asset to fail fast
-    const actual = await findAsset(backend, "2.7.0", "app-2.7.0-univ.dmg");
-    nockGithubReleasesAssetRedirect(nock, OWNER, REPO, actual);
     await expectRedirectTo(
       app,
       "/download/version/2.6.0/osx",
@@ -328,11 +315,10 @@ describe("/download/version/:tag/:platform?", () => {
     );
   });
 
-  // BUG (fix in Phase 2): without the platform segment this path is shadowed
-  // by /download/:tag/:filename ("version" parses as the tag), which 500s.
-  // Intended: fall back to user-agent platform detection.
-  it.fails(
-    "falls back to user-agent detection without a platform segment (intended)",
+  // regression: this route registers before /download/:tag/:filename so the
+  // literal "version" segment is not captured as a tag (bug fixed in Phase 2)
+  it(
+    "falls back to user-agent detection without a platform segment",
     async () => {
       const { app, backend } = configureTestAppWithReleases(
         buildStableReleaseSet(OWNER, REPO)

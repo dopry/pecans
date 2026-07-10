@@ -6,6 +6,7 @@ import {
 } from "../../src/models/PecansRelease.js";
 import { PecansAssetDTO } from "../../src/models/PecansAsset.js";
 import { PecansReleaseQuery } from "../../src/models/PecansReleaseQuery.js";
+import { channelFromVersion } from "../../src/utils/channelFromVersion.js";
 
 describe("PecansReleases", () => {
   const createMockAssetDTO = (filename: string): PecansAssetDTO => ({
@@ -23,7 +24,9 @@ describe("PecansReleases", () => {
     overrides: Partial<PecansReleaseDTO> = {}
   ): PecansReleaseDTO => ({
     assets: [createMockAssetDTO(`${version}-app.dmg`)],
-    channel: "stable",
+    // keep the fixture internally consistent: an explicit channel override
+    // wins, otherwise derive it from the version
+    channel: channelFromVersion(version),
     notes: `Release notes for ${version}`,
     published_at: publishedAt,
     version,
