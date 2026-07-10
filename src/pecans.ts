@@ -270,6 +270,11 @@ export class Pecans extends EventEmitter {
   async dlfilename(req: Request, res: Response, next: NextFunction) {
     try {
       const filename = getStringParam(req, "filename");
+      // an absent filename must not fall through to queryReleases, where an
+      // undefined filename matches every release
+      if (!filename) {
+        return res.status(404).send("filename is required");
+      }
       const query = { filename };
       const releases = await this.getReleases();
       const matchingReleases = releases.queryReleases(query);
