@@ -244,7 +244,7 @@ export class Pecans extends EventEmitter {
         throw new NotFoundError(`${filename} not found`);
       }
       const asset = matchingAssets[0];
-      this.serveAsset(req, res, release, asset);
+      await this.serveAsset(req, res, release, asset);
     } catch (err) {
       next(err);
     }
@@ -300,7 +300,7 @@ export class Pecans extends EventEmitter {
       }
 
       const asset = matchingAssets[0];
-      this.serveAsset(req, res, release, asset);
+      await this.serveAsset(req, res, release, asset);
     } catch (e) {
       next(e);
     }
@@ -459,8 +459,9 @@ export class Pecans extends EventEmitter {
           `No download available for platform ${platform} for version ${release.version} (${channel})`,
         );
 
-      // Call analytic middleware, then serve
-      return this.serveAsset(req, res, release, asset);
+      // Call analytic middleware, then serve; await so rejections reach the
+      // catch below instead of orphaning the promise
+      await this.serveAsset(req, res, release, asset);
     } catch (err) {
       next(err);
     }
