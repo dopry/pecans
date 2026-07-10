@@ -137,7 +137,7 @@ describe("Server Startup Integration", () => {
       await new Promise((resolve) => setTimeout(resolve, 10));
 
       expect(consoleLogSpy).toHaveBeenCalledWith(
-        "Lisening at unix:/tmp/server.sock",
+        "Listening at unix:/tmp/server.sock",
       );
     });
 

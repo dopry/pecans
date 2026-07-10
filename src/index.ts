@@ -31,7 +31,9 @@ export function configure() {
       return { env: backendEnv, backend, pecans };
     }
     default:
-      throw "Unrecognized PECANS_BACKEND. Must be one of ['PecansGithubBackend']";
+      throw new Error(
+        "Unrecognized PECANS_BACKEND. Must be one of ['PecansGithubBackend']",
+      );
   }
 }
 
@@ -70,7 +72,7 @@ export function main() {
     const address = server.address() || "0.0.0.0";
 
     if (typeof address == "string") {
-      console.log(`Lisening at ${address}`);
+      console.log(`Listening at ${address}`);
     } else {
       console.log(
         `Listening at http://${address.address || "0.0.0.0"}:${port}`,
