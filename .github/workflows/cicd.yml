@@ -1,4 +1,4 @@
-name: Test, Build, and Release
+name: CI
 
 on:
   pull_request:
@@ -10,7 +10,8 @@ on:
       - "*.x"
 
 jobs:
-  test:
+  lint:
+    name: Lint & Typecheck
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
@@ -22,18 +23,41 @@ jobs:
       - run: npm run lint
       - run: npm run format:check
       - run: npm run typecheck
+
+  test:
+    name: Test
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "npm"
+      - run: npm ci
       - run: npm test
         env:
           GITHUB_OWNER: owner-nock-mocked
           GITHUB_REPO: repo-nock-mocked
           GITHUB_TOKEN: token-nock-mocked
+
+  build:
+    name: Build
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "npm"
+      - run: npm ci
       - run: npm run build
 
   release:
-    # release only from pushes to release branches, after tests pass;
+    name: Release
+    # release only from pushes to release branches, after all checks pass;
     # semantic-release's own branches config decides the version/channel
     if: github.event_name == 'push'
-    needs: test
+    needs: [lint, test, build]
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
