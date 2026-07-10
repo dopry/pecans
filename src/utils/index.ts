@@ -6,5 +6,4 @@ export * from "./channelFromVersion";
 export * from "./mergeReleaseNotes";
 export * from "./resolveForVersion";
 export * from "./sortReleaseBySemVerDescending";
-export * from "./userAgent";
 export * from "./win-releases";

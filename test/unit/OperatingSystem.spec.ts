@@ -1,11 +1,9 @@
-import { UserAgentDetails } from "../../src/utils/userAgent";
 import QueryString from "qs";
 import { describe, expect, it } from "vitest";
 import {
   OPERATING_SYSTEMS,
   filenameToOperatingSystem,
   getOsFromQuery,
-  getOsFromUserAgent,
   isOperatingSystem,
 } from "../../src/utils/OperatingSystem";
 
@@ -141,46 +139,6 @@ describe("OperatingSystem", () => {
           "Unable to determine OS from filename.",
         );
       });
-    });
-  });
-
-  describe("getOsFromUserAgent", () => {
-    it("should return undefined when no useragent provided", () => {
-      expect(getOsFromUserAgent()).toBe(undefined);
-      expect(getOsFromUserAgent(undefined)).toBe(undefined);
-    });
-
-    it("should detect Mac from user agent", () => {
-      const macUserAgent = { isMac: true } as UserAgentDetails;
-      expect(getOsFromUserAgent(macUserAgent)).toBe("osx");
-    });
-
-    it("should detect Windows from user agent", () => {
-      const windowsUserAgent = { isWindows: true } as UserAgentDetails;
-      expect(getOsFromUserAgent(windowsUserAgent)).toBe("windows");
-    });
-
-    it("should detect Linux from isLinux flag", () => {
-      const linuxUserAgent = { isLinux: true } as UserAgentDetails;
-      expect(getOsFromUserAgent(linuxUserAgent)).toBe("linux");
-    });
-
-    it("should detect Linux from isLinux64 flag", () => {
-      const linux64UserAgent = { isLinux64: true } as UserAgentDetails;
-      expect(getOsFromUserAgent(linux64UserAgent)).toBe("linux");
-    });
-
-    it("should return undefined for unknown user agents", () => {
-      const unknownUserAgent = {} as UserAgentDetails;
-      expect(getOsFromUserAgent(unknownUserAgent)).toBe(undefined);
-    });
-
-    it("should prioritize Mac over other flags", () => {
-      const multipleFlags = {
-        isMac: true,
-        isWindows: true,
-      } as UserAgentDetails;
-      expect(getOsFromUserAgent(multipleFlags)).toBe("osx");
     });
   });
 

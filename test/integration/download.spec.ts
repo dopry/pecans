@@ -7,11 +7,7 @@ import {
   buildRelease,
   buildStableReleaseSet,
 } from "../fixtures/builders";
-import {
-  configureTestAppWithReleases,
-  findAsset,
-  USER_AGENTS,
-} from "../harness";
+import { configureTestAppWithReleases, findAsset } from "../harness";
 import { nockGithubReleasesAssetRedirect } from "../nock/nockGithubReleaseAsset";
 
 nock.disableNetConnect();
@@ -33,54 +29,32 @@ async function expectRedirectTo(
   return res;
 }
 
-describe("GET / (user-agent driven download)", () => {
+describe("platform autodetection removed in 2.0", () => {
   afterEach(() => nock.cleanAll());
 
-  it("serves the universal dmg to a mac browser", async () => {
-    const { app, backend } = configureTestAppWithReleases(
-      buildStableReleaseSet(OWNER, REPO),
-    );
-    const asset = await findAsset(backend, "2.7.0", "app-2.7.0-univ.dmg");
-    nockGithubReleasesAssetRedirect(nock, OWNER, REPO, asset);
-    await expectRedirectTo(app, "/", "app-2.7.0-univ.dmg", USER_AGENTS.mac);
-  });
+  // selecting a platform is the client's responsibility; bare download
+  // routes return 400 regardless of the browser user agent
+  const platformless = ["/download", "/download/version/2.7.0"];
 
-  it("serves the setup exe to a windows browser", async () => {
-    const { app, backend } = configureTestAppWithReleases(
-      buildStableReleaseSet(OWNER, REPO),
-    );
-    const asset = await findAsset(backend, "2.7.0", "app-2.7.0-x64-setup.exe");
-    nockGithubReleasesAssetRedirect(nock, OWNER, REPO, asset);
-    await expectRedirectTo(
-      app,
-      "/",
-      "app-2.7.0-x64-setup.exe",
-      USER_AGENTS.windows,
-    );
-  });
-
-  // Linux resolution sorts composite platform ids by string length, so the
-  // longer "linux_deb_64" beats "linux_64" and a .deb is served to browsers.
-  it("serves the deb to a linux browser", async () => {
-    const { app, backend } = configureTestAppWithReleases(
-      buildStableReleaseSet(OWNER, REPO),
-    );
-    const asset = await findAsset(backend, "2.7.0", "app-2.7.0-linux-x64.deb");
-    nockGithubReleasesAssetRedirect(nock, OWNER, REPO, asset);
-    await expectRedirectTo(
-      app,
-      "/",
-      "app-2.7.0-linux-x64.deb",
-      USER_AGENTS.linux,
-    );
-  });
-
-  // Today an unresolvable platform throws a plain Error -> 500.
-  it("500s when the platform cannot be determined", async () => {
+  it.each(platformless)("%s returns 400 without a platform", async (url) => {
     const { app } = configureTestAppWithReleases(
       buildStableReleaseSet(OWNER, REPO),
     );
-    await supertest(app).get("/").set("User-Agent", "curl/8.0").expect(500);
+    const res = await supertest(app)
+      .get(url)
+      .set(
+        "User-Agent",
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Chrome/120 Safari/537.36",
+      )
+      .expect(400);
+    expect(res.text).toContain("Platform is required");
+  });
+
+  it("GET / is no longer a route", async () => {
+    const { app } = configureTestAppWithReleases(
+      buildStableReleaseSet(OWNER, REPO),
+    );
+    await supertest(app).get("/").expect(404);
   });
 });
 
@@ -196,10 +170,7 @@ describe("/download/:platform?", () => {
     const { app } = configureTestAppWithReleases(
       buildStableReleaseSet(OWNER, REPO),
     );
-    await supertest(app)
-      .get("/download/latest")
-      .set("User-Agent", USER_AGENTS.mac)
-      .expect(500);
+    await supertest(app).get("/download/latest").expect(500);
   });
 
   it("500s on an unknown platform", async () => {
@@ -316,18 +287,13 @@ describe("/download/version/:tag/:platform?", () => {
   });
 
   // regression: this route registers before /download/:tag/:filename so the
-  // literal "version" segment is not captured as a tag (bug fixed in Phase 2)
-  it("falls back to user-agent detection without a platform segment", async () => {
-    const { app, backend } = configureTestAppWithReleases(
+  // literal "version" segment is not captured as a tag (bug fixed in Phase 2);
+  // without a platform segment it now 400s (autodetection removed in 2.0)
+  it("returns 400 without a platform segment", async () => {
+    const { app } = configureTestAppWithReleases(
       buildStableReleaseSet(OWNER, REPO),
     );
-    const asset = await findAsset(backend, "2.7.0", "app-2.7.0-univ.dmg");
-    nockGithubReleasesAssetRedirect(nock, OWNER, REPO, asset);
-    await expectRedirectTo(
-      app,
-      "/download/version/2.7.0",
-      "app-2.7.0-univ.dmg",
-      USER_AGENTS.mac,
-    );
+    const res = await supertest(app).get("/download/version/2.7.0").expect(400);
+    expect(res.text).toContain("Platform is required");
   });
 });

@@ -1,5 +1,4 @@
 import QueryString from "qs";
-import { UserAgentDetails } from "./userAgent";
 
 export const OPERATING_SYSTEMS = ["linux", "osx", "windows"] as const;
 export type OperatingSystem = (typeof OPERATING_SYSTEMS)[number];
@@ -39,16 +38,6 @@ export function filenameToOperatingSystem(filename: string): OperatingSystem {
   )
     return "osx";
   throw new Error("Unable to determine OS from filename.");
-}
-
-export function getOsFromUserAgent(
-  useragent?: UserAgentDetails,
-): OperatingSystem | undefined {
-  if (!useragent) return;
-  if (useragent.isMac) return "osx";
-  if (useragent.isWindows) return "windows";
-  if (useragent.isLinux) return "linux";
-  if (useragent.isLinux64) return "linux";
 }
 
 export function getOsFromQuery(

@@ -34,7 +34,6 @@ import {
   mergeReleaseNotes,
 } from "./utils/mergeReleaseNotes";
 import { resolveReleaseAssetForVersion } from "./utils/resolveForVersion";
-import { UserAgentDetails, userAgentMiddleware } from "./utils/userAgent";
 import { generateRELEASES, parseRELEASES } from "./utils/win-releases";
 import { VersionFilterOpts, Versions } from "./versions";
 
@@ -108,26 +107,6 @@ export function validateReqQueryTag(tag?: ReqQueryValue): string | undefined {
   return tag;
 }
 
-export interface ExpressUserAgent {
-  isMac: boolean;
-  isWindows: boolean;
-  isLinux: boolean;
-  isLinux64: boolean;
-}
-export interface ExpressRequestUserAgent {
-  useragent?: UserAgentDetails;
-}
-
-export function getPlatformFromUserAgent(
-  req: Request & ExpressRequestUserAgent,
-) {
-  // requires useragent middleware.
-  if (!req.useragent) return;
-  if (req.useragent.isMac) return platforms.OSX;
-  if (req.useragent.isWindows) return platforms.WINDOWS;
-  if (req.useragent.isLinux) return platforms.LINUX;
-  if (req.useragent.isLinux64) return platforms.LINUX_64;
-}
 // return a string value from the req.query if it is a single string,
 // otherwise return undefined
 export function getStringValueFromRequestQuery(
@@ -162,17 +141,6 @@ export function getFiletypeFromQuery(
 export function getPlatformFromQuery(query: ParsedQs): Platform | undefined {
   const value = getStringValueFromRequestQuery(query, "platform");
   return value && isPlatform(value) ? value : undefined;
-}
-
-export function getArchFromUserAgent(
-  useragent?: UserAgentDetails,
-): Architecture | undefined {
-  // these are arbitrary defaults; 32-bit desktops are effectively extinct
-  if (!useragent) return;
-  if (useragent.isMac) return "64";
-  if (useragent.isWindows) return "64";
-  if (useragent.isLinux64) return "64";
-  if (useragent.isLinux) return "64";
 }
 
 export class Pecans extends EventEmitter {
@@ -211,9 +179,6 @@ export class Pecans extends EventEmitter {
       return next();
     });
 
-    // Bind routes
-    this.router.use(userAgentMiddleware());
-
     // this will need to be called by the backends webhook infrastructure,
     // the semantic will vary by backend.
     this.router.use(
@@ -221,7 +186,6 @@ export class Pecans extends EventEmitter {
     );
 
     // #region download endpoints
-    this.router.get("/", this.handleDownload.bind(this));
     this.router.get(
       "/download/channel/:channel{/:platform}",
       this.handleDownload.bind(this),
@@ -457,14 +421,20 @@ export class Pecans extends EventEmitter {
       const filename = getStringParam(req, "filename");
       const filetype = getFiletypeFromQuery(req.query);
 
+      // platform autodetection from the user agent was removed in 2.0;
+      // selecting a platform is the client's responsibility
       const _platform = filename
         ? filenameToPlatform(filename)
-        : getStringParam(req, "platform") || getPlatformFromUserAgent(req);
-      const mapped_platform = mapLegacyPlatform(_platform || "");
-      if (!mapped_platform) {
-        throw new Error("Platform is required");
+        : getStringParam(req, "platform");
+      if (!_platform) {
+        res
+          .status(400)
+          .send(
+            "Platform is required. Specify a platform in the URL, e.g. /download/osx_64.",
+          );
+        return;
       }
-      const platform = validateReqQueryPlatform(mapped_platform);
+      const platform = validateReqQueryPlatform(mapLegacyPlatform(_platform));
 
       // If a specific version was requested, don't enforce a channel; an
       // absent tag means "latest" and keeps the requested/default channel.

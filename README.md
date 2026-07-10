@@ -4,11 +4,10 @@ Pecans is an Electron Release Server.
 
 ## Features
 
-- Download URLs
-  - `/` — detect platform from the browser user agent and serve the latest build
+- Download URLs (the client chooses the platform; user-agent autodetection was removed in 2.0)
   - `/download/:platform` — latest build for a platform (`osx_64`, `windows_64`, … legacy aliases like `darwin`, `win32`, `mac-arm64` are accepted)
-  - `/download/channel/:channel/:platform?` — latest build on a release channel (platform falls back to user-agent detection when omitted)
-  - `/download/version/:tag/:platform?` — a specific version (platform falls back to user-agent detection when omitted)
+  - `/download/channel/:channel/:platform` — latest build on a release channel
+  - `/download/version/:tag/:platform` — a specific version
   - `/download/:tag/:filename` — a specific release asset by filename
   - `/dl/:os/:arch` — resolve by discrete OS (`osx`, `windows`, `linux`) and arch (`32`, `64`, `arm64`, `universal`); supports `?channel`, `?version`, and `?pkg` (`deb`/`rpm`) queries
   - `/dl/:filename` — a release asset by filename

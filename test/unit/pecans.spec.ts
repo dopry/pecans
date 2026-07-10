@@ -1,14 +1,10 @@
 import { NextFunction, Request, Response } from "express";
-import { UserAgentDetails } from "../../src/utils/userAgent";
 import { ParsedQs } from "qs";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
-  ExpressRequestUserAgent,
-  getArchFromUserAgent,
   getFilenameFromQuery,
   getFiletypeFromQuery,
   getPlatformFromQuery,
-  getPlatformFromUserAgent,
   getStringValueFromRequestQuery,
   getVersionFromQuery,
   Pecans,
@@ -102,10 +98,7 @@ class MockBackend extends Backend {
 }
 
 // Mock Express Request and Response
-type MockRequestOverrides = Partial<Request> & {
-  useragent?: UserAgentDetails;
-};
-const createMockRequest = (overrides: MockRequestOverrides = {}): Request =>
+const createMockRequest = (overrides: Partial<Request> = {}): Request =>
   ({
     method: "GET",
     url: "/test",
@@ -114,7 +107,6 @@ const createMockRequest = (overrides: MockRequestOverrides = {}): Request =>
     get: vi.fn().mockReturnValue("localhost:3000"),
     params: {},
     query: {},
-    useragent: undefined,
     ...overrides,
   }) as any;
 
@@ -300,73 +292,6 @@ describe("Pecans", () => {
       });
     });
 
-    describe("getPlatformFromUserAgent", () => {
-      it("should detect Mac platform", () => {
-        const req = {
-          useragent: {
-            isMac: true,
-            isWindows: false,
-            isLinux: false,
-            isLinux64: false,
-          },
-        } as Request & ExpressRequestUserAgent;
-        expect(getPlatformFromUserAgent(req)).toBe(platforms.OSX);
-      });
-
-      it("should detect Windows platform", () => {
-        const req = {
-          useragent: {
-            isMac: false,
-            isWindows: true,
-            isLinux: false,
-            isLinux64: false,
-          },
-        } as Request & ExpressRequestUserAgent;
-        expect(getPlatformFromUserAgent(req)).toBe(platforms.WINDOWS);
-      });
-
-      it("should detect Linux platform", () => {
-        const req = {
-          useragent: {
-            isMac: false,
-            isWindows: false,
-            isLinux: true,
-            isLinux64: false,
-          },
-        } as Request & ExpressRequestUserAgent;
-        expect(getPlatformFromUserAgent(req)).toBe(platforms.LINUX);
-      });
-
-      it("should detect Linux64 platform", () => {
-        const req = {
-          useragent: {
-            isMac: false,
-            isWindows: false,
-            isLinux: false,
-            isLinux64: true,
-          },
-        } as Request & ExpressRequestUserAgent;
-        expect(getPlatformFromUserAgent(req)).toBe(platforms.LINUX_64);
-      });
-
-      it("should return undefined when no useragent", () => {
-        const req = {} as Request & ExpressRequestUserAgent;
-        expect(getPlatformFromUserAgent(req)).toBeUndefined();
-      });
-
-      it("should return undefined for unknown user agents", () => {
-        const req = {
-          useragent: {
-            isMac: false,
-            isWindows: false,
-            isLinux: false,
-            isLinux64: false,
-          },
-        } as Request & ExpressRequestUserAgent;
-        expect(getPlatformFromUserAgent(req)).toBeUndefined();
-      });
-    });
-
     describe("getStringValueFromRequestQuery", () => {
       it("should return string value from query", () => {
         const query = { param: "value" };
@@ -491,62 +416,6 @@ describe("Pecans", () => {
       it("should return undefined for non-string platform", () => {
         const query = { platform: ["osx_64"] };
         expect(getPlatformFromQuery(query)).toBeUndefined();
-      });
-    });
-
-    describe("getArchFromUserAgent", () => {
-      it("should return '64' for Mac", () => {
-        const useragent = {
-          isMac: true,
-          isWindows: false,
-          isLinux: false,
-          isLinux64: false,
-        } as UserAgentDetails;
-        expect(getArchFromUserAgent(useragent)).toBe("64");
-      });
-
-      it("should return '64' for Windows", () => {
-        const useragent = {
-          isMac: false,
-          isWindows: true,
-          isLinux: false,
-          isLinux64: false,
-        } as UserAgentDetails;
-        expect(getArchFromUserAgent(useragent)).toBe("64");
-      });
-
-      it("should return '64' for Linux", () => {
-        const useragent = {
-          isMac: false,
-          isWindows: false,
-          isLinux: true,
-          isLinux64: false,
-        } as UserAgentDetails;
-        expect(getArchFromUserAgent(useragent)).toBe("64");
-      });
-
-      it("should return '64' for Linux64", () => {
-        const useragent = {
-          isMac: false,
-          isWindows: false,
-          isLinux: false,
-          isLinux64: true,
-        } as UserAgentDetails;
-        expect(getArchFromUserAgent(useragent)).toBe("64");
-      });
-
-      it("should return undefined when no useragent", () => {
-        expect(getArchFromUserAgent(undefined)).toBeUndefined();
-      });
-
-      it("should return undefined for unknown agents", () => {
-        const useragent = {
-          isMac: false,
-          isWindows: false,
-          isLinux: false,
-          isLinux64: false,
-        } as UserAgentDetails;
-        expect(getArchFromUserAgent(useragent)).toBeUndefined();
       });
     });
   });
@@ -1261,24 +1130,14 @@ describe("Pecans", () => {
       });
 
       describe("handleDownload", () => {
-        it("should handle download with platform detection from user agent", async () => {
-          const req = createMockRequest({
-            query: {},
-            useragent: {
-              isMac: true,
-              isWindows: false,
-              isLinux: false,
-              isLinux64: false,
-            } as any,
-          });
+        it("should 400 when no platform is specified (autodetection removed in 2.0)", async () => {
+          const req = createMockRequest({ query: {} });
           const res = createMockResponse();
           const next = createMockNext();
 
-          vi.spyOn(pecans as any, "serveAsset").mockResolvedValue(undefined);
-
           await (pecans as any).handleDownload(req, res, next);
 
-          expect((pecans as any).serveAsset).toHaveBeenCalled();
+          expect(res.status).toHaveBeenCalledWith(400);
         });
 
         it("should handle download with explicit platform parameter", async () => {
@@ -1370,7 +1229,7 @@ describe("Pecans", () => {
           expect(next).toHaveBeenCalledWith(expect.any(Error));
         });
 
-        it("should throw error when platform is required but not provided", async () => {
+        it("should 400 when platform is required but not provided", async () => {
           pecans = new Pecans(mockBackend);
           const req = createMockRequest({
             query: {},
@@ -1379,11 +1238,8 @@ describe("Pecans", () => {
           const res = createMockResponse();
           const next = createMockNext();
           await (pecans as any).handleDownload(req, res, next);
-          expect(next).toHaveBeenCalledWith(
-            expect.objectContaining({
-              message: expect.stringMatching(/Platform is required/),
-            }),
-          );
+          expect(res.status).toHaveBeenCalledWith(400);
+          expect(next).not.toHaveBeenCalled();
         });
 
         it("should throw error when no asset found", async () => {
