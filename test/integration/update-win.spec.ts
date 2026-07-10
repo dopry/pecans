@@ -132,6 +132,15 @@ describe("/update/:platform/:version/RELEASES (Squirrel.Windows)", () => {
     expect(text).toContain("app-2.8.0-beta.2-x64-full.nupkg");
   });
 
+  it("400s on a range-shaped version", async () => {
+    const { app } = configureTestAppWithReleases(
+      buildStableReleaseSet(OWNER, REPO),
+    );
+    await supertest(app)
+      .get("/update/windows_64/%3E%3D1.0.0/RELEASES")
+      .expect(400);
+  });
+
   it("404s when no release matches the version range", async () => {
     const { app } = configureTestAppWithReleases(
       buildStableReleaseSet(OWNER, REPO),

@@ -94,6 +94,15 @@ describe("/update/:platform/:version (Squirrel.Mac)", () => {
     );
     await supertest(app).get("/update/osx/not-a-version").expect(400);
   });
+
+  it("400s on a range-shaped version", async () => {
+    // clients report a specific installed version; a range like >=1.0.0
+    // would corrupt the ">=" + version filter and previously 500ed
+    const { app } = configureTestAppWithReleases(
+      buildStableReleaseSet(OWNER, REPO),
+    );
+    await supertest(app).get("/update/osx/%3E%3D1.0.0").expect(400);
+  });
 });
 
 describe("/update/channel/:channel/:platform/:version (Squirrel.Mac)", () => {

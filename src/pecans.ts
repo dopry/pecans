@@ -2,7 +2,7 @@ import Debug from "debug";
 import { NextFunction, Request, Response, Router } from "express";
 import EventEmitter from "node:events";
 import { ParsedQs } from "qs";
-import { validRange } from "semver";
+import { valid, validRange } from "semver";
 import { Backend } from "./backends/";
 import {
   BadRequestError,
@@ -501,8 +501,12 @@ export class Pecans extends EventEmitter {
 
       const mapped_platform = mapLegacyPlatform(platformParam);
       const platform = validateReqQueryPlatform(mapped_platform);
-      if (!validRange(versionParam)) {
-        throw new UnsupportedTagError(versionParam);
+      // the client reports its installed version, so require a specific
+      // semver version; a range would corrupt the ">=" + tag filter below
+      if (!valid(versionParam)) {
+        throw new BadRequestError(
+          `Invalid version (${versionParam}), expected a specific semver version`,
+        );
       }
       const tag = versionParam;
 
@@ -555,8 +559,12 @@ export class Pecans extends EventEmitter {
       const channel = getStringParam(req, "channel") || "stable";
       const tag = getStringParam(req, "version");
       if (!tag) throw new BadRequestError('Requires "version" parameter');
-      if (!validRange(tag)) {
-        throw new UnsupportedTagError(tag);
+      // the client reports its installed version, so require a specific
+      // semver version; a range would corrupt the ">=" + tag filter below
+      if (!valid(tag)) {
+        throw new BadRequestError(
+          `Invalid version (${tag}), expected a specific semver version`,
+        );
       }
 
       const versions = await this.versions.filter({
