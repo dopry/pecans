@@ -13,14 +13,14 @@ export function resolveReleaseAssetForVersion(
   version: PecansReleaseDTO,
   platform: Platform,
   preferUniversal = true,
-  wanted?: string
+  wanted?: string,
 ) {
   const prefs: string[] = [...SUPPORTED_FILE_EXTENSIONS];
 
   // Put wanted at the top of the list... will fallback to other extensions.
   if (wanted) prefs.unshift(wanted);
 
-  const platforms: Platform[] = [platform]
+  const platforms: Platform[] = [platform];
 
   // If we want a universal binary, add the other platform to the list.
   if (preferUniversal && platform.startsWith("osx")) {
@@ -29,7 +29,9 @@ export function resolveReleaseAssetForVersion(
 
   const compatibleAssets = version.assets.filter((asset) => {
     const ext = getSupportedExt(asset.filename) || "";
-    return prefs.includes(ext) && platforms.some(p => asset.type.startsWith(p));
+    return (
+      prefs.includes(ext) && platforms.some((p) => asset.type.startsWith(p))
+    );
   });
 
   const sorted = compatibleAssets.sort((p1, p2) => {
@@ -40,8 +42,8 @@ export function resolveReleaseAssetForVersion(
 
     const ext1 = path.extname(p1.filename);
     const ext2 = path.extname(p2.filename);
-    let pos1 = prefs.indexOf(ext1 as SupportedFileExtension);
-    let pos2 = prefs.indexOf(ext2 as SupportedFileExtension);
+    const pos1 = prefs.indexOf(ext1 as SupportedFileExtension);
+    const pos2 = prefs.indexOf(ext2 as SupportedFileExtension);
     return pos1 - pos2;
   });
   return sorted[0];

@@ -320,7 +320,7 @@ describe("Backend Caching", () => {
   describe("Manual Cache Refresh", () => {
     it("should refresh cache immediately when refreshCache is called", async () => {
       // Populate initial cache
-      const originalReleases = await backend.releases();
+      await backend.releases();
       const originalTimestamp = backend.getCacheTimestamp();
 
       // Advance time slightly (but not enough to expire)

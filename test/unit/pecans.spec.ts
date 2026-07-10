@@ -126,7 +126,7 @@ const createMockRequest = (overrides: Partial<Request> = {}): Request =>
     query: {},
     useragent: undefined,
     ...overrides,
-  } as any);
+  }) as any;
 
 const createMockResponse = (acceptHeader?: string): Response => {
   const mockRes: any = {
@@ -170,7 +170,7 @@ describe("Pecans", () => {
       it("should create error with platform message", () => {
         const error = new UnsupportedPlatformError("invalid_platform");
         expect(error.message).toContain(
-          "Unsupported platform (invalid_platform)"
+          "Unsupported platform (invalid_platform)",
         );
         expect(error.message).toContain("expected one of");
       });
@@ -190,7 +190,7 @@ describe("Pecans", () => {
       it("should create error with channel message", () => {
         const error = new UnsupportedChannelError("invalid_channel");
         expect(error.message).toContain(
-          "Unsupported channel (invalid_channel)"
+          "Unsupported channel (invalid_channel)",
         );
         expect(error.message).toContain("expected a single string");
       });
@@ -230,20 +230,20 @@ describe("Pecans", () => {
 
       it("should throw UnsupportedChannelError for non-string", () => {
         expect(() => validateReqQueryChannel(["stable"])).toThrow(
-          UnsupportedChannelError
+          UnsupportedChannelError,
         );
         expect(() => validateReqQueryChannel({ channel: "stable" })).toThrow(
-          UnsupportedChannelError
+          UnsupportedChannelError,
         );
         expect(() => validateReqQueryChannel(123 as any)).toThrow(
-          UnsupportedChannelError
+          UnsupportedChannelError,
         );
       });
 
       it("should throw UnsupportedChannelError for nested ParsedQs", () => {
         const nestedQs = { nested: { value: "stable" } } as ParsedQs;
         expect(() => validateReqQueryChannel(nestedQs)).toThrow(
-          UnsupportedChannelError
+          UnsupportedChannelError,
         );
       });
     });
@@ -257,26 +257,26 @@ describe("Pecans", () => {
 
       it("should throw UnsupportedPlatformError for undefined", () => {
         expect(() => validateReqQueryPlatform(undefined)).toThrow(
-          UnsupportedPlatformError
+          UnsupportedPlatformError,
         );
       });
 
       it("should throw UnsupportedPlatformError for invalid platform", () => {
         expect(() => validateReqQueryPlatform("invalid")).toThrow(
-          UnsupportedPlatformError
+          UnsupportedPlatformError,
         );
         expect(() => validateReqQueryPlatform(["osx_64"])).toThrow(
-          UnsupportedPlatformError
+          UnsupportedPlatformError,
         );
         expect(() => validateReqQueryPlatform(123 as any)).toThrow(
-          UnsupportedPlatformError
+          UnsupportedPlatformError,
         );
       });
 
       it("should throw UnsupportedPlatformError for nested ParsedQs", () => {
         const nestedQs = { nested: { value: "osx_64" } } as ParsedQs;
         expect(() => validateReqQueryPlatform(nestedQs)).toThrow(
-          UnsupportedPlatformError
+          UnsupportedPlatformError,
         );
       });
     });
@@ -294,13 +294,13 @@ describe("Pecans", () => {
 
       it("should throw UnsupportedTagError for non-string", () => {
         expect(() => validateReqQueryTag(["1.0.0"])).toThrow(
-          UnsupportedTagError
+          UnsupportedTagError,
         );
         expect(() => validateReqQueryTag({ tag: "1.0.0" })).toThrow(
-          UnsupportedTagError
+          UnsupportedTagError,
         );
         expect(() => validateReqQueryTag(123 as any)).toThrow(
-          UnsupportedTagError
+          UnsupportedTagError,
         );
       });
 
@@ -467,7 +467,7 @@ describe("Pecans", () => {
       it("should throw for invalid extension", () => {
         const query = { filetype: "invalid" };
         expect(() => getFiletypeFromQuery(query)).toThrowError(
-          "Unsupported FileType Requested"
+          "Unsupported FileType Requested",
         );
       });
 
@@ -635,7 +635,7 @@ describe("Pecans", () => {
           // Make backend throw error
           mockBackend.mockReleases = null;
           vi.spyOn(mockBackend, "releases").mockRejectedValueOnce(
-            new Error("Backend error")
+            new Error("Backend error"),
           );
 
           await (pecans as any).handleApiChannels(req, res, next);
@@ -741,7 +741,7 @@ describe("Pecans", () => {
           await (pecans as any).handleApiVersions(req, res, next);
 
           expect(next).toHaveBeenCalledWith(
-            expect.any(UnsupportedChannelError)
+            expect.any(UnsupportedChannelError),
           );
           expect(res.send).not.toHaveBeenCalled();
         });
@@ -755,7 +755,7 @@ describe("Pecans", () => {
 
           // Make versions.filter throw
           vi.spyOn(pecans.versions, "filter").mockRejectedValueOnce(
-            new Error("Filter error")
+            new Error("Filter error"),
           );
 
           await (pecans as any).handleApiVersions(req, res, next);
@@ -825,13 +825,13 @@ describe("Pecans", () => {
       describe("validateChannelName", () => {
         it("should validate existing channel names", async () => {
           await expect(
-            pecans.validateChannelName("stable")
+            pecans.validateChannelName("stable"),
           ).resolves.not.toThrow();
         });
 
         it("should throw error for invalid channel names", async () => {
           await expect(
-            pecans.validateChannelName("nonexistent")
+            pecans.validateChannelName("nonexistent"),
           ).rejects.toThrow("Invalid Channel: nonexistent");
         });
       });
@@ -991,7 +991,7 @@ describe("Pecans", () => {
           const next = createMockNext();
 
           vi.spyOn(pecans, "getReleases").mockRejectedValueOnce(
-            new Error("Backend error")
+            new Error("Backend error"),
           );
 
           await pecans.dlfilename(req, res, next);
@@ -1073,7 +1073,7 @@ describe("Pecans", () => {
 
           expect(res.status).toHaveBeenCalledWith(404);
           expect(res.send).toHaveBeenCalledWith(
-            expect.stringContaining("Unrecognized OS")
+            expect.stringContaining("Unrecognized OS"),
           );
         });
 
@@ -1089,7 +1089,7 @@ describe("Pecans", () => {
 
           expect(res.status).toHaveBeenCalledWith(404);
           expect(res.send).toHaveBeenCalledWith(
-            expect.stringContaining("Unsupported Arch")
+            expect.stringContaining("Unsupported Arch"),
           );
         });
 
@@ -1261,7 +1261,7 @@ describe("Pecans", () => {
           const next = createMockNext();
 
           vi.spyOn(pecans, "queryReleases").mockRejectedValueOnce(
-            new Error("Query error")
+            new Error("Query error"),
           );
 
           await pecans.dl(req, res, next);
@@ -1392,7 +1392,7 @@ describe("Pecans", () => {
           expect(next).toHaveBeenCalledWith(
             expect.objectContaining({
               message: expect.stringMatching(/Platform is required/),
-            })
+            }),
           );
         });
 
@@ -1428,7 +1428,7 @@ describe("Pecans", () => {
             .mockImplementation(async (opts) => {
               callCount++;
               // Log the arguments for debug
-              // eslint-disable-next-line no-console
+
               console.log(`resolve call ${callCount}:`, opts);
               if (callCount === 1) {
                 throw new Error("First resolve failed");
@@ -1463,7 +1463,7 @@ describe("Pecans", () => {
           // Fallback call should use channel="*"
           expect(resolveSpy).toHaveBeenNthCalledWith(
             2,
-            expect.objectContaining({ channel: "*" })
+            expect.objectContaining({ channel: "*" }),
           );
           expect((pecans as any).serveAsset).toHaveBeenCalled();
         });
@@ -1587,7 +1587,7 @@ describe("Pecans", () => {
             },
           ];
           vi.spyOn(pecans.versions, "filter").mockResolvedValueOnce(
-            mockReleases as any
+            mockReleases as any,
           );
 
           const req = createMockRequest({
@@ -1605,7 +1605,7 @@ describe("Pecans", () => {
               name: "2.0.0",
               notes: expect.any(String),
               pub_date: expect.any(String),
-            })
+            }),
           );
         });
 
@@ -1618,7 +1618,7 @@ describe("Pecans", () => {
             },
           ];
           vi.spyOn(pecans.versions, "filter").mockResolvedValueOnce(
-            mockReleases as any
+            mockReleases as any,
           );
 
           const req = createMockRequest({
@@ -1633,7 +1633,7 @@ describe("Pecans", () => {
           expect(res.send).toHaveBeenCalledWith(
             expect.objectContaining({
               name: "2.0.0",
-            })
+            }),
           );
         });
 
@@ -1646,7 +1646,7 @@ describe("Pecans", () => {
             },
           ];
           vi.spyOn(pecans.versions, "filter").mockResolvedValueOnce(
-            mockReleases as any
+            mockReleases as any,
           );
 
           const req = createMockRequest({
@@ -1661,13 +1661,13 @@ describe("Pecans", () => {
           expect(res.send).toHaveBeenCalledWith(
             expect.objectContaining({
               url: expect.stringContaining("filetype=dmg"),
-            })
+            }),
           );
         });
 
         it("should call next with error on failure", async () => {
           vi.spyOn(pecans.versions, "filter").mockRejectedValueOnce(
-            new Error("Filter error")
+            new Error("Filter error"),
           );
 
           const req = createMockRequest({
@@ -1691,12 +1691,12 @@ describe("Pecans", () => {
             },
           ];
           vi.spyOn(pecans.versions, "filter").mockResolvedValueOnce(
-            mockReleases as any
+            mockReleases as any,
           );
           vi.spyOn(mockBackend, "readAsset").mockResolvedValueOnce(
             Buffer.from(
-              "DA39A3EE5E6B4B0D3255BFEF95601890AFD80709 test-1.0.0-full.nupkg 1024"
-            )
+              "DA39A3EE5E6B4B0D3255BFEF95601890AFD80709 test-1.0.0-full.nupkg 1024",
+            ),
           );
 
           const req = createMockRequest({
@@ -1709,7 +1709,7 @@ describe("Pecans", () => {
 
           expect(res.header).toHaveBeenCalledWith(
             "Content-Length",
-            expect.any(String)
+            expect.any(String),
           );
           expect(res.attachment).toHaveBeenCalledWith("RELEASES");
           expect(res.send).toHaveBeenCalled();
@@ -1723,10 +1723,10 @@ describe("Pecans", () => {
             },
           ];
           vi.spyOn(pecans.versions, "filter").mockResolvedValueOnce(
-            mockReleases as any
+            mockReleases as any,
           );
           vi.spyOn(mockBackend, "readAsset").mockResolvedValueOnce(
-            Buffer.from("mock RELEASES content")
+            Buffer.from("mock RELEASES content"),
           );
 
           const req = createMockRequest({
@@ -1774,7 +1774,7 @@ describe("Pecans", () => {
           // Should be UnsupportedPlatformError
           if (vi.isMockFunction(next)) {
             expect(next.mock.calls[0][0]).toBeInstanceOf(
-              UnsupportedPlatformError
+              UnsupportedPlatformError,
             );
           }
           isPlatformSpy.mockRestore();
@@ -1802,7 +1802,7 @@ describe("Pecans", () => {
             },
           ];
           vi.spyOn(pecans.versions, "filter").mockResolvedValueOnce(
-            mockReleases as any
+            mockReleases as any,
           );
 
           const req = createMockRequest({
@@ -1818,7 +1818,7 @@ describe("Pecans", () => {
 
         it("should call next with error on failure", async () => {
           vi.spyOn(pecans.versions, "filter").mockRejectedValueOnce(
-            new Error("Filter error")
+            new Error("Filter error"),
           );
 
           const req = createMockRequest({
@@ -1842,7 +1842,7 @@ describe("Pecans", () => {
           await (pecans as any).handleUpdateOSX(req, res, next);
 
           expect(next).toHaveBeenCalledWith(
-            new Error('Requires "version" parameter')
+            new Error('Requires "version" parameter'),
           );
         });
 
@@ -1856,7 +1856,7 @@ describe("Pecans", () => {
           await (pecans as any).handleUpdateOSX(req, res, next);
 
           expect(next).toHaveBeenCalledWith(
-            new Error('Requires "platform" parameter')
+            new Error('Requires "platform" parameter'),
           );
         });
       });
@@ -1915,7 +1915,7 @@ describe("Pecans", () => {
         const next = createMockNext();
 
         vi.spyOn(pecans, "getReleases").mockRejectedValueOnce(
-          new Error("Backend error")
+          new Error("Backend error"),
         );
 
         await (pecans as any).handleServeNotes(req, res, next);

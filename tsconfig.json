@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "allowSyntheticDefaultImports": true,
+    "declaration": true,
+    "esModuleInterop": true,
+    "lib": ["esnext"],
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "noEmit": true,
+    "noFallthroughCasesInSwitch": true,
+    "pretty": true,
+    "resolveJsonModule": true,
+    "rootDir": ".",
+    "skipLibCheck": true,
+    "strict": true,
+    "target": "es2022",
+    "types": ["node"]
+  },
+  "include": ["src", "test", "tsup.config.ts", "vitest.config.ts"],
+  "exclude": ["node_modules", "dist"]
+}

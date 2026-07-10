@@ -8,7 +8,6 @@ let mockListen: any;
 let mockUse: any;
 let mockAddress: any;
 let mockClose: any;
-let mockRouter: any;
 let mockServer: any;
 let mockApp: any;
 
@@ -116,7 +115,7 @@ describe("Server Startup Integration", () => {
 
       // Verify startup message was logged
       expect(consoleLogSpy).toHaveBeenCalledWith(
-        "Listening at http://127.0.0.1:3000"
+        "Listening at http://127.0.0.1:3000",
       );
     });
 
@@ -138,7 +137,7 @@ describe("Server Startup Integration", () => {
       await new Promise((resolve) => setTimeout(resolve, 10));
 
       expect(consoleLogSpy).toHaveBeenCalledWith(
-        "Lisening at unix:/tmp/server.sock"
+        "Lisening at unix:/tmp/server.sock",
       );
     });
 

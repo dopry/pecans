@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
   SUPPORTED_FILE_EXTENSIONS,
-  SupportedFileExtension,
   isSupportedFileExtension,
   getSupportedExt,
   getDownloadExtensionsByOs,
@@ -90,10 +89,10 @@ describe("SupportedFileExtension", () => {
     it("should handle complex filenames", () => {
       expect(getSupportedExt("my-app-v1.2.3-win32-x64.exe")).toBe(".exe");
       expect(getSupportedExt("software-2.0.0-darwin-universal.dmg")).toBe(
-        ".dmg"
+        ".dmg",
       );
       expect(getSupportedExt("package-1.5.0-linux-amd64.tar.gz")).toBe(
-        ".tar.gz"
+        ".tar.gz",
       );
       expect(getSupportedExt("app-3.1.0.linux.x86_64.rpm")).toBe(".rpm");
     });
@@ -139,7 +138,7 @@ describe("SupportedFileExtension", () => {
 
       it("should return default linux extensions for unknown package format", () => {
         expect(
-          getDownloadExtensionsByOs("linux", "unknown" as PackageFormat)
+          getDownloadExtensionsByOs("linux", "unknown" as PackageFormat),
         ).toEqual([".tgz", ".tar.gz"]);
       });
     });

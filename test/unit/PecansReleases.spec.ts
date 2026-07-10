@@ -5,7 +5,6 @@ import {
   PecansReleaseDTO,
 } from "../../src/models/PecansRelease.js";
 import { PecansAssetDTO } from "../../src/models/PecansAsset.js";
-import { PecansReleaseQuery } from "../../src/models/PecansReleaseQuery.js";
 import { channelFromVersion } from "../../src/utils/channelFromVersion.js";
 
 describe("PecansReleases", () => {
@@ -21,7 +20,7 @@ describe("PecansReleases", () => {
   const createMockReleaseDTO = (
     version: string,
     publishedAt: Date,
-    overrides: Partial<PecansReleaseDTO> = {}
+    overrides: Partial<PecansReleaseDTO> = {},
   ): PecansReleaseDTO => {
     // derive dependent fields from the version an override may replace, so
     // the fixture stays internally consistent
@@ -40,13 +39,13 @@ describe("PecansReleases", () => {
     it("should create instance with sorted releases", () => {
       const releases = [
         new PecansRelease(
-          createMockReleaseDTO("1.0.0", new Date("2023-01-01"))
+          createMockReleaseDTO("1.0.0", new Date("2023-01-01")),
         ),
         new PecansRelease(
-          createMockReleaseDTO("2.0.0", new Date("2023-02-01"))
+          createMockReleaseDTO("2.0.0", new Date("2023-02-01")),
         ),
         new PecansRelease(
-          createMockReleaseDTO("1.5.0", new Date("2023-01-15"))
+          createMockReleaseDTO("1.5.0", new Date("2023-01-15")),
         ),
       ];
 
@@ -62,16 +61,16 @@ describe("PecansReleases", () => {
     it("should group releases by channel", () => {
       const releases = [
         new PecansRelease(
-          createMockReleaseDTO("1.0.0", new Date("2023-01-01"))
+          createMockReleaseDTO("1.0.0", new Date("2023-01-01")),
         ), // stable
         new PecansRelease(
-          createMockReleaseDTO("1.1.0-beta.1", new Date("2023-01-10"))
+          createMockReleaseDTO("1.1.0-beta.1", new Date("2023-01-10")),
         ), // beta
         new PecansRelease(
-          createMockReleaseDTO("1.0.1", new Date("2023-01-05"))
+          createMockReleaseDTO("1.0.1", new Date("2023-01-05")),
         ), // stable
         new PecansRelease(
-          createMockReleaseDTO("1.1.0-alpha.1", new Date("2023-01-08"))
+          createMockReleaseDTO("1.1.0-alpha.1", new Date("2023-01-08")),
         ), // alpha
       ];
 
@@ -89,13 +88,13 @@ describe("PecansReleases", () => {
     it("should create channel metadata correctly", () => {
       const releases = [
         new PecansRelease(
-          createMockReleaseDTO("1.0.0", new Date("2023-01-01"))
+          createMockReleaseDTO("1.0.0", new Date("2023-01-01")),
         ),
         new PecansRelease(
-          createMockReleaseDTO("1.0.1", new Date("2023-01-05"))
+          createMockReleaseDTO("1.0.1", new Date("2023-01-05")),
         ),
         new PecansRelease(
-          createMockReleaseDTO("1.1.0", new Date("2023-01-10"))
+          createMockReleaseDTO("1.1.0", new Date("2023-01-10")),
         ),
       ];
 
@@ -113,13 +112,13 @@ describe("PecansReleases", () => {
     it("should handle mixed channels with different published dates", () => {
       const releases = [
         new PecansRelease(
-          createMockReleaseDTO("1.0.0", new Date("2023-01-01"))
+          createMockReleaseDTO("1.0.0", new Date("2023-01-01")),
         ), // stable
         new PecansRelease(
-          createMockReleaseDTO("2.0.0-beta.1", new Date("2023-02-01"))
+          createMockReleaseDTO("2.0.0-beta.1", new Date("2023-02-01")),
         ), // beta, newer date
         new PecansRelease(
-          createMockReleaseDTO("1.5.0", new Date("2023-01-15"))
+          createMockReleaseDTO("1.5.0", new Date("2023-01-15")),
         ), // stable
       ];
 
@@ -150,13 +149,13 @@ describe("PecansReleases", () => {
     it("should return all unique channel names", () => {
       const releases = [
         new PecansRelease(
-          createMockReleaseDTO("1.0.0", new Date("2023-01-01"))
+          createMockReleaseDTO("1.0.0", new Date("2023-01-01")),
         ), // stable
         new PecansRelease(
-          createMockReleaseDTO("1.1.0-beta.1", new Date("2023-01-10"))
+          createMockReleaseDTO("1.1.0-beta.1", new Date("2023-01-10")),
         ), // beta
         new PecansRelease(
-          createMockReleaseDTO("1.0.1", new Date("2023-01-05"))
+          createMockReleaseDTO("1.0.1", new Date("2023-01-05")),
         ), // stable
       ];
 
@@ -178,7 +177,7 @@ describe("PecansReleases", () => {
     const releases = [
       new PecansRelease(createMockReleaseDTO("1.0.0", new Date("2023-01-01"))),
       new PecansRelease(
-        createMockReleaseDTO("1.1.0-beta.1", new Date("2023-01-10"))
+        createMockReleaseDTO("1.1.0-beta.1", new Date("2023-01-10")),
       ),
     ];
     const pecansReleases = new PecansReleases(releases);
@@ -199,10 +198,10 @@ describe("PecansReleases", () => {
     it("should return all channels", () => {
       const releases = [
         new PecansRelease(
-          createMockReleaseDTO("1.0.0", new Date("2023-01-01"))
+          createMockReleaseDTO("1.0.0", new Date("2023-01-01")),
         ),
         new PecansRelease(
-          createMockReleaseDTO("1.1.0-beta.1", new Date("2023-01-10"))
+          createMockReleaseDTO("1.1.0-beta.1", new Date("2023-01-10")),
         ),
       ];
 
@@ -224,13 +223,13 @@ describe("PecansReleases", () => {
     it("should return all releases in sorted order", () => {
       const releases = [
         new PecansRelease(
-          createMockReleaseDTO("1.0.0", new Date("2023-01-01"))
+          createMockReleaseDTO("1.0.0", new Date("2023-01-01")),
         ),
         new PecansRelease(
-          createMockReleaseDTO("2.0.0", new Date("2023-02-01"))
+          createMockReleaseDTO("2.0.0", new Date("2023-02-01")),
         ),
         new PecansRelease(
-          createMockReleaseDTO("1.5.0", new Date("2023-01-15"))
+          createMockReleaseDTO("1.5.0", new Date("2023-01-15")),
         ),
       ];
 
@@ -248,7 +247,7 @@ describe("PecansReleases", () => {
     const releases = [
       new PecansRelease(createMockReleaseDTO("1.0.0", new Date("2023-01-01"))),
       new PecansRelease(
-        createMockReleaseDTO("1.1.0-beta.1", new Date("2023-01-10"))
+        createMockReleaseDTO("1.1.0-beta.1", new Date("2023-01-10")),
       ),
       new PecansRelease(createMockReleaseDTO("2.0.0", new Date("2023-02-01"))),
     ];
@@ -290,10 +289,10 @@ describe("PecansReleases", () => {
     it("should handle duplicate versions in same channel", () => {
       const releases = [
         new PecansRelease(
-          createMockReleaseDTO("1.0.0", new Date("2023-01-01"))
+          createMockReleaseDTO("1.0.0", new Date("2023-01-01")),
         ),
         new PecansRelease(
-          createMockReleaseDTO("1.0.0", new Date("2023-01-02"))
+          createMockReleaseDTO("1.0.0", new Date("2023-01-02")),
         ), // Same version, different date
       ];
 
@@ -309,13 +308,13 @@ describe("PecansReleases", () => {
     it("should handle prerelease versions correctly", () => {
       const releases = [
         new PecansRelease(
-          createMockReleaseDTO("1.0.0-alpha.1", new Date("2023-01-01"))
+          createMockReleaseDTO("1.0.0-alpha.1", new Date("2023-01-01")),
         ),
         new PecansRelease(
-          createMockReleaseDTO("1.0.0-beta.1", new Date("2023-01-05"))
+          createMockReleaseDTO("1.0.0-beta.1", new Date("2023-01-05")),
         ),
         new PecansRelease(
-          createMockReleaseDTO("1.0.0-rc.1", new Date("2023-01-10"))
+          createMockReleaseDTO("1.0.0-rc.1", new Date("2023-01-10")),
         ),
       ];
 

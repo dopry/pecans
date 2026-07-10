@@ -31,7 +31,6 @@ vi.mock("@octokit/webhooks", () => ({
 describe("PecansGitHubBackend", () => {
   let backend: PecansGitHubBackend;
   let consoleWarnSpy: ReturnType<typeof vi.spyOn>;
-  let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
 
   // Get references to mocked functions
   let mockOctokit: any;
@@ -45,7 +44,7 @@ describe("PecansGitHubBackend", () => {
     mockFetch = vi.fn();
     vi.stubGlobal("fetch", mockFetch);
     consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
-    consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.spyOn(console, "error").mockImplementation(() => {});
 
     // Initialize fresh mock instances
     mockOctokit = {
@@ -102,7 +101,7 @@ describe("PecansGitHubBackend", () => {
       delete process.env.GITHUB_OWNER;
 
       expect(() => PecansGitHubBackend.getEnvironment()).toThrow(
-        "GITHUB_OWNER environment variable is required."
+        "GITHUB_OWNER environment variable is required.",
       );
     });
 
@@ -111,7 +110,7 @@ describe("PecansGitHubBackend", () => {
       delete process.env.GITHUB_REPO;
 
       expect(() => PecansGitHubBackend.getEnvironment()).toThrow(
-        "GITHUB_REPO environment variable is required."
+        "GITHUB_REPO environment variable is required.",
       );
     });
 
@@ -123,7 +122,7 @@ describe("PecansGitHubBackend", () => {
       const env = PecansGitHubBackend.getEnvironment();
 
       expect(consoleWarnSpy).toHaveBeenCalledWith(
-        "GITHUB_TOKEN environment variable was not provided, if your repo is private you will need to provide a token."
+        "GITHUB_TOKEN environment variable was not provided, if your repo is private you will need to provide a token.",
       );
       expect(env.GITHUB_TOKEN).toBeUndefined();
     });
@@ -132,7 +131,7 @@ describe("PecansGitHubBackend", () => {
       process.env.PREFIX_GITHUB_REPO = "test-repo";
 
       expect(() => PecansGitHubBackend.getEnvironment("PREFIX")).toThrow(
-        "PREFIX_GITHUB_OWNER environment variable is required."
+        "PREFIX_GITHUB_OWNER environment variable is required.",
       );
     });
 
@@ -143,7 +142,7 @@ describe("PecansGitHubBackend", () => {
       PecansGitHubBackend.getEnvironment("PREFIX");
 
       expect(consoleWarnSpy).toHaveBeenCalledWith(
-        "PREFIX_GITHUB_TOKEN environment variable was not provided, if your repo is private you will need to provide a token."
+        "PREFIX_GITHUB_TOKEN environment variable was not provided, if your repo is private you will need to provide a token.",
       );
     });
   });
@@ -191,19 +190,19 @@ describe("PecansGitHubBackend", () => {
 
       expect(backend).toBeInstanceOf(PecansGitHubBackend);
       expect(consoleWarnSpy).toHaveBeenCalledWith(
-        "Github Token not provided, ensure the repo is public"
+        "Github Token not provided, ensure the repo is public",
       );
     });
 
     it("should throw error if owner is missing", () => {
       expect(() => new PecansGitHubBackend("", "repo", "token")).toThrow(
-        "Github Owner Required"
+        "Github Owner Required",
       );
     });
 
     it("should throw error if repo is missing", () => {
       expect(() => new PecansGitHubBackend("owner", "", "token")).toThrow(
-        "Github Repo Required"
+        "Github Repo Required",
       );
     });
 
@@ -212,7 +211,7 @@ describe("PecansGitHubBackend", () => {
 
       expect(backend).toBeInstanceOf(PecansGitHubBackend);
       expect(consoleWarnSpy).toHaveBeenCalledWith(
-        "Github Token not provided, ensure the repo is public"
+        "Github Token not provided, ensure the repo is public",
       );
     });
   });
@@ -269,7 +268,7 @@ describe("PecansGitHubBackend", () => {
 
       expect(mockWebhooks.on).toHaveBeenCalledWith(
         "release",
-        expect.any(Function)
+        expect.any(Function),
       );
     });
 
@@ -286,7 +285,7 @@ describe("PecansGitHubBackend", () => {
 
       // Get the callback that was registered and trigger it
       const releaseCallback = mockWebhooks.on.mock.calls.find(
-        (call: any) => call[0] === "release"
+        (call: any) => call[0] === "release",
       )?.[1];
       expect(releaseCallback).toBeDefined();
 
@@ -338,7 +337,7 @@ describe("PecansGitHubBackend", () => {
 
       expect(mockOctokit.paginate).toHaveBeenCalledWith(
         mockOctokit.rest.repos.listReleases,
-        { owner: "test-owner", repo: "test-repo" }
+        { owner: "test-owner", repo: "test-repo" },
       );
       expect(result.getReleases()).toHaveLength(1);
     });
@@ -393,7 +392,7 @@ describe("PecansGitHubBackend", () => {
       await backend.serveAsset(asset, mockResponse as Response);
 
       expect(mockResponse.redirect).toHaveBeenCalledWith(
-        asset.raw.browser_download_url
+        asset.raw.browser_download_url,
       );
     });
 
@@ -418,7 +417,7 @@ describe("PecansGitHubBackend", () => {
           get: vi
             .fn()
             .mockReturnValue(
-              "https://github-releases.s3.amazonaws.com/temp-url"
+              "https://github-releases.s3.amazonaws.com/temp-url",
             ),
         },
       } as any;
@@ -434,10 +433,10 @@ describe("PecansGitHubBackend", () => {
             Authorization: "token token",
           },
           redirect: "manual",
-        }
+        },
       );
       expect(mockResponse.redirect).toHaveBeenCalledWith(
-        "https://github-releases.s3.amazonaws.com/temp-url"
+        "https://github-releases.s3.amazonaws.com/temp-url",
       );
     });
 
@@ -465,7 +464,7 @@ describe("PecansGitHubBackend", () => {
       mockFetch.mockResolvedValue(mockFetchResponse);
 
       await expect(
-        backend.serveAsset(asset, mockResponse as Response)
+        backend.serveAsset(asset, mockResponse as Response),
       ).rejects.toThrow("Unable to load asset url");
     });
   });
@@ -689,7 +688,7 @@ describe("PecansGitHubBackend", () => {
       expect(result.assets).toHaveLength(1);
       expect(consoleLogSpy).toHaveBeenCalledWith(
         "failed to normalize asset",
-        expect.any(Error)
+        expect.any(Error),
       );
     });
   });
@@ -733,25 +732,25 @@ describe("GitHubBackend (deprecated)", () => {
     expect(backend).toBeInstanceOf(GitHubBackend);
     expect(backend).toBeInstanceOf(PecansGitHubBackend);
     expect(consoleWarnSpy).toHaveBeenCalledWith(
-      "GitHubBackend has been deprecated in favor of the namespaced PecansGithubBackend"
+      "GitHubBackend has been deprecated in favor of the namespaced PecansGithubBackend",
     );
   });
 
   it("should throw error if token is missing", () => {
     expect(() => new GitHubBackend("", "owner", "repo")).toThrow(
-      "Github Token Required"
+      "Github Token Required",
     );
   });
 
   it("should throw error if owner is missing", () => {
     expect(() => new GitHubBackend("token", "", "repo")).toThrow(
-      "Github Owner Required"
+      "Github Owner Required",
     );
   });
 
   it("should throw error if repo is missing", () => {
     expect(() => new GitHubBackend("token", "owner", "")).toThrow(
-      "Github Repo Required"
+      "Github Repo Required",
     );
   });
 });

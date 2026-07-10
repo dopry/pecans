@@ -78,7 +78,7 @@ export abstract class Backend {
   // ex) `app.use(backend.getRefreshMiddleware('/api/backend/refresh'))`
   getRefreshWebhookMiddleware(
     // path that the firmware will watch.
-    path: string
+    path: string,
   ): (req: Request, res: Response, nex: NextFunction) => void {
     // the default refresh callback expects a base64 encoded sha256 hash of the refreshSecret.
     // the secret is to prevent DOS attacks against update infrastructure.
@@ -117,7 +117,7 @@ export abstract class Backend {
 
   // Return stream for an asset
   async getAssetStream(
-    asset: PecansAsset
+    asset: PecansAsset,
   ): Promise<NodeJS.ReadableStream | null> {
     throw Error("Abstract Method");
   }
@@ -150,10 +150,13 @@ export abstract class Backend {
       if (error instanceof Error) {
         if (error.message.includes("Premature close")) {
           throw new Error(
-            `Stream closed unexpectedly while reading asset ${asset.id}: ${error.message}`
+            `Stream closed unexpectedly while reading asset ${asset.id}: ${error.message}`,
+            { cause: error },
           );
         }
-        throw new Error(`Failed to read asset ${asset.id}: ${error.message}`);
+        throw new Error(`Failed to read asset ${asset.id}: ${error.message}`, {
+          cause: error,
+        });
       }
       throw error;
     }

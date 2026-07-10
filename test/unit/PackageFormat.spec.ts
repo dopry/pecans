@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
   PACKAGE_FORMATS,
-  PackageFormat,
   isPackageFormat,
   filenameToPackageFormat,
   getPkgFromQuery,
@@ -72,10 +71,10 @@ describe("PackageFormat", () => {
 
     it("should handle complex filenames", () => {
       expect(filenameToPackageFormat("my-app-v1.2.3-linux-amd64.deb")).toBe(
-        "deb"
+        "deb",
       );
       expect(filenameToPackageFormat("software-2.0.0-1.el8.x86_64.rpm")).toBe(
-        "rpm"
+        "rpm",
       );
       expect(filenameToPackageFormat("package-1.0-rc1.noarch.rpm")).toBe("rpm");
     });

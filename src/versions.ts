@@ -1,4 +1,3 @@
-import semver from "semver";
 import { Backend } from "./backends/";
 import { PecansRelease } from "./models/PecansRelease";
 import { sortReleaseBySemVerDescending } from "./utils/sortReleaseBySemVerDescending";
@@ -33,7 +32,7 @@ export class Versions {
     const _opts: VersionFilterOpts = Object.assign(
       {},
       Versions.filterDefaults,
-      opts
+      opts,
     );
 
     if (_opts.platform !== undefined && !isPlatform(_opts.platform)) {
