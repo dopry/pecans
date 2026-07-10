@@ -34,7 +34,7 @@ export interface SquirrelMacUpdate {
  * requirement.
  */
 export function expectSquirrelMacResponse(
-  body: unknown
+  body: unknown,
 ): asserts body is SquirrelMacUpdate {
   // explicit null guard: typeof null is also "object"
   expect(body).not.toBeNull();
@@ -48,7 +48,7 @@ export function expectSquirrelMacResponse(
   // client-required when present: ISO 8601 pub_date
   expect(update.pub_date).toBeTypeOf("string");
   expect(new Date(update.pub_date as string).toISOString()).toBe(
-    update.pub_date
+    update.pub_date,
   );
 
   // pecans-output pin: we always emit exactly these four keys

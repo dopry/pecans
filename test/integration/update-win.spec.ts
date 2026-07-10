@@ -39,7 +39,7 @@ describe("/update/:platform/:version/RELEASES (Squirrel.Windows)", () => {
 
   async function setupReleasesRequest(
     releases = buildStableReleaseSet(OWNER, REPO),
-    latest = "2.7.0"
+    latest = "2.7.0",
   ) {
     const { app, backend } = configureTestAppWithReleases(releases);
     const releasesAsset = await findAsset(backend, latest, "RELEASES");
@@ -48,7 +48,7 @@ describe("/update/:platform/:version/RELEASES (Squirrel.Windows)", () => {
       OWNER,
       REPO,
       releasesAsset,
-      buildRELEASESContentForVersion(latest)
+      buildRELEASESContentForVersion(latest),
     );
     return { app, backend };
   }
@@ -70,18 +70,16 @@ describe("/update/:platform/:version/RELEASES (Squirrel.Windows)", () => {
     // absolute URL on the requesting host
     expect(deltaLine).toBe(
       `${fakeSha1("app-2.7.0-x64-delta.nupkg")} ` +
-        `${urlOf(res, "app-2.7.0-x64-delta.nupkg")} ${SQUIRREL_DELTA_SIZE}`
+        `${urlOf(res, "app-2.7.0-x64-delta.nupkg")} ${SQUIRREL_DELTA_SIZE}`,
     );
     expect(fullLine).toBe(
       `${fakeSha1("app-2.7.0-x64-full.nupkg")} ` +
-        `${urlOf(res, "app-2.7.0-x64-full.nupkg")} ${SQUIRREL_NUPKG_SIZE}`
+        `${urlOf(res, "app-2.7.0-x64-full.nupkg")} ${SQUIRREL_NUPKG_SIZE}`,
     );
 
     // headers Squirrel.Windows relies on; Content-Length is bytes, so
     // compare against byteLength (equal to .length only for ASCII)
-    expect(res.headers["content-length"]).toBe(
-      String(Buffer.byteLength(text))
-    );
+    expect(res.headers["content-length"]).toBe(String(Buffer.byteLength(text)));
     expect(res.headers["content-disposition"]).toContain("RELEASES");
   });
 
@@ -124,7 +122,7 @@ describe("/update/:platform/:version/RELEASES (Squirrel.Windows)", () => {
   it("serves the channel's RELEASES via the channel route", async () => {
     const { app } = await setupReleasesRequest(
       buildMixedChannelReleaseSet(OWNER, REPO),
-      "2.8.0-beta.2"
+      "2.8.0-beta.2",
     );
     const res = await supertest(app)
       .get("/update/channel/beta/windows_64/2.8.0-beta.1/RELEASES")
@@ -136,7 +134,7 @@ describe("/update/:platform/:version/RELEASES (Squirrel.Windows)", () => {
 
   it("500s when no release matches the version range", async () => {
     const { app } = configureTestAppWithReleases(
-      buildStableReleaseSet(OWNER, REPO)
+      buildStableReleaseSet(OWNER, REPO),
     );
     // ">=999.0.0" matches nothing -> "Version not found" -> plain Error -> 500
     await supertest(app).get("/update/windows_64/999.0.0/RELEASES").expect(500);
@@ -149,9 +147,9 @@ describe("/update/:platform/:version/RELEASES (Squirrel.Windows)", () => {
         repo: REPO,
         version,
         assets: buildFullPlatformAssets(OWNER, REPO, version).filter(
-          (a) => a.name !== "RELEASES"
+          (a) => a.name !== "RELEASES",
         ),
-      })
+      }),
     );
     const { app } = configureTestAppWithReleases(releases);
     const res = await supertest(app)
@@ -165,7 +163,7 @@ describe("/update/:platform/:version/RELEASES (Squirrel.Windows)", () => {
   // endorsed.
   it("500s for win32 clients when only x64 assets exist", async () => {
     const { app } = configureTestAppWithReleases(
-      buildStableReleaseSet(OWNER, REPO)
+      buildStableReleaseSet(OWNER, REPO),
     );
     await supertest(app).get("/update/win32/2.5.0/RELEASES").expect(500);
   });

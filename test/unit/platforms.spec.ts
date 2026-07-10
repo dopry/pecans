@@ -24,7 +24,7 @@ type FilenameResolveTestTuple = [
   arch: Architecture | null,
   pkg: PackageFormat | undefined,
   /** null means it will throw */
-  platform: Platform | null
+  platform: Platform | null,
 ];
 
 const release: PecansReleaseDTO = {
@@ -222,7 +222,7 @@ const fileNameByPlatformTests: [platform: Platform, filename: string][] = [
 
 const fileNameByPlatformUniversalTests: [
   platform: Platform,
-  filename: string
+  filename: string,
 ][] = [
   [platforms.OSX, "test-3.3.1-darwin-universal.dmg"],
   [platforms.OSX_UNIVERSAL, "test-3.3.1-darwin-universal.dmg"],
@@ -240,7 +240,7 @@ const fileNameByPlatformUniversalTests: [
 const fileNameByPlatformAndExtTests: [
   platform: Platform,
   ext: SupportedFileExtension,
-  filename: string
+  filename: string,
 ][] = [
   ["osx_64", ".zip", "test-3.3.1-darwin-x64.zip"],
   ["osx_arm64", ".zip", "test-3.3.1-darwin-arm64.zip"],
@@ -251,7 +251,7 @@ const fileNameByPlatformAndExtTests: [
 const fileNameByPlatformAndExtUniversalTests: [
   platform: Platform,
   ext: SupportedFileExtension,
-  filename: string
+  filename: string,
 ][] = [
   [platforms.OSX, ".zip", "test-3.3.1-darwin-universal.zip"],
   [platforms.OSX_UNIVERSAL, ".zip", "test-3.3.1-darwin-universal.zip"],
@@ -329,7 +329,7 @@ describe("Platforms", function () {
           release,
           platform,
           false,
-          ext
+          ext,
         );
         expect(target.filename).toBe(filename);
       });
@@ -355,7 +355,7 @@ describe("Platforms", function () {
         const target = resolveReleaseAssetForVersion(
           releaseWithoutUniversal,
           platform,
-          true
+          true,
         );
         if (platform === platforms.OSX_UNIVERSAL) {
           // these have been removed, so expect undefined
@@ -374,11 +374,11 @@ describe("Platforms", function () {
             release,
             platform,
             true,
-            ext
+            ext,
           );
           expect(target.filename).toBe(filename);
         });
-      }
+      },
     );
 
     // test that we fall back to conventional assets when universal are not available and the extension is specified
@@ -388,7 +388,7 @@ describe("Platforms", function () {
           releaseWithoutUniversal,
           platform,
           true,
-          ext
+          ext,
         );
         if (platform === platforms.OSX_UNIVERSAL) {
           // these have been removed, so expect undefined
@@ -414,10 +414,10 @@ describe("Platforms", function () {
 
     it("should throw error for invalid platform strings", () => {
       expect(() => platformToType("invalid_64" as Platform)).toThrow(
-        "Unrecognized OS in platform string"
+        "Unrecognized OS in platform string",
       );
       expect(() => platformToType("unknown" as Platform)).toThrow(
-        "Unrecognized OS in platform string"
+        "Unrecognized OS in platform string",
       );
     });
   });

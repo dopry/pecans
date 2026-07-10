@@ -69,7 +69,7 @@ export function toSemver(tag: string) {
 // Parse RELEASES file
 // https://github.com/Squirrel/Squirrel.Windows/blob/0d1250aa6f0c25fe22e92add78af327d1277d97d/src/Squirrel/ReleaseExtensions.cs#L19
 export async function parseRELEASES(
-  content: string
+  content: string,
 ): Promise<SquirrelRelease[]> {
   const stripped = stripBom(content);
   const normalizedEOL = stripped.replace("\r\n", "\n");

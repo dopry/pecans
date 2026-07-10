@@ -12,7 +12,7 @@ export function isArchitecture(obj: unknown): obj is Architecture {
 
 export function filenameToArchitecture(
   filename: string,
-  os: OperatingSystem
+  os: OperatingSystem,
 ): Architecture {
   const name = filename.toLowerCase();
   if (name == "releases") return "universal";
@@ -47,7 +47,7 @@ export function getSupportedArchByOs(os: OperatingSystem): Architecture[] {
 
 export function isValidArchForOS(
   os: OperatingSystem,
-  arch: string
+  arch: string,
 ): arch is Architecture {
   const supported = getSupportedArchByOs(os);
   return supported.includes(arch as Architecture);

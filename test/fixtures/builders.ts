@@ -44,7 +44,8 @@ export function publishedAtForVersion(version: string): string {
 }
 
 export function buildRelease(opts: BuildReleaseOpts): Partial<GithubRelease> {
-  const notes = opts.notes === undefined ? `Notes for ${opts.version}` : opts.notes;
+  const notes =
+    opts.notes === undefined ? `Notes for ${opts.version}` : opts.notes;
   const published_at = opts.published_at ?? publishedAtForVersion(opts.version);
   return mock_github_release(
     opts.owner,
@@ -54,7 +55,7 @@ export function buildRelease(opts: BuildReleaseOpts): Partial<GithubRelease> {
     opts.draft ?? false,
     opts.prerelease ?? false,
     notes,
-    published_at
+    published_at,
   );
 }
 
@@ -62,7 +63,7 @@ export function buildAsset(
   owner: string,
   repo: string,
   filename: string,
-  opts: MockGithubAssetOpts = {}
+  opts: MockGithubAssetOpts = {},
 ): Partial<GithubReleaseAsset> {
   return mock_github_asset(owner, repo, filename, opts);
 }
@@ -83,7 +84,7 @@ export function buildMacAssets(owner: string, repo: string, version: string) {
 export function buildWindowsAssets(
   owner: string,
   repo: string,
-  version: string
+  version: string,
 ) {
   return [
     buildAsset(owner, repo, `app-${version}-x64-setup.exe`),
@@ -109,7 +110,7 @@ export function buildLinuxAssets(owner: string, repo: string, version: string) {
 export function buildFullPlatformAssets(
   owner: string,
   repo: string,
-  version: string
+  version: string,
 ) {
   return [
     ...buildMacAssets(owner, repo, version),
@@ -134,7 +135,7 @@ export function buildStableReleaseSet(owner: string, repo: string) {
       repo,
       version,
       assets: buildFullPlatformAssets(owner, repo, version),
-    })
+    }),
   );
 }
 
@@ -151,7 +152,7 @@ export function buildMixedChannelReleaseSet(owner: string, repo: string) {
       version,
       prerelease: true,
       assets: buildFullPlatformAssets(owner, repo, version),
-    })
+    }),
   );
   return [...beta, ...buildStableReleaseSet(owner, repo)];
 }

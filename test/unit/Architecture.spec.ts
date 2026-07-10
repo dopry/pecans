@@ -49,11 +49,11 @@ describe("Architecture", () => {
 
       it("should detect universal architecture", () => {
         expect(filenameToArchitecture("app-universal.dmg", "osx")).toBe(
-          "universal"
+          "universal",
         );
         expect(filenameToArchitecture("app-univ.zip", "osx")).toBe("universal");
         expect(filenameToArchitecture("MyApp-Universal.exe", "windows")).toBe(
-          "universal"
+          "universal",
         );
       });
     });
@@ -62,10 +62,10 @@ describe("Architecture", () => {
       it("should detect arm64 architecture", () => {
         expect(filenameToArchitecture("app-arm64.dmg", "osx")).toBe("arm64");
         expect(filenameToArchitecture("myapp-darwin-arm64.zip", "osx")).toBe(
-          "arm64"
+          "arm64",
         );
         expect(filenameToArchitecture("APP-ARM64.exe", "windows")).toBe(
-          "arm64"
+          "arm64",
         );
       });
 
@@ -89,7 +89,7 @@ describe("Architecture", () => {
         expect(filenameToArchitecture("app.dmg", "osx")).toBe("64");
         expect(filenameToArchitecture("myapp.exe", "windows")).toBe("64");
         expect(filenameToArchitecture("someapp-unknown.tar.gz", "linux")).toBe(
-          "64"
+          "64",
         );
         expect(filenameToArchitecture("app-weird-name.zip", "osx")).toBe("64");
       });
@@ -98,10 +98,10 @@ describe("Architecture", () => {
     describe("case insensitive matching", () => {
       it("should handle mixed case filenames", () => {
         expect(filenameToArchitecture("App-UNIVERSAL.DMG", "osx")).toBe(
-          "universal"
+          "universal",
         );
         expect(filenameToArchitecture("MyApp-ARM64.EXE", "windows")).toBe(
-          "arm64"
+          "arm64",
         );
         expect(filenameToArchitecture("app-IA32.DEB", "linux")).toBe("32");
       });

@@ -13,7 +13,7 @@ import { nockGithubListReleases } from "./nock/nockGithubListReleases";
  */
 
 export function configurePecansGitHubBackend(
-  opts: PecansGitHubBackendOpts = {}
+  opts: PecansGitHubBackendOpts = {},
 ) {
   const env = PecansGitHubBackend.getEnvironment();
   const backend = PecansGitHubBackend.FromEnv(env, opts);
@@ -22,7 +22,7 @@ export function configurePecansGitHubBackend(
 
 export function configurePecansTestApp(
   backend: PecansGitHubBackend,
-  opts: PecansOptions = {}
+  opts: PecansOptions = {},
 ) {
   const pecans = new Pecans(backend, opts);
   const app = express();
@@ -37,7 +37,7 @@ export function configurePecansTestApp(
 export function configureTestAppWithReleases(
   releases: Partial<GithubRelease>[],
   backendOpts: PecansGitHubBackendOpts = {},
-  pecansOpts: PecansOptions = {}
+  pecansOpts: PecansOptions = {},
 ) {
   const { env, backend } = configurePecansGitHubBackend(backendOpts);
   nockGithubListReleases(nock, env.GITHUB_OWNER, env.GITHUB_REPO, releases);
@@ -53,7 +53,7 @@ export function configureTestAppWithReleases(
 export async function findAsset(
   backend: PecansGitHubBackend,
   version: string,
-  filename: string
+  filename: string,
 ): Promise<PecansAsset> {
   const releases = await backend.releases();
   const release = releases.getReleases().find((r) => r.version === version);

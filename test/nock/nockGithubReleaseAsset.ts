@@ -5,7 +5,7 @@ export function nockGithubReleasesAssetRedirect(
   nock: Nock,
   owner: string,
   repo: string,
-  asset: PecansAsset
+  asset: PecansAsset,
 ) {
   nock("https://api.github.com:443", { encodedQueryParams: true })
     .get(`/repos/${owner}/${repo}/releases/assets/${asset.id}`)

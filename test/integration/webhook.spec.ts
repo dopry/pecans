@@ -2,7 +2,11 @@ import { Webhooks } from "@octokit/webhooks";
 import nock from "nock";
 import supertest from "supertest";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { buildStableReleaseSet, buildRelease, buildFullPlatformAssets } from "../fixtures/builders";
+import {
+  buildStableReleaseSet,
+  buildRelease,
+  buildFullPlatformAssets,
+} from "../fixtures/builders";
 import { configureTestAppWithReleases } from "../harness";
 import { nockGithubListReleases } from "../nock/nockGithubListReleases";
 
@@ -30,7 +34,7 @@ describe("/webhook/refresh (GitHub release webhook)", () => {
   it("busts the release cache on a signed release event", async () => {
     const { app } = configureTestAppWithReleases(
       buildStableReleaseSet(OWNER, REPO),
-      { refreshSecret: SECRET }
+      { refreshSecret: SECRET },
     );
 
     // warm the cache with the initial release list
@@ -71,7 +75,7 @@ describe("/webhook/refresh (GitHub release webhook)", () => {
   it("rejects a bad signature", async () => {
     const { app } = configureTestAppWithReleases(
       buildStableReleaseSet(OWNER, REPO),
-      { refreshSecret: SECRET }
+      { refreshSecret: SECRET },
     );
     const { payload } = await signedReleaseEvent(SECRET);
     const res = await supertest(app)
@@ -88,7 +92,7 @@ describe("/webhook/refresh (GitHub release webhook)", () => {
 
   it("is a no-op 404 when no refreshSecret is configured", async () => {
     const { app } = configureTestAppWithReleases(
-      buildStableReleaseSet(OWNER, REPO)
+      buildStableReleaseSet(OWNER, REPO),
     );
     const { payload, signature } = await signedReleaseEvent(SECRET);
     await supertest(app)

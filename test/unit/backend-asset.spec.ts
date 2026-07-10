@@ -20,7 +20,7 @@ class MockReadableStream extends Readable {
       errorMessage?: string;
       shouldClose?: boolean;
       emitDelay?: number;
-    } = {}
+    } = {},
   ) {
     super();
     this.chunks = options.chunks || [];
@@ -76,7 +76,7 @@ class TestAssetBackend extends Backend {
   }
 
   async getAssetStream(
-    asset: PecansAsset
+    asset: PecansAsset,
   ): Promise<NodeJS.ReadableStream | null> {
     this.getAssetStreamCalls.push(asset);
     return this.mockStream;
@@ -202,7 +202,7 @@ describe("Backend Asset Reading", () => {
         backend.setMockStream(stream);
 
         await expect(backend.readAsset(mockAsset)).rejects.toThrow(
-          "Network error"
+          "Network error",
         );
       });
 
@@ -216,7 +216,7 @@ describe("Backend Asset Reading", () => {
         backend.setMockStream(stream);
 
         await expect(backend.readAsset(mockAsset)).rejects.toThrow(
-          "Connection lost"
+          "Connection lost",
         );
       });
 
@@ -230,7 +230,7 @@ describe("Backend Asset Reading", () => {
         backend.setMockStream(stream);
 
         await expect(backend.readAsset(mockAsset)).rejects.toThrow(
-          "Custom error"
+          "Custom error",
         );
       });
     });
@@ -257,7 +257,7 @@ describe("Backend Asset Reading", () => {
         backend.setMockStream(stream);
 
         await expect(backend.readAsset(mockAsset)).rejects.toThrow(
-          "Test error"
+          "Test error",
         );
 
         // After an error, the stream should be in an error state or destroyed
@@ -295,7 +295,7 @@ describe("Backend Asset Reading", () => {
         // In Node.js 22.x, this would cause the promise to hang or fail
         // This test documents the current limitation
         await expect(backend.readAsset(mockAsset)).rejects.toThrow(
-          "Premature close"
+          "Premature close",
         );
       });
 
@@ -321,7 +321,7 @@ describe("Backend Asset Reading", () => {
         // Current implementation will fail with premature close
         // Future implementation should handle this gracefully
         await expect(backend.readAsset(mockAsset)).rejects.toThrow(
-          /Premature close|Stream closed unexpectedly/
+          /Premature close|Stream closed unexpectedly/,
         );
       });
 
@@ -424,7 +424,7 @@ describe("Backend Asset Reading", () => {
       it("should efficiently concatenate many small chunks", async () => {
         const numChunks = 1000;
         const chunks = Array.from({ length: numChunks }, (_, i) =>
-          Buffer.from(`chunk${i}`)
+          Buffer.from(`chunk${i}`),
         );
         const stream = new MockReadableStream({ chunks });
         backend.setMockStream(stream);

@@ -10,7 +10,7 @@ import { channelFromVersion } from "../../src/utils/channelFromVersion.js";
 
 describe("PecansRelease", () => {
   const createMockAssetDTO = (
-    overrides: Partial<PecansAssetDTO> = {}
+    overrides: Partial<PecansAssetDTO> = {},
   ): PecansAssetDTO => ({
     content_type: "application/octet-stream",
     filename: "test-app-osx.dmg",
@@ -22,7 +22,7 @@ describe("PecansRelease", () => {
   });
 
   const createMockReleaseDTO = (
-    overrides: Partial<PecansReleaseDTO> = {}
+    overrides: Partial<PecansReleaseDTO> = {},
   ): PecansReleaseDTO => {
     const version = overrides.version ?? "1.0.0";
     return {
@@ -53,7 +53,7 @@ describe("PecansRelease", () => {
       const release = new PecansRelease(
         createMockReleaseDTO({
           version: "1.0.0-beta.1",
-        })
+        }),
       );
       expect(release.channel).toBe("beta");
     });
@@ -65,7 +65,7 @@ describe("PecansRelease", () => {
         createMockReleaseDTO({
           version: "1.0.0-beta.1",
           channel: "nightly",
-        })
+        }),
       );
       expect(release.channel).toBe("beta");
     });
@@ -97,7 +97,7 @@ describe("PecansRelease", () => {
       const release = new PecansRelease(
         createMockReleaseDTO({
           assets: [],
-        })
+        }),
       );
       expect(release.assets).toHaveLength(0);
     });
@@ -111,7 +111,7 @@ describe("PecansRelease", () => {
           createMockAssetDTO({ filename: "app-osx.dmg" }),
           createMockAssetDTO({ filename: "app-linux.deb" }),
         ],
-      })
+      }),
     );
 
     it("should return true when all query conditions are satisfied", () => {
@@ -157,7 +157,7 @@ describe("PecansRelease", () => {
           createMockAssetDTO({ filename: "app-linux.deb" }),
           createMockAssetDTO({ filename: "app-windows.exe" }),
         ],
-      })
+      }),
     );
 
     it("should return all assets for empty query", () => {
@@ -181,7 +181,7 @@ describe("PecansRelease", () => {
     const release = new PecansRelease(
       createMockReleaseDTO({
         version: "1.0.0-beta.1", // Channel will be "beta"
-      })
+      }),
     );
 
     it("should return true when channel is undefined", () => {
@@ -205,7 +205,7 @@ describe("PecansRelease", () => {
     const release = new PecansRelease(
       createMockReleaseDTO({
         version: "1.2.3",
-      })
+      }),
     );
 
     it("should return true when range is undefined", () => {
@@ -230,7 +230,7 @@ describe("PecansRelease", () => {
 
     it("should throw error for invalid range", () => {
       expect(() => release.satisfiesSemVerRange("invalid-range")).toThrow(
-        "Invalid Range Specified"
+        "Invalid Range Specified",
       );
     });
   });
@@ -240,7 +240,7 @@ describe("PecansRelease", () => {
       const release = new PecansRelease(
         createMockReleaseDTO({
           version: "1.0.0-alpha.1",
-        })
+        }),
       );
       expect(release.channel).toBe("alpha");
       expect(release.satisfiesSemVerRange(">=1.0.0-alpha")).toBe(true);
@@ -250,7 +250,7 @@ describe("PecansRelease", () => {
       const release = new PecansRelease(
         createMockReleaseDTO({
           version: "1.0.0",
-        })
+        }),
       );
       expect(release.channel).toBe("stable");
     });
@@ -259,11 +259,11 @@ describe("PecansRelease", () => {
       const release = new PecansRelease(
         createMockReleaseDTO({
           version: "2.1.5",
-        })
+        }),
       );
       expect(release.satisfiesSemVerRange(">=2.0.0 <3.0.0")).toBe(true);
       expect(
-        release.satisfiesSemVerRange("1.x || >=2.5.0 || 5.0.0 - 7.2.3")
+        release.satisfiesSemVerRange("1.x || >=2.5.0 || 5.0.0 - 7.2.3"),
       ).toBe(false);
     });
   });

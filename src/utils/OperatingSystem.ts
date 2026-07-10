@@ -2,7 +2,7 @@ import QueryString from "qs";
 import useragent from "express-useragent";
 
 export const OPERATING_SYSTEMS = ["linux", "osx", "windows"] as const;
-export type OperatingSystem = typeof OPERATING_SYSTEMS[number];
+export type OperatingSystem = (typeof OPERATING_SYSTEMS)[number];
 // check if a string is an OS identifier
 export function isOperatingSystem(obj: unknown): obj is OperatingSystem {
   return (
@@ -42,7 +42,7 @@ export function filenameToOperatingSystem(filename: string): OperatingSystem {
 }
 
 export function getOsFromUserAgent(
-  useragent?: useragent.Details
+  useragent?: useragent.Details,
 ): OperatingSystem | undefined {
   if (!useragent) return;
   if (useragent.isMac) return "osx";
@@ -52,7 +52,7 @@ export function getOsFromUserAgent(
 }
 
 export function getOsFromQuery(
-  query: QueryString.ParsedQs
+  query: QueryString.ParsedQs,
 ): OperatingSystem | undefined {
   return query.os && typeof query.os === "string" && isOperatingSystem(query.os)
     ? query.os
