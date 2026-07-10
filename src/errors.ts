@@ -65,7 +65,15 @@ export function errorHandler() {
     if (statusCode >= 500) {
       console.error(err instanceof Error ? (err.stack ?? err) : err);
     }
+    // text first: clients sending Accept: */* get plain text (matching the
+    // pre-typed-errors middleware); JSON is served when explicitly requested
     res.status(statusCode).format({
+      "text/plain": () => {
+        res.send(message);
+      },
+      "text/html": () => {
+        res.send(message);
+      },
       "application/json": () => {
         res.send({ error: message, code: statusCode });
       },

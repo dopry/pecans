@@ -165,6 +165,31 @@ describe("/notes", () => {
     expect(res.text).toBe("## 2.6.0\n\nNotes for 2.6.0\n");
   });
 
+  it("honors the :version path parameter", async () => {
+    const { app } = configureTestAppWithReleases(
+      buildStableReleaseSet(OWNER, REPO),
+    );
+    const res = await supertest(app)
+      .get("/notes/2.6.0")
+      .set("Accept", "application/json")
+      .expect(200);
+    expect(res.body).toEqual({ note: "## 2.6.0\n\nNotes for 2.6.0\n" });
+  });
+
+  it("404s for an unknown path version", async () => {
+    const { app } = configureTestAppWithReleases(
+      buildStableReleaseSet(OWNER, REPO),
+    );
+    await supertest(app).get("/notes/99.0.0").expect(404);
+  });
+
+  it("400s for an invalid path version", async () => {
+    const { app } = configureTestAppWithReleases(
+      buildStableReleaseSet(OWNER, REPO),
+    );
+    await supertest(app).get("/notes/not-a-version").expect(400);
+  });
+
   it("404s for an unknown version", async () => {
     const { app } = configureTestAppWithReleases(
       buildStableReleaseSet(OWNER, REPO),

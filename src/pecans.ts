@@ -260,7 +260,7 @@ export class Pecans extends EventEmitter {
       const os = getStringParam(req, "os");
       if (!isOperatingSystem(os)) {
         throw new NotFoundError(
-          `Unrecognized OS (${os}) expecting one of ${OPERATING_SYSTEMS.join(", ")} `,
+          `Unrecognized OS (${os}) expecting one of ${OPERATING_SYSTEMS.join(", ")}`,
         );
       }
 
@@ -612,7 +612,15 @@ export class Pecans extends EventEmitter {
     next: NextFunction,
   ) {
     try {
-      const version = getVersionFromQuery(req.query);
+      // the path param wins over ?version; an invalid path param is an
+      // explicit client error rather than silently serving the latest notes
+      const versionParam = getStringParam(req, "version");
+      if (versionParam && !validRange(versionParam)) {
+        throw new BadRequestError(
+          `Invalid version (${versionParam}), expected a semver version`,
+        );
+      }
+      const version = versionParam ?? getVersionFromQuery(req.query);
       const releases = await this.getReleases();
       const query = { version };
       const candidates = releases.queryReleases(query);
