@@ -10,13 +10,19 @@ export function get_mock_content_type(filename: string) {
   return "application/octet-stream";
 }
 
+export interface MockGithubAssetOpts {
+  size?: number;
+  content_type?: string;
+}
+
 export function mock_github_asset(
   owner: string,
   repo: string,
-  filename: string
+  filename: string,
+  opts: MockGithubAssetOpts = {}
 ): Partial<GithubReleaseAsset> {
   const id = parseInt(numericId(8));
-  const content_type = get_mock_content_type(filename);
+  const content_type = opts.content_type ?? get_mock_content_type(filename);
   return {
     url: `https://api.github.com/repos/${owner}/${repo}/releases/assets/${id}`,
     id,
@@ -25,7 +31,7 @@ export function mock_github_asset(
     label: "",
     content_type,
     state: "uploaded",
-    size: 143940252,
+    size: opts.size ?? 143940252,
     download_count: 0,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
@@ -39,11 +45,13 @@ export function mock_github_release(
   tag_name: string,
   assets: Partial<GithubReleaseAsset>[],
   draft = false,
-  prerelease = false
+  prerelease = false,
+  body: string | null = null,
+  published: string | null = null
 ): Partial<GithubRelease> {
   const id = parseInt(numericId(8));
-  const created_at = new Date().toISOString();
-  const published_at = draft ? null : new Date().toISOString();
+  const created_at = published ?? new Date().toISOString();
+  const published_at = draft ? null : published ?? new Date().toISOString();
   const url = `https://api.github.com/repos/${owner}/${repo}/releases/${id}`;
 
   return {
@@ -60,7 +68,7 @@ export function mock_github_release(
     assets: assets as GithubReleaseAsset[],
     tarball_url: null,
     zipball_url: null,
-    body: null,
+    body,
   };
 }
 
