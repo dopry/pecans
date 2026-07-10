@@ -9,13 +9,17 @@ import {
   getVersionFromQuery,
   Pecans,
   PecansOptions,
-  UnsupportedChannelError,
-  UnsupportedPlatformError,
-  UnsupportedTagError,
   validateReqQueryChannel,
   validateReqQueryPlatform,
   validateReqQueryTag,
 } from "../../src/pecans";
+import {
+  BadRequestError,
+  NotFoundError,
+  UnsupportedChannelError,
+  UnsupportedPlatformError,
+  UnsupportedTagError,
+} from "../../src/errors";
 
 // Import types and dependencies
 import { Backend } from "../../src/backends/backend";
@@ -388,7 +392,7 @@ describe("Pecans", () => {
       it("should throw for invalid extension", () => {
         const query = { filetype: "invalid" };
         expect(() => getFiletypeFromQuery(query)).toThrowError(
-          "Unsupported FileType Requested",
+          "Unsupported filetype requested",
         );
       });
 
@@ -785,8 +789,10 @@ describe("Pecans", () => {
 
           await pecans.dlfilename(req, res, next);
 
-          expect(res.status).toHaveBeenCalledWith(404);
-          expect(res.send).toHaveBeenCalledWith("nonexistent.dmg not found");
+          expect(next).toHaveBeenCalledWith(expect.any(NotFoundError));
+          expect(
+            (vi.mocked(next).mock.calls[0][0] as unknown as Error).message,
+          ).toBe("nonexistent.dmg not found");
         });
 
         it("should return 404 when no matching assets", async () => {
@@ -810,8 +816,10 @@ describe("Pecans", () => {
 
           await pecans.dlfilename(req, res, next);
 
-          expect(res.status).toHaveBeenCalledWith(404);
-          expect(res.send).toHaveBeenCalledWith("test.dmg not found");
+          expect(next).toHaveBeenCalledWith(expect.any(NotFoundError));
+          expect(
+            (vi.mocked(next).mock.calls[0][0] as unknown as Error).message,
+          ).toBe("test.dmg not found");
         });
 
         it("should return 404 when release exists but no matching assets for filename", async () => {
@@ -844,8 +852,10 @@ describe("Pecans", () => {
 
           await pecans.dlfilename(req, res, next);
 
-          expect(res.status).toHaveBeenCalledWith(404);
-          expect(res.send).toHaveBeenCalledWith("requested-file.dmg not found");
+          expect(next).toHaveBeenCalledWith(expect.any(NotFoundError));
+          expect(
+            (vi.mocked(next).mock.calls[0][0] as unknown as Error).message,
+          ).toBe("requested-file.dmg not found");
         });
 
         it("should call next with error on exception", async () => {
@@ -903,8 +913,10 @@ describe("Pecans", () => {
 
           await pecans.dlfilename(req, res, next);
 
-          expect(res.status).toHaveBeenCalledWith(404);
-          expect(res.send).toHaveBeenCalledWith("test.dmg not found");
+          expect(next).toHaveBeenCalledWith(expect.any(NotFoundError));
+          expect(
+            (vi.mocked(next).mock.calls[0][0] as unknown as Error).message,
+          ).toBe("test.dmg not found");
           expect(mockRelease.queryAssets).toHaveBeenCalled();
         });
       });
@@ -936,10 +948,10 @@ describe("Pecans", () => {
 
           await pecans.dl(req, res, next);
 
-          expect(res.status).toHaveBeenCalledWith(404);
-          expect(res.send).toHaveBeenCalledWith(
-            expect.stringContaining("Unrecognized OS"),
-          );
+          expect(next).toHaveBeenCalledWith(expect.any(NotFoundError));
+          expect(
+            (vi.mocked(next).mock.calls[0][0] as unknown as Error).message,
+          ).toContain("Unrecognized OS");
         });
 
         it("should return 404 for invalid architecture", async () => {
@@ -952,10 +964,10 @@ describe("Pecans", () => {
 
           await pecans.dl(req, res, next);
 
-          expect(res.status).toHaveBeenCalledWith(404);
-          expect(res.send).toHaveBeenCalledWith(
-            expect.stringContaining("Unsupported Arch"),
-          );
+          expect(next).toHaveBeenCalledWith(expect.any(NotFoundError));
+          expect(
+            (vi.mocked(next).mock.calls[0][0] as unknown as Error).message,
+          ).toContain("Unsupported Arch");
         });
 
         it("should return 404 when no matching releases", async () => {
@@ -989,8 +1001,10 @@ describe("Pecans", () => {
 
           await pecans.dl(req, res, next);
 
-          expect(res.status).toHaveBeenCalledWith(404);
-          expect(res.send).toHaveBeenCalledWith("No Matching Releases Found");
+          expect(next).toHaveBeenCalledWith(expect.any(NotFoundError));
+          expect(
+            (vi.mocked(next).mock.calls[0][0] as unknown as Error).message,
+          ).toBe("No Matching Releases Found");
         });
 
         it("should return 404 when no matching assets", async () => {
@@ -1024,8 +1038,10 @@ describe("Pecans", () => {
 
           await pecans.dl(req, res, next);
 
-          expect(res.status).toHaveBeenCalledWith(404);
-          expect(res.send).toHaveBeenCalledWith("No Matching Releases Found");
+          expect(next).toHaveBeenCalledWith(expect.any(NotFoundError));
+          expect(
+            (vi.mocked(next).mock.calls[0][0] as unknown as Error).message,
+          ).toBe("No Matching Releases Found");
         });
 
         it("should return 404 when release exists but no matching assets for query", async () => {
@@ -1062,8 +1078,10 @@ describe("Pecans", () => {
 
           await pecans.dl(req, res, next);
 
-          expect(res.status).toHaveBeenCalledWith(404);
-          expect(res.send).toHaveBeenCalledWith("No Matching Assets Found");
+          expect(next).toHaveBeenCalledWith(expect.any(NotFoundError));
+          expect(
+            (vi.mocked(next).mock.calls[0][0] as unknown as Error).message,
+          ).toBe("No Matching Assets Found");
         });
 
         it("should handle version parameter", async () => {
@@ -1143,7 +1161,7 @@ describe("Pecans", () => {
 
           await (pecans as any).handleDownload(req, res, next);
 
-          expect(res.status).toHaveBeenCalledWith(400);
+          expect(next).toHaveBeenCalledWith(expect.any(BadRequestError));
         });
 
         it("should handle download with explicit platform parameter", async () => {
@@ -1244,8 +1262,7 @@ describe("Pecans", () => {
           const res = createMockResponse();
           const next = createMockNext();
           await (pecans as any).handleDownload(req, res, next);
-          expect(res.status).toHaveBeenCalledWith(400);
-          expect(next).not.toHaveBeenCalled();
+          expect(next).toHaveBeenCalledWith(expect.any(BadRequestError));
         });
 
         it("should throw error when no asset found", async () => {
@@ -1694,7 +1711,7 @@ describe("Pecans", () => {
           await (pecans as any).handleUpdateOSX(req, res, next);
 
           expect(next).toHaveBeenCalledWith(
-            new Error('Requires "version" parameter'),
+            new BadRequestError('Requires "version" parameter'),
           );
         });
 
@@ -1708,7 +1725,7 @@ describe("Pecans", () => {
           await (pecans as any).handleUpdateOSX(req, res, next);
 
           expect(next).toHaveBeenCalledWith(
-            new Error('Requires "platform" parameter'),
+            new BadRequestError('Requires "platform" parameter'),
           );
         });
       });

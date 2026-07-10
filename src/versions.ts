@@ -2,7 +2,7 @@ import { Backend } from "./backends/";
 import { PecansRelease } from "./models/PecansRelease";
 import { sortReleaseBySemVerDescending } from "./utils/sortReleaseBySemVerDescending";
 import { isPlatform, Platform } from "./utils";
-import { UnsupportedPlatformError } from "./pecans";
+import { NotFoundError, UnsupportedPlatformError } from "./errors";
 
 export type PlatformQuery = Platform | undefined;
 
@@ -89,7 +89,7 @@ export class Versions {
   async resolve(opts: VersionFilterOpts) {
     const versions = await this.filter(opts);
     if (versions.length === 0)
-      throw new Error("Release not found: " + JSON.stringify(opts));
+      throw new NotFoundError("Release not found: " + JSON.stringify(opts));
 
     const version = versions[0];
     return version;

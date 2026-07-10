@@ -1,8 +1,10 @@
 import express, { NextFunction, Request, Response } from "express";
+import { errorHandler } from "./errors";
 import { PecansGitHubBackend } from "./backends";
 import { Pecans, PecansOptions } from "./pecans";
 
 export * from "./backends";
+export * from "./errors";
 export * from "./models";
 export * from "./pecans";
 export * from "./utils/";
@@ -46,28 +48,9 @@ export function main() {
   app.use((req: Request, res: Response, next: NextFunction): void => {
     res.status(404).send("Page not found");
   });
-  app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
-    const msg = err.message || err;
-    const code = 500;
-
-    console.error(err.stack || err);
-
-    // Return error
-    res.format({
-      "text/plain": function () {
-        res.status(code).send(msg);
-      },
-      "text/html": function () {
-        res.status(code).send(msg);
-      },
-      "application/json": function () {
-        res.status(code).send({
-          error: msg,
-          code: code,
-        });
-      },
-    });
-  });
+  // pecans.router carries its own errorHandler; this catches errors from
+  // anything mounted outside it
+  app.use(errorHandler());
   const server = app.listen(port, () => {
     const address = server.address() || "0.0.0.0";
 

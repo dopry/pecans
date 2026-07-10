@@ -81,18 +81,18 @@ describe("/update/:platform/:version (Squirrel.Mac)", () => {
     await supertest(app).get("/update/osx/2.7.0").expect(204);
   });
 
-  it("500s on an unknown platform", async () => {
+  it("400s on an unknown platform", async () => {
     const { app } = configureTestAppWithReleases(
       buildStableReleaseSet(OWNER, REPO),
     );
-    await supertest(app).get("/update/amiga/2.5.0").expect(500);
+    await supertest(app).get("/update/amiga/2.5.0").expect(400);
   });
 
-  it("500s on an invalid version", async () => {
+  it("400s on an invalid version", async () => {
     const { app } = configureTestAppWithReleases(
       buildStableReleaseSet(OWNER, REPO),
     );
-    await supertest(app).get("/update/osx/not-a-version").expect(500);
+    await supertest(app).get("/update/osx/not-a-version").expect(400);
   });
 });
 
@@ -136,11 +136,11 @@ describe("/update (deprecated redirect)", () => {
     expect(res.headers.location).toBe("/update/osx/2.5.0");
   });
 
-  it("500s when version or platform is missing", async () => {
+  it("400s when version or platform is missing", async () => {
     const { app } = configureTestAppWithReleases(
       buildStableReleaseSet(OWNER, REPO),
     );
-    await supertest(app).get("/update?platform=osx").expect(500);
-    await supertest(app).get("/update?version=2.5.0").expect(500);
+    await supertest(app).get("/update?platform=osx").expect(400);
+    await supertest(app).get("/update?version=2.5.0").expect(400);
   });
 });

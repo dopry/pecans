@@ -165,12 +165,11 @@ describe("/notes", () => {
     expect(res.text).toBe("## 2.6.0\n\nNotes for 2.6.0\n");
   });
 
-  // Today an unknown version crashes formatReleaseNote (undefined release)
-  // -> 500. Phase 6 turns this into a 404.
-  it("500s for an unknown version (until typed error handling lands)", async () => {
+  it("404s for an unknown version", async () => {
     const { app } = configureTestAppWithReleases(
       buildStableReleaseSet(OWNER, REPO),
     );
-    await supertest(app).get("/notes?version=99.0.0").expect(500);
+    const res = await supertest(app).get("/notes?version=99.0.0").expect(404);
+    expect(res.text).toContain("No release found");
   });
 });
