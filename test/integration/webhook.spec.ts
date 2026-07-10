@@ -81,7 +81,9 @@ describe("/webhook/refresh (GitHub release webhook)", () => {
       .set("X-GitHub-Delivery", "test-delivery-2")
       .set("X-Hub-Signature-256", "sha256=0000000000000000")
       .send(payload);
+    // a 4xx rejection specifically - a crashing handler (5xx) must not pass
     expect(res.status).toBeGreaterThanOrEqual(400);
+    expect(res.status).toBeLessThan(500);
   });
 
   it("is a no-op 404 when no refreshSecret is configured", async () => {

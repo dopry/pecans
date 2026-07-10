@@ -77,8 +77,11 @@ describe("/update/:platform/:version/RELEASES (Squirrel.Windows)", () => {
         `${urlOf(res, "app-2.7.0-x64-full.nupkg")} ${SQUIRREL_NUPKG_SIZE}`
     );
 
-    // headers Squirrel.Windows relies on
-    expect(res.headers["content-length"]).toBe(String(text.length));
+    // headers Squirrel.Windows relies on; Content-Length is bytes, so
+    // compare against byteLength (equal to .length only for ASCII)
+    expect(res.headers["content-length"]).toBe(
+      String(Buffer.byteLength(text))
+    );
     expect(res.headers["content-disposition"]).toContain("RELEASES");
   });
 
