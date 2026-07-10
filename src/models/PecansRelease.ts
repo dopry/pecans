@@ -7,6 +7,11 @@ import { PecansReleaseQuery } from "./PecansReleaseQuery";
 export interface PecansReleaseDTO {
   // version
   assets: PecansAssetDTO[];
+  /**
+   * @deprecated ignored - the channel is always derived from the version's
+   * prerelease identifier (channelFromVersion), so channel and version can
+   * never disagree. Will be removed in 3.0.
+   */
   channel: string;
   notes: string;
   // missing published_at indicates a draft that hasn't been published.
@@ -26,6 +31,9 @@ export class PecansRelease implements PecansReleaseDTO {
   version: string;
 
   constructor(dto: PecansReleaseDTO) {
+    // the version string is the single source of truth for the channel;
+    // dto.channel is deliberately ignored (see PecansReleaseDTO.channel)
+    this.channel = channelFromVersion(dto.version);
     this.assets = dto.assets
       .map((assetDTO) => {
         try {
@@ -33,13 +41,12 @@ export class PecansRelease implements PecansReleaseDTO {
           return asset;
         } catch (err) {
           console.error(
-            `Error parsing asset: ${assetDTO.filename} for release ${dto.version}/${dto.channel}`,
+            `Error parsing asset: ${assetDTO.filename} for release ${dto.version}/${this.channel}`,
             err
           );
         }
       })
       .filter<PecansAsset>(isPecansAsset);
-    this.channel = dto.channel || channelFromVersion(dto.version);
     this.notes = dto.notes;
     this.published_at = dto.published_at;
     this.version = dto.version;

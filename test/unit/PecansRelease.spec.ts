@@ -58,21 +58,13 @@ describe("PecansRelease", () => {
       expect(release.channel).toBe("beta");
     });
 
-    it("should honor an explicit channel from the DTO", () => {
-      const release = new PecansRelease(
-        createMockReleaseDTO({
-          version: "1.0.0",
-          channel: "nightly",
-        })
-      );
-      expect(release.channel).toBe("nightly");
-    });
-
-    it("should fall back to the version-derived channel when the DTO channel is empty", () => {
+    it("should ignore dto.channel - the version string is the source of truth", () => {
+      // PecansReleaseDTO.channel is deprecated and deliberately ignored so
+      // channel and version can never disagree
       const release = new PecansRelease(
         createMockReleaseDTO({
           version: "1.0.0-beta.1",
-          channel: "",
+          channel: "nightly",
         })
       );
       expect(release.channel).toBe("beta");
