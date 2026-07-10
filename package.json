@@ -17,7 +17,6 @@
     "@octokit/webhooks": "^14.2.0",
     "debug": "^4.4.3",
     "express": "^5.2.1",
-    "express-useragent": "^1.0.15",
     "qs": "^6.15.3",
     "semver": "^7.3.7"
   },
@@ -28,7 +27,6 @@
     "@types/debug": "^4.1.8",
     "@types/destroy": "^1.0.0",
     "@types/express": "^5.0.6",
-    "@types/express-useragent": "^1.0.2",
     "@types/node": "^26.1.1",
     "@types/semver": "^7.3.9",
     "@types/supertest": "^6.0.3",

@@ -1,6 +1,5 @@
 import Debug from "debug";
 import { NextFunction, Request, Response, Router } from "express";
-import useragent from "express-useragent";
 import EventEmitter from "node:events";
 import { ParsedQs } from "qs";
 import { validRange } from "semver";
@@ -35,6 +34,7 @@ import {
   mergeReleaseNotes,
 } from "./utils/mergeReleaseNotes";
 import { resolveReleaseAssetForVersion } from "./utils/resolveForVersion";
+import { UserAgentDetails, userAgentMiddleware } from "./utils/userAgent";
 import { generateRELEASES, parseRELEASES } from "./utils/win-releases";
 import { VersionFilterOpts, Versions } from "./versions";
 
@@ -78,18 +78,10 @@ export class UnsupportedTagError extends Error {
 }
 
 export type ReqQueryValue =
-  | string
-  | ParsedQs
-  | (string | ParsedQs)[]
-  | string[]
-  | ParsedQs[]
-  | undefined;
+  string | ParsedQs | (string | ParsedQs)[] | string[] | ParsedQs[] | undefined;
 
 /** single-segment route params are strings; anything else is treated as absent */
-export function getStringParam(
-  req: Request,
-  name: string,
-): string | undefined {
+export function getStringParam(req: Request, name: string): string | undefined {
   const value = req.params[name];
   return typeof value === "string" ? value : undefined;
 }
@@ -123,7 +115,7 @@ export interface ExpressUserAgent {
   isLinux64: boolean;
 }
 export interface ExpressRequestUserAgent {
-  useragent?: useragent.Details;
+  useragent?: UserAgentDetails;
 }
 
 export function getPlatformFromUserAgent(
@@ -173,14 +165,14 @@ export function getPlatformFromQuery(query: ParsedQs): Platform | undefined {
 }
 
 export function getArchFromUserAgent(
-  useragent?: useragent.Details,
+  useragent?: UserAgentDetails,
 ): Architecture | undefined {
-  // these are arbitrary defaults
+  // these are arbitrary defaults; 32-bit desktops are effectively extinct
   if (!useragent) return;
   if (useragent.isMac) return "64";
-  if (useragent.isWindows) return "32";
-  if (useragent.isLinux) return "32";
+  if (useragent.isWindows) return "64";
   if (useragent.isLinux64) return "64";
+  if (useragent.isLinux) return "64";
 }
 
 export class Pecans extends EventEmitter {
@@ -220,7 +212,7 @@ export class Pecans extends EventEmitter {
     });
 
     // Bind routes
-    this.router.use(useragent.express());
+    this.router.use(userAgentMiddleware());
 
     // this will need to be called by the backends webhook infrastructure,
     // the semantic will vary by backend.

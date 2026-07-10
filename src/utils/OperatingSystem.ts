@@ -1,5 +1,5 @@
 import QueryString from "qs";
-import useragent from "express-useragent";
+import { UserAgentDetails } from "./userAgent";
 
 export const OPERATING_SYSTEMS = ["linux", "osx", "windows"] as const;
 export type OperatingSystem = (typeof OPERATING_SYSTEMS)[number];
@@ -42,7 +42,7 @@ export function filenameToOperatingSystem(filename: string): OperatingSystem {
 }
 
 export function getOsFromUserAgent(
-  useragent?: useragent.Details,
+  useragent?: UserAgentDetails,
 ): OperatingSystem | undefined {
   if (!useragent) return;
   if (useragent.isMac) return "osx";

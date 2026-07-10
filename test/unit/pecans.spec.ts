@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import useragent from "express-useragent";
+import { UserAgentDetails } from "../../src/utils/userAgent";
 import { ParsedQs } from "qs";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
@@ -27,19 +27,6 @@ import { PecansRelease, PecansReleases } from "../../src/models";
 import { platforms } from "../../src/utils";
 
 // Mock all external dependencies
-vi.mock("express-useragent", () => ({
-  default: {
-    express: () => (req: any, res: any, next: any) => {
-      req.useragent = {
-        isMac: false,
-        isWindows: false,
-        isLinux: false,
-        isLinux64: false,
-      };
-      next();
-    },
-  },
-}));
 vi.mock("debug", () => ({
   default: () => () => {},
 }));
@@ -115,7 +102,10 @@ class MockBackend extends Backend {
 }
 
 // Mock Express Request and Response
-const createMockRequest = (overrides: Partial<Request> = {}): Request =>
+type MockRequestOverrides = Partial<Request> & {
+  useragent?: UserAgentDetails;
+};
+const createMockRequest = (overrides: MockRequestOverrides = {}): Request =>
   ({
     method: "GET",
     url: "/test",
@@ -511,28 +501,28 @@ describe("Pecans", () => {
           isWindows: false,
           isLinux: false,
           isLinux64: false,
-        } as useragent.Details;
+        } as UserAgentDetails;
         expect(getArchFromUserAgent(useragent)).toBe("64");
       });
 
-      it("should return '32' for Windows", () => {
+      it("should return '64' for Windows", () => {
         const useragent = {
           isMac: false,
           isWindows: true,
           isLinux: false,
           isLinux64: false,
-        } as useragent.Details;
-        expect(getArchFromUserAgent(useragent)).toBe("32");
+        } as UserAgentDetails;
+        expect(getArchFromUserAgent(useragent)).toBe("64");
       });
 
-      it("should return '32' for Linux", () => {
+      it("should return '64' for Linux", () => {
         const useragent = {
           isMac: false,
           isWindows: false,
           isLinux: true,
           isLinux64: false,
-        } as useragent.Details;
-        expect(getArchFromUserAgent(useragent)).toBe("32");
+        } as UserAgentDetails;
+        expect(getArchFromUserAgent(useragent)).toBe("64");
       });
 
       it("should return '64' for Linux64", () => {
@@ -541,7 +531,7 @@ describe("Pecans", () => {
           isWindows: false,
           isLinux: false,
           isLinux64: true,
-        } as useragent.Details;
+        } as UserAgentDetails;
         expect(getArchFromUserAgent(useragent)).toBe("64");
       });
 
@@ -555,7 +545,7 @@ describe("Pecans", () => {
           isWindows: false,
           isLinux: false,
           isLinux64: false,
-        } as useragent.Details;
+        } as UserAgentDetails;
         expect(getArchFromUserAgent(useragent)).toBeUndefined();
       });
     });
