@@ -34,8 +34,10 @@ describe("errorHandler middleware", () => {
       status: vi.fn(),
       format: vi.fn(),
       send: vi.fn(),
+      type: vi.fn(),
     };
     res.status.mockReturnValue(res);
+    res.type.mockReturnValue(res);
     // run the default formatter so send() is observable
     res.format.mockImplementation((handlers: Record<string, () => void>) => {
       handlers.default();
@@ -53,6 +55,9 @@ describe("errorHandler middleware", () => {
     errorHandler()(new NotFoundError("missing"), {} as Request, res, next);
     expect(res.status).toHaveBeenCalledWith(404);
     expect(res.send).toHaveBeenCalledWith("missing");
+    // the default branch must force text/plain: res.send(string) would
+    // otherwise emit text/html and reflect user-controlled values
+    expect(res.type).toHaveBeenCalledWith("text/plain");
     expect(next).not.toHaveBeenCalled();
   });
 

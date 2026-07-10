@@ -66,19 +66,20 @@ export function errorHandler() {
       console.error(err instanceof Error ? (err.stack ?? err) : err);
     }
     // text first: clients sending Accept: */* get plain text (matching the
-    // pre-typed-errors middleware); JSON is served when explicitly requested
+    // pre-typed-errors middleware); JSON is served when explicitly requested.
+    // never serve text/html - messages embed user-controlled values (platform,
+    // version, tag), which would be reflected XSS under an html content type;
+    // the default branch forces text/plain because res.send(string) would
+    // otherwise default the content type to text/html
     res.status(statusCode).format({
       "text/plain": () => {
-        res.send(message);
-      },
-      "text/html": () => {
         res.send(message);
       },
       "application/json": () => {
         res.send({ error: message, code: statusCode });
       },
       default: () => {
-        res.send(message);
+        res.type("text/plain").send(message);
       },
     });
   };

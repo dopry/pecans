@@ -179,6 +179,20 @@ describe("/download/:platform?", () => {
     await supertest(app).get("/download/amiga").expect(400);
   });
 
+  it("never reflects error messages as html", async () => {
+    // messages embed user-controlled url values; an html content type would
+    // make them reflected XSS in a browser
+    const { app } = configureTestAppWithReleases(
+      buildStableReleaseSet(OWNER, REPO),
+    );
+    const res = await supertest(app)
+      .get("/download/%3Cscript%3Ealert(1)%3C%2Fscript%3E")
+      .set("Accept", "text/html")
+      .expect(400);
+    expect(res.headers["content-type"]).not.toContain("text/html");
+    expect(res.headers["content-type"]).toContain("text/plain");
+  });
+
   it("404s when no asset exists for the platform", async () => {
     const { app } = configureTestAppWithReleases(
       buildStableReleaseSet(OWNER, REPO),

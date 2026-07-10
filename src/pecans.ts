@@ -615,9 +615,13 @@ export class Pecans extends EventEmitter {
       // the path param wins over ?version; an invalid path param is an
       // explicit client error rather than silently serving the latest notes
       const versionParam = getStringParam(req, "version");
-      if (versionParam && !validRange(versionParam)) {
+      if (
+        versionParam &&
+        versionParam !== "latest" &&
+        !validRange(versionParam)
+      ) {
         throw new BadRequestError(
-          `Invalid version (${versionParam}), expected a semver version`,
+          `Invalid version (${versionParam}), expected 'latest' or a semver range`,
         );
       }
       const version = versionParam ?? getVersionFromQuery(req.query);
