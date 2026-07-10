@@ -69,7 +69,7 @@ export class UnsupportedChannelError extends Error {
 
 export class UnsupportedTagError extends Error {
   constructor(tag: unknown) {
-    const message = `Unsupported channel (${tag}), expected a single string`;
+    const message = `Unsupported tag (${tag}), expected 'latest' or a semver range`;
     super(message);
   }
 }
@@ -101,7 +101,10 @@ export function validateReqQueryTag(tag?: ReqQueryValue): string | undefined {
   if (typeof tag !== "string") {
     throw new UnsupportedTagError(tag);
   }
-  validRange(tag);
+  // 'latest' is a pecans keyword, everything else must be a semver range
+  if (tag !== "latest" && !validRange(tag)) {
+    throw new UnsupportedTagError(tag);
+  }
   return tag;
 }
 

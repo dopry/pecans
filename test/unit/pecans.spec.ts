@@ -190,13 +190,13 @@ describe("Pecans", () => {
     describe("UnsupportedTagError", () => {
       it("should create error with tag message", () => {
         const error = new UnsupportedTagError(123);
-        expect(error.message).toContain("Unsupported channel (123)");
-        expect(error.message).toContain("expected a single string");
+        expect(error.message).toContain("Unsupported tag (123)");
+        expect(error.message).toContain("expected 'latest' or a semver range");
       });
 
       it("should handle array tag", () => {
         const error = new UnsupportedTagError(["v1.0.0"]);
-        expect(error.message).toContain("Unsupported channel");
+        expect(error.message).toContain("Unsupported tag");
       });
     });
   });
@@ -285,9 +285,16 @@ describe("Pecans", () => {
         );
       });
 
-      it("should handle invalid semver gracefully", () => {
-        // validRange is called but doesn't throw for invalid ranges
-        expect(validateReqQueryTag("invalid-version")).toBe("invalid-version");
+      it("should allow the 'latest' keyword", () => {
+        expect(validateReqQueryTag("latest")).toBe("latest");
+      });
+
+      it("should throw UnsupportedTagError for invalid semver ranges", () => {
+        // previously validRange's result was discarded and invalid tags only
+        // failed deep in release matching with a generic error
+        expect(() => validateReqQueryTag("invalid-version")).toThrow(
+          UnsupportedTagError,
+        );
       });
     });
 
