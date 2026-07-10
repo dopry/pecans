@@ -41,7 +41,7 @@ import { VersionFilterOpts, Versions } from "./versions";
 const logger = Debug("pecans");
 
 export interface PecansSettings {
-  /** @deprecated accepted but never read; will be removed in 3.0 */
+  /** @deprecated accepted but unused (defaulted, no functional effect); will be removed in 3.0 */
   timeout: number;
   /** Base path for all routes */
   basePath: string;
@@ -469,9 +469,10 @@ export class Pecans extends EventEmitter {
           preferUniversal: this.opts.preferUniversal,
         });
       } catch (err) {
-        // if we didn't restrict by channel or we specified a specific tag
-        // don't try to fallback to any channel
-        if (channel == "*" || (tag && tag != "latest")) throw err;
+        // don't fall back to any channel if we already searched them all;
+        // a specific tag widened channel to "*" above, so this covers both
+        // "unrestricted" and "specific version requested"
+        if (channel == "*") throw err;
       }
 
       // we weren't able to find a release with the specified channel
