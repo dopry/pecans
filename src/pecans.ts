@@ -77,9 +77,24 @@ export class UnsupportedTagError extends Error {
   }
 }
 
-export function validateReqQueryChannel(
-  channel: string | ParsedQs | string[] | ParsedQs[],
-): string {
+export type ReqQueryValue =
+  | string
+  | ParsedQs
+  | (string | ParsedQs)[]
+  | string[]
+  | ParsedQs[]
+  | undefined;
+
+/** single-segment route params are strings; anything else is treated as absent */
+export function getStringParam(
+  req: Request,
+  name: string,
+): string | undefined {
+  const value = req.params[name];
+  return typeof value === "string" ? value : undefined;
+}
+
+export function validateReqQueryChannel(channel: ReqQueryValue): string {
   if (typeof channel !== "string") {
     throw new UnsupportedChannelError(channel);
   }
@@ -87,16 +102,12 @@ export function validateReqQueryChannel(
 }
 
 //
-export function validateReqQueryPlatform(
-  platform: string | ParsedQs | string[] | ParsedQs[] | undefined,
-): Platform {
+export function validateReqQueryPlatform(platform: ReqQueryValue): Platform {
   if (!isPlatform(platform)) throw new UnsupportedPlatformError(platform);
   return platform;
 }
 
-export function validateReqQueryTag(
-  tag?: string | ParsedQs | string[] | ParsedQs[],
-): string | undefined {
+export function validateReqQueryTag(tag?: ReqQueryValue): string | undefined {
   if (tag == undefined) return;
   if (typeof tag !== "string") {
     throw new UnsupportedTagError(tag);
@@ -266,7 +277,7 @@ export class Pecans extends EventEmitter {
 
   async dlfilename(req: Request, res: Response, next: NextFunction) {
     try {
-      const filename = req.params.filename;
+      const filename = getStringParam(req, "filename");
       const query = { filename };
       const releases = await this.getReleases();
       const matchingReleases = releases.queryReleases(query);
@@ -295,7 +306,7 @@ export class Pecans extends EventEmitter {
 
   async dl(req: Request, res: Response, next: NextFunction) {
     try {
-      const os = req.params.os;
+      const os = getStringParam(req, "os");
       if (!isOperatingSystem(os)) {
         res
           .status(404)
@@ -307,8 +318,8 @@ export class Pecans extends EventEmitter {
         return;
       }
 
-      const arch = req.params.arch;
-      if (!isValidArchForOS(os, arch)) {
+      const arch = getStringParam(req, "arch");
+      if (!arch || !isValidArchForOS(os, arch)) {
         res.status(404).send(`Unsupported Arch (${arch}) for OS (${os})`);
         return;
       }
@@ -441,15 +452,17 @@ export class Pecans extends EventEmitter {
   ) {
     try {
       let channel = validateReqQueryChannel(
-        req.params.channel || req.query.channel || "stable",
+        getStringParam(req, "channel") || req.query.channel || "stable",
       );
-      const tag = validateReqQueryTag(req.params.tag ?? req.query.tag);
-      const filename = req.params.filename;
+      const tag = validateReqQueryTag(
+        getStringParam(req, "tag") ?? req.query.tag,
+      );
+      const filename = getStringParam(req, "filename");
       const filetype = getFiletypeFromQuery(req.query);
 
       const _platform = filename
         ? filenameToPlatform(filename)
-        : req.params.platform || getPlatformFromUserAgent(req);
+        : getStringParam(req, "platform") || getPlatformFromUserAgent(req);
       const mapped_platform = mapLegacyPlatform(_platform || "");
       if (!mapped_platform) {
         throw new Error("Platform is required");
@@ -541,11 +554,13 @@ export class Pecans extends EventEmitter {
       if (!req.params.platform)
         throw new Error('Requires "platform" parameter');
 
-      const mapped_platform = mapLegacyPlatform(req.params.platform);
+      const mapped_platform = mapLegacyPlatform(
+        getStringParam(req, "platform") || "",
+      );
       const platform = validateReqQueryPlatform(mapped_platform);
-      const tag = req.params.version;
+      const tag = getStringParam(req, "version");
 
-      const channel = req.params.channel || "stable";
+      const channel = getStringParam(req, "channel") || "stable";
       const filetype = req.query.filetype ? req.query.filetype : "zip";
 
       const versions = await this.versions.filter({
@@ -587,12 +602,12 @@ export class Pecans extends EventEmitter {
     next: NextFunction,
   ) {
     try {
-      const _platform = req.params.platform;
+      const _platform = getStringParam(req, "platform") || "";
       const mapped_platform = mapLegacyPlatform(_platform);
       const platform = validateReqQueryPlatform(mapped_platform);
 
-      const channel = req.params.channel || "stable";
-      const tag = req.params.version;
+      const channel = getStringParam(req, "channel") || "stable";
+      const tag = getStringParam(req, "version");
 
       const versions = await this.versions.filter({
         versionRange: ">=" + tag,

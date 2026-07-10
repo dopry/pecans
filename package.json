@@ -3,7 +3,7 @@
   "version": "2.0.0-next.17",
   "description": "Server to make GitHub releases (private) available to download with Squirrel support",
   "engines": {
-    "node": ">=22"
+    "node": ">=22.12"
   },
   "files": [
     "dist/"
@@ -13,8 +13,8 @@
   "homepage": "https://github.com/dopry/pecans",
   "license": "Apache-2.0",
   "dependencies": {
-    "@octokit/rest": "^20.0.1",
-    "@octokit/webhooks": "^12.0.3",
+    "@octokit/rest": "^22.0.1",
+    "@octokit/webhooks": "^14.2.0",
     "debug": "^4.4.3",
     "express": "^5.2.1",
     "express-useragent": "^1.0.15",
