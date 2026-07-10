@@ -220,16 +220,16 @@ export class Pecans extends EventEmitter {
     // #region download endpoints
     this.router.get("/", this.handleDownload.bind(this));
     this.router.get(
-      "/download/channel/:channel/:platform?",
+      "/download/channel/:channel{/:platform}",
       this.handleDownload.bind(this),
     );
     // /download/version must register before /download/:tag/:filename or the
     // literal "version" segment is captured as :tag and the request 500s.
     this.router.get(
-      "/download/version/:tag/:platform?",
+      "/download/version/:tag{/:platform}",
       this.handleDownload.bind(this),
     );
-    this.router.get("/download/:platform?", this.handleDownload.bind(this));
+    this.router.get("/download{/:platform}", this.handleDownload.bind(this));
     this.router.get("/download/:tag/:filename", this.handleDownload.bind(this));
 
     // the /dl path will supersede the /download/**  paths
@@ -243,7 +243,7 @@ export class Pecans extends EventEmitter {
     // ?channel?platform?version
     this.router.get("/api/versions", this.handleApiVersions.bind(this));
 
-    this.router.get("/notes/:version?", this.handleServeNotes.bind(this));
+    this.router.get("/notes{/:version}", this.handleServeNotes.bind(this));
     // @deprecated - the /update endpoint is deprecated, please use /update/:platform/:version
     this.router.get("/update", this.handleUpdateRedirect.bind(this));
     this.router.get(
