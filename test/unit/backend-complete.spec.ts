@@ -59,6 +59,7 @@ describe("Backend Complete Coverage", () => {
     beforeEach(() => {
       mockReq = {
         path: "/api/refresh",
+        method: "POST",
         query: {},
         get: vi.fn().mockReturnValue(undefined),
       };
@@ -89,6 +90,20 @@ describe("Backend Complete Coverage", () => {
 
       expect(mockNext).toHaveBeenCalledWith();
       expect(mockNext).toHaveBeenCalledTimes(1);
+    });
+
+    // the refresh contract is POST-only; other methods fall through so a
+    // crawler hitting a shared ?secret= link can't trigger a refresh
+    it("should call next() for non-POST methods on the watched path", () => {
+      backend = new TestBackend({ refreshSecret: "test-secret" });
+      mockReq.method = "GET";
+      mockReq.query = { secret: "test-secret" };
+      const middleware = backend.getRefreshWebhookMiddleware("/api/refresh");
+
+      middleware(mockReq as unknown as Request, mockRes as Response, mockNext);
+
+      expect(mockNext).toHaveBeenCalledWith();
+      expect(mockRes.status).not.toHaveBeenCalled();
     });
 
     it("should 403 when the secret does not match", () => {

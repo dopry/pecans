@@ -5,7 +5,7 @@ import { pipeline, Writable } from "stream";
 import { promisify } from "util";
 import { ForbiddenError } from "../errors";
 import { PecansReleases } from "../models";
-import { PecansAsset, PecansAssetDTO } from "../models/PecansAsset";
+import { PecansAssetDTO } from "../models/PecansAsset";
 
 const DEFAULT_CACHE_MAX_AGE = 60 * 60 * 2; // 2 hours in seconds
 
@@ -19,7 +19,11 @@ export class BackendSettings implements BackendOpts {
   public cacheMaxAge = DEFAULT_CACHE_MAX_AGE;
 }
 
-export abstract class Backend {
+// TRaw is the backend-private payload type this backend stashes on each
+// asset's `raw` field (e.g. the GitHub backend uses its API asset object),
+// giving the backend typed reads when assets flow back into serveAsset /
+// getAssetStream. Opaque (`unknown`) to everyone else.
+export abstract class Backend<TRaw = unknown> {
   protected opts: BackendSettings;
   private hash?: string;
   protected cache: PecansReleases | null = null;
@@ -100,6 +104,14 @@ export abstract class Backend {
         next();
         return;
       }
+      // the refresh contract is POST-only (matching the GitHub backend's
+      // webhook middleware); other methods fall through so crawlers hitting
+      // a shared ?secret= link can't trigger refreshes and preflights
+      // aren't answered with 403
+      if (req.method !== "POST") {
+        next();
+        return;
+      }
       // the middleware is mounted with use(), so req.params is never
       // populated here - the secret arrives as a header or query parameter
       const query = req.query.secret;
@@ -136,20 +148,20 @@ export abstract class Backend {
   abstract fetchReleases(): Promise<PecansReleases>;
 
   // Return stream for an asset, serving out of the LRU cache if available.
-  async serveAsset(asset: PecansAssetDTO, res: Response) {
+  async serveAsset(asset: PecansAssetDTO<TRaw>, res: Response) {
     throw Error("Abstract Method");
   }
 
   // Return stream for an asset
   async getAssetStream(
-    asset: PecansAsset,
+    asset: PecansAssetDTO<TRaw>,
   ): Promise<NodeJS.ReadableStream | null> {
     throw Error("Abstract Method");
   }
 
   // Return buffer for an asset stream
   // Requires Node.js 22+ for proper stream handling with pipeline()
-  async readAsset(asset: PecansAsset): Promise<Buffer> {
+  async readAsset(asset: PecansAssetDTO<TRaw>): Promise<Buffer> {
     const stream = await this.getAssetStream(asset);
     if (stream == null) {
       return Buffer.from("");

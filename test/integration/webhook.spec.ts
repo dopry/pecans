@@ -164,6 +164,14 @@ describe("/webhook/refresh (generic backend secret middleware)", () => {
     expect(backend.fetchCount).toBe(0);
   });
 
+  // POST-only contract: a GET with a valid secret (e.g. a crawler following
+  // a shared ?secret= link) must fall through without refreshing
+  it("ignores non-POST requests even with a valid secret", async () => {
+    const { backend, app } = buildGenericApp({ refreshSecret: SECRET });
+    await supertest(app).get(`/webhook/refresh?secret=${SECRET}`).expect(404);
+    expect(backend.fetchCount).toBe(0);
+  });
+
   it("is a no-op 404 when no refreshSecret is configured", async () => {
     const { backend, app } = buildGenericApp();
     await supertest(app).post(`/webhook/refresh?secret=${SECRET}`).expect(404);

@@ -19,7 +19,11 @@ export interface PecansReleaseDTO {
   version: string;
 }
 
-export function isPecansAsset(obj: unknown): obj is PecansAsset {
+// generic so filtering keeps the caller's TRaw (e.g. the GitHub backend's
+// PecansAsset<GithubReleaseAsset>[] survives a .filter(isPecansAsset))
+export function isPecansAsset<TRaw = unknown>(
+  obj: unknown,
+): obj is PecansAsset<TRaw> {
   return obj instanceof PecansAsset;
 }
 

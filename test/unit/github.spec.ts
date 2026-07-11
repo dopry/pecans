@@ -4,6 +4,7 @@ import { Response } from "express";
 import { Readable } from "node:stream";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
+  GithubReleaseAsset,
   GitHubBackend,
   PecansGitHubBackend,
   PecansGitHubBackendSettings,
@@ -386,7 +387,7 @@ describe("PecansGitHubBackend", () => {
         raw: {
           browser_download_url:
             "https://github.com/owner/repo/releases/download/v1.0.0/app.exe",
-        },
+        } as GithubReleaseAsset,
       };
 
       await backend.serveAsset(asset, mockResponse as Response);
@@ -407,7 +408,7 @@ describe("PecansGitHubBackend", () => {
         filename: "app.exe",
         size: 1000,
         content_type: "application/octet-stream",
-        raw: {},
+        raw: {} as GithubReleaseAsset,
       };
 
       await expect(
@@ -428,7 +429,7 @@ describe("PecansGitHubBackend", () => {
         content_type: "application/octet-stream",
         raw: {
           url: "https://api.github.com/repos/owner/repo/releases/assets/1",
-        },
+        } as GithubReleaseAsset,
       };
 
       const mockFetchResponse = {
@@ -472,7 +473,7 @@ describe("PecansGitHubBackend", () => {
         content_type: "application/octet-stream",
         raw: {
           url: "https://api.github.com/repos/owner/repo/releases/assets/1",
-        },
+        } as GithubReleaseAsset,
       };
 
       const mockFetchResponse = {
@@ -502,7 +503,7 @@ describe("PecansGitHubBackend", () => {
         content_type: "application/octet-stream",
         raw: {
           url: "https://api.github.com/repos/owner/repo/releases/assets/1",
-        },
+        } as GithubReleaseAsset,
       };
 
       // native fetch resolves `body` to a web ReadableStream; the backend wraps
@@ -545,7 +546,7 @@ describe("PecansGitHubBackend", () => {
         content_type: "application/octet-stream",
         raw: {
           url: "https://api.github.com/repos/owner/repo/releases/assets/1",
-        },
+        } as GithubReleaseAsset,
       };
 
       const mockBody = new ReadableStream<Uint8Array>({

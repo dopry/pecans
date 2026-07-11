@@ -42,7 +42,9 @@ export interface PecansGithubBackendEnvironment {
   GITHUB_TOKEN?: string;
 }
 
-export class PecansGitHubBackend extends Backend {
+// typed raw payload: assets created by this backend carry the GitHub API
+// asset object, read back in serveAsset/getAssetStream
+export class PecansGitHubBackend extends Backend<GithubReleaseAsset> {
   protected opts: PecansGitHubBackendSettings;
   protected octokit: Octokit;
 
@@ -167,7 +169,10 @@ export class PecansGitHubBackend extends Backend {
   }
 
   // Return stream for an asset
-  async serveAsset(asset: PecansAssetDTO, res: Response): Promise<void> {
+  async serveAsset(
+    asset: PecansAssetDTO<GithubReleaseAsset>,
+    res: Response,
+  ): Promise<void> {
     if (!this.opts.proxyAssets) {
       // raw is this backend's private payload: the GitHub API asset object
       const downloadUrl = asset.raw?.browser_download_url;
@@ -208,7 +213,7 @@ export class PecansGitHubBackend extends Backend {
   }
   // Return stream for an asset
   async getAssetStream(
-    asset: PecansAssetDTO,
+    asset: PecansAssetDTO<GithubReleaseAsset>,
   ): Promise<NodeJS.ReadableStream | null> {
     const headers: Record<string, string> = {
       "User-Agent": "pecans",
@@ -259,7 +264,8 @@ export class PecansGitHubBackend extends Backend {
           return undefined;
         }
       })
-      .filter(isPecansAsset);
+      // explicit type arg so the guard keeps the typed raw payload
+      .filter(isPecansAsset<GithubReleaseAsset>);
     const dto: PecansReleaseDTO = {
       version,
       channel,
@@ -270,7 +276,7 @@ export class PecansGitHubBackend extends Backend {
     return new PecansRelease(dto);
   }
 
-  normalizeAsset(asset: GithubReleaseAsset): PecansAsset {
+  normalizeAsset(asset: GithubReleaseAsset): PecansAsset<GithubReleaseAsset> {
     const id = asset.id.toString();
     const filename = asset.name;
     const type = filenameToPlatform(filename);
