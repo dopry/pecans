@@ -147,7 +147,8 @@ export abstract class Backend<TRaw = unknown> {
   // Abstract method for backends to implement actual fetching logic
   abstract fetchReleases(): Promise<PecansReleases>;
 
-  // Return stream for an asset, serving out of the LRU cache if available.
+  // Serve an asset to the response (redirect or stream). Backends must
+  // override this to deliver the assets they created.
   async serveAsset(asset: PecansAssetDTO<TRaw>, res: Response) {
     throw Error("Abstract Method");
   }

@@ -208,7 +208,10 @@ export class PecansGitHubBackend extends Backend<GithubReleaseAsset> {
         res.redirect(location);
         return;
       }
-      throw new Error("Unable to load asset url");
+      throw new Error(
+        `Unable to resolve download location for asset ${asset.id} ` +
+          `(${apiUrl}): HTTP ${assetRes.status} without a Location header`,
+      );
     }
   }
   // Return stream for an asset

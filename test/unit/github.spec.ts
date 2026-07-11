@@ -477,15 +477,21 @@ describe("PecansGitHubBackend", () => {
       };
 
       const mockFetchResponse = {
+        status: 404,
         headers: {
           get: vi.fn().mockReturnValue(null),
         },
       } as any;
       mockFetch.mockResolvedValue(mockFetchResponse);
 
+      // the error carries the asset id, api url, and status for diagnosis
       await expect(
         backend.serveAsset(asset, mockResponse as Response),
-      ).rejects.toThrow("Unable to load asset url");
+      ).rejects.toThrow(
+        "Unable to resolve download location for asset 1 " +
+          "(https://api.github.com/repos/owner/repo/releases/assets/1): " +
+          "HTTP 404 without a Location header",
+      );
     });
   });
 
