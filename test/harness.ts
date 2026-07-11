@@ -2,6 +2,7 @@ import express from "express";
 import nock from "nock";
 import { GithubRelease } from "../src";
 import { Pecans, PecansGitHubBackend, PecansOptions } from "../src";
+import { Backend } from "../src/backends/backend";
 import { PecansGitHubBackendOpts } from "../src/backends/github";
 import { PecansAsset } from "../src/models";
 import { nockGithubListReleases } from "./nock/nockGithubListReleases";
@@ -21,7 +22,7 @@ export function configurePecansGitHubBackend(
 }
 
 export function configurePecansTestApp(
-  backend: PecansGitHubBackend,
+  backend: Backend,
   opts: PecansOptions = {},
 ) {
   const pecans = new Pecans(backend, opts);

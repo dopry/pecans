@@ -1,10 +1,11 @@
 import { Buffer } from "buffer";
-import { createHash } from "crypto";
+import { createHash, timingSafeEqual } from "crypto";
 import { NextFunction, Request, Response } from "express";
 import { pipeline, Writable } from "stream";
 import { promisify } from "util";
+import { ForbiddenError } from "../errors";
 import { PecansReleases } from "../models";
-import { PecansAsset, PecansAssetDTO } from "../models/PecansAsset";
+import { PecansAssetDTO } from "../models/PecansAsset";
 
 const DEFAULT_CACHE_MAX_AGE = 60 * 60 * 2; // 2 hours in seconds
 
@@ -18,7 +19,11 @@ export class BackendSettings implements BackendOpts {
   public cacheMaxAge = DEFAULT_CACHE_MAX_AGE;
 }
 
-export abstract class Backend {
+// TRaw is the backend-private payload type this backend stashes on each
+// asset's `raw` field (e.g. the GitHub backend uses its API asset object),
+// giving the backend typed reads when assets flow back into serveAsset /
+// getAssetStream. Opaque (`unknown`) to everyone else.
+export abstract class Backend<TRaw = unknown> {
   protected opts: BackendSettings;
   private hash?: string;
   protected cache: PecansReleases | null = null;
@@ -74,14 +79,21 @@ export abstract class Backend {
     return this.cache;
   }
 
-  // return an express middlware to catch a specific path
-  // ex) `app.use(backend.getRefreshMiddleware('/api/backend/refresh'))`
+  // Return an express middleware guarding a cache-refresh endpoint, for
+  // backends without their own webhook verification (the GitHub backend
+  // overrides this with signed-payload verification via @octokit/webhooks).
+  //
+  // The caller authenticates by sending the configured refreshSecret in an
+  // `X-Pecans-Secret` header or `?secret=` query parameter; a request on the
+  // watched path with a missing or wrong secret gets a 403. When no
+  // refreshSecret is configured the middleware is a pass-through and the
+  // endpoint stays disabled — the secret requirement prevents DOS attacks
+  // against update infrastructure.
+  // ex) `app.use(backend.getRefreshWebhookMiddleware('/api/backend/refresh'))`
   getRefreshWebhookMiddleware(
-    // path that the firmware will watch.
+    // path that the middleware will watch.
     path: string,
-  ): (req: Request, res: Response, nex: NextFunction) => void {
-    // the default refresh callback expects a base64 encoded sha256 hash of the refreshSecret.
-    // the secret is to prevent DOS attacks against update infrastructure.
+  ): (req: Request, res: Response, next: NextFunction) => void {
     const middleware = (req: Request, res: Response, next: NextFunction) => {
       // only do stuff if a secret was provided, otherwise just call next.
       if (!this.hash) {
@@ -92,13 +104,27 @@ export abstract class Backend {
         next();
         return;
       }
-      if (this.hash != req.params.secret) {
-        next("bad secret");
+      // the refresh contract is POST-only (matching the GitHub backend's
+      // webhook middleware); other methods fall through so crawlers hitting
+      // a shared ?secret= link can't trigger refreshes and preflights
+      // aren't answered with 403
+      if (req.method !== "POST") {
+        next();
+        return;
+      }
+      // the middleware is mounted with use(), so req.params is never
+      // populated here - the secret arrives as a header or query parameter
+      const query = req.query.secret;
+      const provided =
+        req.get("x-pecans-secret") ??
+        (typeof query === "string" ? query : undefined);
+      if (!provided || !this.verifyRefreshSecret(provided)) {
+        next(new ForbiddenError("Invalid refresh secret"));
         return;
       }
       this.refreshCache()
         .then(() => {
-          next();
+          res.status(200).json({ refreshed: true });
         })
         .catch((err) => {
           next(err);
@@ -107,24 +133,36 @@ export abstract class Backend {
     return middleware;
   }
 
+  // constant-time comparison of the provided secret's sha256 against the
+  // stored hash, so the comparison doesn't leak match progress via timing
+  private verifyRefreshSecret(provided: string): boolean {
+    if (!this.hash) return false;
+    const expected = Buffer.from(this.hash, "base64");
+    const actual = createHash("sha256").update(provided).digest();
+    return (
+      expected.length === actual.length && timingSafeEqual(expected, actual)
+    );
+  }
+
   // Abstract method for backends to implement actual fetching logic
   abstract fetchReleases(): Promise<PecansReleases>;
 
-  // Return stream for an asset, serving out of the LRU cache if available.
-  async serveAsset(asset: PecansAssetDTO, res: Response) {
+  // Serve an asset to the response (redirect or stream). Backends must
+  // override this to deliver the assets they created.
+  async serveAsset(asset: PecansAssetDTO<TRaw>, res: Response) {
     throw Error("Abstract Method");
   }
 
   // Return stream for an asset
   async getAssetStream(
-    asset: PecansAsset,
+    asset: PecansAssetDTO<TRaw>,
   ): Promise<NodeJS.ReadableStream | null> {
     throw Error("Abstract Method");
   }
 
   // Return buffer for an asset stream
   // Requires Node.js 22+ for proper stream handling with pipeline()
-  async readAsset(asset: PecansAsset): Promise<Buffer> {
+  async readAsset(asset: PecansAssetDTO<TRaw>): Promise<Buffer> {
     const stream = await this.getAssetStream(asset);
     if (stream == null) {
       return Buffer.from("");

@@ -38,6 +38,21 @@ Pecans is an Electron Release Server.
 
 This server provides an endpoint for [Squirrel auto-updater](https://github.com/atom/electron/blob/master/docs/api/auto-updater.md), it supports both [OS X](https://pecans.darrelopry.com/v/main/docs/update-osx) and [Windows](https://pecans.darrelopry.com/v/main/docs/update-windows).
 
+## Cache-refresh webhook
+
+Release lists are cached (2 hours by default). `POST /webhook/refresh` busts
+the cache without waiting for expiry; it is enabled by configuring a
+`refreshSecret` on the backend and disabled otherwise.
+
+- **GitHub backend**: point a GitHub _release_ webhook at
+  `/webhook/refresh` with the secret set to your `refreshSecret`; the
+  payload signature is verified with
+  [@octokit/webhooks](https://github.com/octokit/webhooks.js).
+- **Other backends** (base `Backend` middleware): send the `refreshSecret`
+  in an `X-Pecans-Secret` header or a `?secret=` query parameter. A valid
+  request responds `200 {"refreshed": true}`; a missing or wrong secret
+  responds `403`.
+
 ## Documentation
 
 [Check out the documentation](https://pecans.darrelopry.com/v/main/docs) for more details.

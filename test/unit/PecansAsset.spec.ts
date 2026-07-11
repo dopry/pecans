@@ -63,6 +63,17 @@ describe("PecansAsset", () => {
       );
       expect(asset.pkg).toBeUndefined();
     });
+
+    // raw is backend-private: the model carries it verbatim for the backend
+    // that created the asset and never interprets it
+    it("should pass the raw payload through untouched", () => {
+      const raw = {
+        browser_download_url: "https://github.com/o/r/releases/d/app.dmg",
+        url: "https://api.github.com/repos/o/r/releases/assets/1",
+      };
+      const asset = new PecansAsset(createMockAssetDTO({ raw }));
+      expect(asset.raw).toBe(raw);
+    });
   });
 
   describe("satisfiesQuery", () => {

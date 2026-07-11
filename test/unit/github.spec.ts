@@ -4,6 +4,7 @@ import { Response } from "express";
 import { Readable } from "node:stream";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
+  GithubReleaseAsset,
   GitHubBackend,
   PecansGitHubBackend,
   PecansGitHubBackendSettings,
@@ -372,7 +373,7 @@ describe("PecansGitHubBackend", () => {
       };
     });
 
-    it("should redirect to browser_download_url when not proxying", async () => {
+    it("should redirect to the raw payload's browser_download_url when not proxying", async () => {
       backend = new PecansGitHubBackend("owner", "repo", "token", {
         proxyAssets: false,
       });
@@ -386,7 +387,7 @@ describe("PecansGitHubBackend", () => {
         raw: {
           browser_download_url:
             "https://github.com/owner/repo/releases/download/v1.0.0/app.exe",
-        },
+        } as GithubReleaseAsset,
       };
 
       await backend.serveAsset(asset, mockResponse as Response);
@@ -394,6 +395,25 @@ describe("PecansGitHubBackend", () => {
       expect(mockResponse.redirect).toHaveBeenCalledWith(
         asset.raw.browser_download_url,
       );
+    });
+
+    it("should throw a clear error when the raw payload has no download url", async () => {
+      backend = new PecansGitHubBackend("owner", "repo", "token", {
+        proxyAssets: false,
+      });
+
+      const asset = {
+        id: "1",
+        type: "windows_64" as const,
+        filename: "app.exe",
+        size: 1000,
+        content_type: "application/octet-stream",
+        raw: {} as GithubReleaseAsset,
+      };
+
+      await expect(
+        backend.serveAsset(asset, mockResponse as Response),
+      ).rejects.toThrow("no browser_download_url");
     });
 
     it("should fetch and redirect to location when proxying", async () => {
@@ -409,7 +429,7 @@ describe("PecansGitHubBackend", () => {
         content_type: "application/octet-stream",
         raw: {
           url: "https://api.github.com/repos/owner/repo/releases/assets/1",
-        },
+        } as GithubReleaseAsset,
       };
 
       const mockFetchResponse = {
@@ -453,19 +473,25 @@ describe("PecansGitHubBackend", () => {
         content_type: "application/octet-stream",
         raw: {
           url: "https://api.github.com/repos/owner/repo/releases/assets/1",
-        },
+        } as GithubReleaseAsset,
       };
 
       const mockFetchResponse = {
+        status: 404,
         headers: {
           get: vi.fn().mockReturnValue(null),
         },
       } as any;
       mockFetch.mockResolvedValue(mockFetchResponse);
 
+      // the error carries the asset id, api url, and status for diagnosis
       await expect(
         backend.serveAsset(asset, mockResponse as Response),
-      ).rejects.toThrow("Unable to load asset url");
+      ).rejects.toThrow(
+        "Unable to resolve download location for asset 1 " +
+          "(https://api.github.com/repos/owner/repo/releases/assets/1): " +
+          "HTTP 404 without a Location header",
+      );
     });
   });
 
@@ -483,7 +509,7 @@ describe("PecansGitHubBackend", () => {
         content_type: "application/octet-stream",
         raw: {
           url: "https://api.github.com/repos/owner/repo/releases/assets/1",
-        },
+        } as GithubReleaseAsset,
       };
 
       // native fetch resolves `body` to a web ReadableStream; the backend wraps
@@ -526,7 +552,7 @@ describe("PecansGitHubBackend", () => {
         content_type: "application/octet-stream",
         raw: {
           url: "https://api.github.com/repos/owner/repo/releases/assets/1",
-        },
+        } as GithubReleaseAsset,
       };
 
       const mockBody = new ReadableStream<Uint8Array>({
@@ -705,6 +731,8 @@ describe("PecansGitHubBackend", () => {
         size: 1000,
         content_type: "application/octet-stream",
         url: "https://api.github.com/repos/owner/repo/releases/assets/123",
+        browser_download_url:
+          "https://github.com/owner/repo/releases/download/v1.0.0/app-v1.0.0-win32-x64.exe",
       };
 
       const result = backend.normalizeAsset(githubAsset as any);
@@ -714,6 +742,7 @@ describe("PecansGitHubBackend", () => {
       expect(result.type).toBe("windows_32");
       expect(result.size).toBe(1000);
       expect(result.content_type).toBe("application/octet-stream");
+      // raw carries the full GitHub asset for this backend's later use
       expect(result.raw).toBe(githubAsset);
     });
   });

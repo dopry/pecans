@@ -13,17 +13,24 @@ import {
 } from "../utils/SupportedFileExtension";
 import { PecansAssetQuery } from "./PecansAssetQuery";
 
-export interface PecansAssetDTO {
+export interface PecansAssetDTO<TRaw = unknown> {
   content_type: string;
   filename: string;
   id: string;
-  raw: any;
+  /**
+   * Backend-private payload attached by the backend that created the asset
+   * (e.g. the GitHub API asset object, which the GitHub backend reads back
+   * in serveAsset/getAssetStream). Opaque outside that backend: core and
+   * other consumers must not interpret it. Backends declare their payload
+   * type via TRaw (e.g. `Backend<GithubReleaseAsset>`) for typed reads.
+   */
+  raw: TRaw;
   size: number;
   // TODO:  use os, arch, and pkg in place of platform.
   type: Platform;
 }
 
-export class PecansAsset implements PecansAssetDTO {
+export class PecansAsset<TRaw = unknown> implements PecansAssetDTO<TRaw> {
   os: OperatingSystem;
   arch: Architecture;
   pkg?: PackageFormat;
@@ -32,9 +39,9 @@ export class PecansAsset implements PecansAssetDTO {
   type: Platform;
   size: number;
   content_type: string;
-  raw: any;
+  raw: TRaw;
 
-  constructor(dto: PecansAssetDTO) {
+  constructor(dto: PecansAssetDTO<TRaw>) {
     this.content_type = dto.content_type;
     this.filename = dto.filename;
     this.id = dto.id;
