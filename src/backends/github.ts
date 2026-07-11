@@ -169,11 +169,12 @@ export class PecansGitHubBackend extends Backend {
   // Return stream for an asset
   async serveAsset(asset: PecansAssetDTO, res: Response): Promise<void> {
     if (!this.opts.proxyAssets) {
-      // downloadUrl fallback for DTOs that predate the explicit URL fields
-      // (removed in 3.0)
-      const downloadUrl = asset.downloadUrl ?? asset.raw?.browser_download_url;
+      // raw is this backend's private payload: the GitHub API asset object
+      const downloadUrl = asset.raw?.browser_download_url;
       if (!downloadUrl) {
-        throw new Error(`Asset ${asset.id} has no downloadUrl`);
+        throw new Error(
+          `Asset ${asset.id} has no browser_download_url in its raw payload`,
+        );
       }
       res.redirect(downloadUrl);
       return;
@@ -189,11 +190,10 @@ export class PecansGitHubBackend extends Backend {
         headers["Authorization"] = `token ${this.token}`;
       }
       const options: RequestInit = { headers, redirect };
-      // apiUrl fallback for DTOs that predate the explicit URL fields
-      // (removed in 3.0)
-      const apiUrl = asset.apiUrl ?? asset.raw?.url;
+      // raw is this backend's private payload: the GitHub API asset object
+      const apiUrl = asset.raw?.url;
       if (!apiUrl) {
-        throw new Error(`Asset ${asset.id} has no apiUrl`);
+        throw new Error(`Asset ${asset.id} has no url in its raw payload`);
       }
       // get private url from github.
       const assetRes = await fetch(apiUrl, options);
@@ -219,11 +219,10 @@ export class PecansGitHubBackend extends Backend {
       headers["Authorization"] = `token ${this.token}`;
     }
 
-    // apiUrl fallback for DTOs that predate the explicit URL fields
-    // (removed in 3.0)
-    const url = asset.apiUrl ?? asset.raw?.url;
+    // raw is this backend's private payload: the GitHub API asset object
+    const url = asset.raw?.url;
     if (!url) {
-      throw new Error(`Asset ${asset.id} has no apiUrl`);
+      throw new Error(`Asset ${asset.id} has no url in its raw payload`);
     }
     const opts: RequestInit = {
       method: "get",
@@ -284,11 +283,6 @@ export class PecansGitHubBackend extends Backend {
       type,
       size,
       content_type,
-      // explicit URLs so nothing downstream needs the GitHub-shaped raw:
-      // downloadUrl is the public redirect target, apiUrl the authenticated
-      // fetch target
-      downloadUrl: asset.browser_download_url,
-      apiUrl: asset.url,
       raw,
     };
     return new PecansAsset(dto);

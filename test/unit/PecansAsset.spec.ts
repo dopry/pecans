@@ -64,31 +64,15 @@ describe("PecansAsset", () => {
       expect(asset.pkg).toBeUndefined();
     });
 
-    it("should carry explicit downloadUrl and apiUrl from the DTO", () => {
-      const asset = new PecansAsset(
-        createMockAssetDTO({
-          downloadUrl: "https://example.com/dl/app.dmg",
-          apiUrl: "https://api.example.com/assets/123",
-        }),
-      );
-      expect(asset.downloadUrl).toBe("https://example.com/dl/app.dmg");
-      expect(asset.apiUrl).toBe("https://api.example.com/assets/123");
-    });
-
-    // raw is backend-specific and opaque to the neutral model - even a
-    // GitHub-shaped raw payload must not leak into the explicit URL fields;
-    // legacy raw-only assets are interpreted by the backend that created them
-    it("should not derive URLs from the raw payload", () => {
-      const asset = new PecansAsset(
-        createMockAssetDTO({
-          raw: {
-            browser_download_url: "https://github.com/o/r/releases/d/app.dmg",
-            url: "https://api.github.com/repos/o/r/releases/assets/1",
-          },
-        }),
-      );
-      expect(asset.downloadUrl).toBeUndefined();
-      expect(asset.apiUrl).toBeUndefined();
+    // raw is backend-private: the model carries it verbatim for the backend
+    // that created the asset and never interprets it
+    it("should pass the raw payload through untouched", () => {
+      const raw = {
+        browser_download_url: "https://github.com/o/r/releases/d/app.dmg",
+        url: "https://api.github.com/repos/o/r/releases/assets/1",
+      };
+      const asset = new PecansAsset(createMockAssetDTO({ raw }));
+      expect(asset.raw).toBe(raw);
     });
   });
 

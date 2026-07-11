@@ -372,30 +372,7 @@ describe("PecansGitHubBackend", () => {
       };
     });
 
-    it("should redirect to downloadUrl when not proxying", async () => {
-      backend = new PecansGitHubBackend("owner", "repo", "token", {
-        proxyAssets: false,
-      });
-
-      const asset = {
-        id: "1",
-        type: "windows_64" as const,
-        filename: "app.exe",
-        size: 1000,
-        content_type: "application/octet-stream",
-        downloadUrl:
-          "https://github.com/owner/repo/releases/download/v1.0.0/app.exe",
-        raw: {},
-      };
-
-      await backend.serveAsset(asset, mockResponse as Response);
-
-      expect(mockResponse.redirect).toHaveBeenCalledWith(asset.downloadUrl);
-    });
-
-    // compat: DTOs built before the explicit URL fields only carry the
-    // GitHub-shaped raw payload (fallback removed in 3.0)
-    it("should fall back to raw.browser_download_url when downloadUrl is absent", async () => {
+    it("should redirect to the raw payload's browser_download_url when not proxying", async () => {
       backend = new PecansGitHubBackend("owner", "repo", "token", {
         proxyAssets: false,
       });
@@ -419,7 +396,7 @@ describe("PecansGitHubBackend", () => {
       );
     });
 
-    it("should throw when neither downloadUrl nor raw carries a url", async () => {
+    it("should throw a clear error when the raw payload has no download url", async () => {
       backend = new PecansGitHubBackend("owner", "repo", "token", {
         proxyAssets: false,
       });
@@ -435,7 +412,7 @@ describe("PecansGitHubBackend", () => {
 
       await expect(
         backend.serveAsset(asset, mockResponse as Response),
-      ).rejects.toThrow("no downloadUrl");
+      ).rejects.toThrow("no browser_download_url");
     });
 
     it("should fetch and redirect to location when proxying", async () => {
@@ -449,8 +426,9 @@ describe("PecansGitHubBackend", () => {
         filename: "app.exe",
         size: 1000,
         content_type: "application/octet-stream",
-        apiUrl: "https://api.github.com/repos/owner/repo/releases/assets/1",
-        raw: {},
+        raw: {
+          url: "https://api.github.com/repos/owner/repo/releases/assets/1",
+        },
       };
 
       const mockFetchResponse = {
@@ -522,8 +500,9 @@ describe("PecansGitHubBackend", () => {
         filename: "app.exe",
         size: 1000,
         content_type: "application/octet-stream",
-        apiUrl: "https://api.github.com/repos/owner/repo/releases/assets/1",
-        raw: {},
+        raw: {
+          url: "https://api.github.com/repos/owner/repo/releases/assets/1",
+        },
       };
 
       // native fetch resolves `body` to a web ReadableStream; the backend wraps
@@ -539,7 +518,7 @@ describe("PecansGitHubBackend", () => {
 
       const result = await backend.getAssetStream(asset);
 
-      expect(mockFetch).toHaveBeenCalledWith(asset.apiUrl, {
+      expect(mockFetch).toHaveBeenCalledWith(asset.raw.url, {
         method: "get",
         headers: {
           "User-Agent": "pecans",
@@ -555,7 +534,6 @@ describe("PecansGitHubBackend", () => {
       expect(Buffer.concat(chunks).toString()).toBe("payload");
     });
 
-    // compat: raw-only DTO exercises the raw.url fallback (removed in 3.0)
     it("should fetch asset stream without token", async () => {
       backend = new PecansGitHubBackend("owner", "repo");
 
@@ -757,9 +735,7 @@ describe("PecansGitHubBackend", () => {
       expect(result.type).toBe("windows_32");
       expect(result.size).toBe(1000);
       expect(result.content_type).toBe("application/octet-stream");
-      // explicit URLs are populated so nothing downstream reads raw
-      expect(result.downloadUrl).toBe(githubAsset.browser_download_url);
-      expect(result.apiUrl).toBe(githubAsset.url);
+      // raw carries the full GitHub asset for this backend's later use
       expect(result.raw).toBe(githubAsset);
     });
   });

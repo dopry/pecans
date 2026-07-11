@@ -18,19 +18,10 @@ export interface PecansAssetDTO {
   filename: string;
   id: string;
   /**
-   * Public URL clients can be redirected to for this asset. Populated by the
-   * backend that normalizes the asset.
-   */
-  downloadUrl?: string;
-  /**
-   * Backend API URL for authenticated fetches of the asset content (e.g. the
-   * GitHub releases-asset API endpoint). Populated by the backend that
-   * normalizes the asset.
-   */
-  apiUrl?: string;
-  /**
-   * Backend-specific payload the asset was normalized from. Opaque outside
-   * the backend that created the asset; prefer the explicit fields above.
+   * Backend-private payload attached by the backend that created the asset
+   * (e.g. the GitHub API asset object, which the GitHub backend reads back
+   * in serveAsset/getAssetStream). Opaque outside that backend: core and
+   * other consumers must not interpret it.
    */
   raw: any;
   size: number;
@@ -47,8 +38,6 @@ export class PecansAsset implements PecansAssetDTO {
   type: Platform;
   size: number;
   content_type: string;
-  downloadUrl?: string;
-  apiUrl?: string;
   raw: any;
 
   constructor(dto: PecansAssetDTO) {
@@ -58,10 +47,6 @@ export class PecansAsset implements PecansAssetDTO {
     this.raw = dto.raw;
     this.size = dto.size;
     this.type = dto.type;
-    // raw is backend-specific, so the neutral model never interprets it;
-    // legacy raw-only assets are handled by the backend that created them
-    this.downloadUrl = dto.downloadUrl;
-    this.apiUrl = dto.apiUrl;
     this.os = filenameToOperatingSystem(this.filename);
     this.arch = filenameToArchitecture(this.filename, this.os);
     this.pkg = filenameToPackageFormat(this.filename);
