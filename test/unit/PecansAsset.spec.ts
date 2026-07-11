@@ -75,8 +75,10 @@ describe("PecansAsset", () => {
       expect(asset.apiUrl).toBe("https://api.example.com/assets/123");
     });
 
-    // compat shim for DTOs that predate the explicit URL fields (removed in 3.0)
-    it("should fall back to the GitHub-shaped raw payload for missing URLs", () => {
+    // raw is backend-specific and opaque to the neutral model - even a
+    // GitHub-shaped raw payload must not leak into the explicit URL fields;
+    // legacy raw-only assets are interpreted by the backend that created them
+    it("should not derive URLs from the raw payload", () => {
       const asset = new PecansAsset(
         createMockAssetDTO({
           raw: {
@@ -85,16 +87,6 @@ describe("PecansAsset", () => {
           },
         }),
       );
-      expect(asset.downloadUrl).toBe(
-        "https://github.com/o/r/releases/d/app.dmg",
-      );
-      expect(asset.apiUrl).toBe(
-        "https://api.github.com/repos/o/r/releases/assets/1",
-      );
-    });
-
-    it("should leave URLs undefined when neither DTO fields nor raw carry them", () => {
-      const asset = new PecansAsset(createMockAssetDTO());
       expect(asset.downloadUrl).toBeUndefined();
       expect(asset.apiUrl).toBeUndefined();
     });
