@@ -164,28 +164,41 @@ describe("/download/:platform?", () => {
     await expectRedirectTo(app, "/download/osx", "app-2.8.0-beta.2-univ.dmg");
   });
 
-  // README advertises /download/latest but "latest" parses as a platform and
-  // 500s. Phase 2 aligns the README with the real route surface.
-  it("500s on /download/latest (unsupported route shape)", async () => {
+  // "latest" is not a platform; the route shape is /download/:platform only
+  it("400s on /download/latest (unsupported route shape)", async () => {
     const { app } = configureTestAppWithReleases(
       buildStableReleaseSet(OWNER, REPO),
     );
-    await supertest(app).get("/download/latest").expect(500);
+    await supertest(app).get("/download/latest").expect(400);
   });
 
-  it("500s on an unknown platform", async () => {
+  it("400s on an unknown platform", async () => {
     const { app } = configureTestAppWithReleases(
       buildStableReleaseSet(OWNER, REPO),
     );
-    await supertest(app).get("/download/amiga").expect(500);
+    await supertest(app).get("/download/amiga").expect(400);
   });
 
-  it("500s when no asset exists for the platform", async () => {
+  it("never reflects error messages as html", async () => {
+    // messages embed user-controlled url values; an html content type would
+    // make them reflected XSS in a browser
+    const { app } = configureTestAppWithReleases(
+      buildStableReleaseSet(OWNER, REPO),
+    );
+    const res = await supertest(app)
+      .get("/download/%3Cscript%3Ealert(1)%3C%2Fscript%3E")
+      .set("Accept", "text/html")
+      .expect(400);
+    expect(res.headers["content-type"]).not.toContain("text/html");
+    expect(res.headers["content-type"]).toContain("text/plain");
+  });
+
+  it("404s when no asset exists for the platform", async () => {
     const { app } = configureTestAppWithReleases(
       buildStableReleaseSet(OWNER, REPO),
     );
     // fixture has no 32-bit windows assets
-    await supertest(app).get("/download/win32").expect(500);
+    await supertest(app).get("/download/win32").expect(404);
   });
 });
 

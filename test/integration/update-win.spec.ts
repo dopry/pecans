@@ -132,15 +132,24 @@ describe("/update/:platform/:version/RELEASES (Squirrel.Windows)", () => {
     expect(text).toContain("app-2.8.0-beta.2-x64-full.nupkg");
   });
 
-  it("500s when no release matches the version range", async () => {
+  it("400s on a range-shaped version", async () => {
     const { app } = configureTestAppWithReleases(
       buildStableReleaseSet(OWNER, REPO),
     );
-    // ">=999.0.0" matches nothing -> "Version not found" -> plain Error -> 500
-    await supertest(app).get("/update/windows_64/999.0.0/RELEASES").expect(500);
+    await supertest(app)
+      .get("/update/windows_64/%3E%3D1.0.0/RELEASES")
+      .expect(400);
   });
 
-  it("500s when the release has no RELEASES asset", async () => {
+  it("404s when no release matches the version range", async () => {
+    const { app } = configureTestAppWithReleases(
+      buildStableReleaseSet(OWNER, REPO),
+    );
+    // ">=999.0.0" matches nothing -> "Version not found"
+    await supertest(app).get("/update/windows_64/999.0.0/RELEASES").expect(404);
+  });
+
+  it("404s when the release has no RELEASES asset", async () => {
     const releases = ["2.7.0"].map((version) =>
       buildRelease({
         owner: OWNER,
@@ -154,17 +163,17 @@ describe("/update/:platform/:version/RELEASES (Squirrel.Windows)", () => {
     const { app } = configureTestAppWithReleases(releases);
     const res = await supertest(app)
       .get("/update/windows_64/2.5.0/RELEASES")
-      .expect(500);
+      .expect(404);
     expect(res.text).toContain("RELEASES File not found");
   });
 
   // The win32 alias maps to windows_32; the fixture (like most Electron apps
-  // today) only publishes x64, so 32-bit clients get a 500. Documented, not
+  // today) only publishes x64, so 32-bit clients get a 404. Documented, not
   // endorsed.
-  it("500s for win32 clients when only x64 assets exist", async () => {
+  it("404s for win32 clients when only x64 assets exist", async () => {
     const { app } = configureTestAppWithReleases(
       buildStableReleaseSet(OWNER, REPO),
     );
-    await supertest(app).get("/update/win32/2.5.0/RELEASES").expect(500);
+    await supertest(app).get("/update/win32/2.5.0/RELEASES").expect(404);
   });
 });

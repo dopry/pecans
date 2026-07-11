@@ -2,8 +2,16 @@ import Debug from "debug";
 import { NextFunction, Request, Response, Router } from "express";
 import EventEmitter from "node:events";
 import { ParsedQs } from "qs";
-import { validRange } from "semver";
+import { valid, validRange } from "semver";
 import { Backend } from "./backends/";
+import {
+  BadRequestError,
+  errorHandler,
+  NotFoundError,
+  UnsupportedChannelError,
+  UnsupportedPlatformError,
+  UnsupportedTagError,
+} from "./errors";
 import {
   PecansAssetDTO,
   PecansRelease,
@@ -13,7 +21,6 @@ import {
 } from "./models/index";
 import {
   OPERATING_SYSTEMS,
-  PLATFORMS,
   Platform,
   filenameToPlatform,
   getPkgFromQuery,
@@ -51,28 +58,6 @@ export interface PecansSettings {
 }
 
 export type PecansOptions = Partial<PecansSettings>;
-
-export class UnsupportedPlatformError extends Error {
-  constructor(platform: unknown) {
-    const platforms = PLATFORMS.join(", ");
-    const message = `Unsupported platform (${platform}), expected one of [${platforms}]`;
-    super(message);
-  }
-}
-
-export class UnsupportedChannelError extends Error {
-  constructor(channel: unknown) {
-    const message = `Unsupported channel (${channel}), expected a single string of 'stable', '*' or a user-defined channel`;
-    super(message);
-  }
-}
-
-export class UnsupportedTagError extends Error {
-  constructor(tag: unknown) {
-    const message = `Unsupported tag (${tag}), expected 'latest' or a semver range`;
-    super(message);
-  }
-}
 
 export type ReqQueryValue =
   string | ParsedQs | (string | ParsedQs)[] | string[] | ParsedQs[] | undefined;
@@ -135,7 +120,7 @@ export function getFiletypeFromQuery(
   if (!value) return undefined;
   const ext = value.startsWith(".") ? value : `.${value}`;
   if (!isSupportedFileExtension(ext))
-    throw new Error("Unsupported FileType Requested");
+    throw new BadRequestError(`Unsupported filetype requested (${value})`);
   return ext;
 }
 
@@ -230,6 +215,10 @@ export class Pecans extends EventEmitter {
       "/update/channel/:channel/:platform/:version/RELEASES",
       this.handleUpdateWin.bind(this),
     );
+
+    // translate HttpErrors into their status codes for every route above,
+    // regardless of how the host app composes this router
+    this.router.use(errorHandler());
   }
 
   async dlfilename(req: Request, res: Response, next: NextFunction) {
@@ -238,13 +227,13 @@ export class Pecans extends EventEmitter {
       // an absent filename must not fall through to queryReleases, where an
       // undefined filename matches every release
       if (!filename) {
-        return res.status(404).send("filename is required");
+        throw new BadRequestError("filename is required");
       }
       const query = { filename };
       const releases = await this.getReleases();
       const matchingReleases = releases.queryReleases(query);
       if (matchingReleases.length == 0) {
-        return res.status(404).send(`${filename} not found`);
+        throw new NotFoundError(`${filename} not found`);
       }
       const release = matchingReleases[0];
       const matchingAssets = release.queryAssets(query);
@@ -252,10 +241,10 @@ export class Pecans extends EventEmitter {
       // queryReleases. queryReleases calls queryAssets internally with the same query.  So the matchingAssets should
       // always be > 0
       if (matchingAssets.length == 0) {
-        return res.status(404).send(`${filename} not found`);
+        throw new NotFoundError(`${filename} not found`);
       }
       const asset = matchingAssets[0];
-      this.serveAsset(req, res, release, asset);
+      await this.serveAsset(req, res, release, asset);
     } catch (err) {
       next(err);
     }
@@ -270,20 +259,14 @@ export class Pecans extends EventEmitter {
     try {
       const os = getStringParam(req, "os");
       if (!isOperatingSystem(os)) {
-        res
-          .status(404)
-          .send(
-            `Unrecognized OS (${os}) expecting one of ${OPERATING_SYSTEMS.join(
-              ", ",
-            )} `,
-          );
-        return;
+        throw new NotFoundError(
+          `Unrecognized OS (${os}) expecting one of ${OPERATING_SYSTEMS.join(", ")}`,
+        );
       }
 
       const arch = getStringParam(req, "arch");
       if (!arch || !isValidArchForOS(os, arch)) {
-        res.status(404).send(`Unsupported Arch (${arch}) for OS (${os})`);
-        return;
+        throw new NotFoundError(`Unsupported Arch (${arch}) for OS (${os})`);
       }
 
       const channel = req.query.channel
@@ -303,8 +286,7 @@ export class Pecans extends EventEmitter {
 
       const releases = await this.queryReleases(releaseQuery);
       if (releases.length == 0) {
-        res.status(404).send("No Matching Releases Found");
-        return;
+        throw new NotFoundError("No Matching Releases Found");
       }
       // releases are sorted in version descending order so the first element
       // should be the highest version that matched the que
@@ -314,12 +296,11 @@ export class Pecans extends EventEmitter {
       const matchingAssets = release.queryAssets(assetQuery);
 
       if (matchingAssets.length == 0) {
-        res.status(404).send("No Matching Assets Found");
-        return;
+        throw new NotFoundError("No Matching Assets Found");
       }
 
       const asset = matchingAssets[0];
-      this.serveAsset(req, res, release, asset);
+      await this.serveAsset(req, res, release, asset);
     } catch (e) {
       next(e);
     }
@@ -329,7 +310,7 @@ export class Pecans extends EventEmitter {
     const releases = await this.getReleases();
     const names = releases.getChannelNames();
     if (!names.includes(name)) {
-      throw new Error(`Invalid Channel: ${name}`);
+      throw new NotFoundError(`Invalid Channel: ${name}`);
     }
   }
 
@@ -428,12 +409,9 @@ export class Pecans extends EventEmitter {
         ? filenameToPlatform(filename)
         : getStringParam(req, "platform");
       if (!_platform) {
-        res
-          .status(400)
-          .send(
-            "Platform is required. Specify a platform in the URL, e.g. /download/osx_64.",
-          );
-        return;
+        throw new BadRequestError(
+          "Platform is required. Specify a platform in the URL, e.g. /download/osx_64.",
+        );
       }
       const platform = validateReqQueryPlatform(mapLegacyPlatform(_platform));
 
@@ -477,18 +455,13 @@ export class Pecans extends EventEmitter {
           );
 
       if (!asset)
-        throw new Error(
-          "No download available for platform " +
-            platform +
-            " for version " +
-            release.version +
-            " (" +
-            channel +
-            ")",
+        throw new NotFoundError(
+          `No download available for platform ${platform} for version ${release.version} (${channel})`,
         );
 
-      // Call analytic middleware, then serve
-      return this.serveAsset(req, res, release, asset);
+      // Call analytic middleware, then serve; await so rejections reach the
+      // catch below instead of orphaning the promise
+      await this.serveAsset(req, res, release, asset);
     } catch (err) {
       next(err);
     }
@@ -501,8 +474,10 @@ export class Pecans extends EventEmitter {
     next: NextFunction,
   ) {
     try {
-      if (!req.query.version) throw new Error('Requires "version" parameter');
-      if (!req.query.platform) throw new Error('Requires "platform" parameter');
+      if (!req.query.version)
+        throw new BadRequestError('Requires "version" parameter');
+      if (!req.query.platform)
+        throw new BadRequestError('Requires "platform" parameter');
       return res.redirect(
         "/update/" + req.query.platform + "/" + req.query.version,
       );
@@ -520,11 +495,20 @@ export class Pecans extends EventEmitter {
     try {
       const versionParam = getStringParam(req, "version");
       const platformParam = getStringParam(req, "platform");
-      if (!versionParam) throw new Error('Requires "version" parameter');
-      if (!platformParam) throw new Error('Requires "platform" parameter');
+      if (!versionParam)
+        throw new BadRequestError('Requires "version" parameter');
+      if (!platformParam)
+        throw new BadRequestError('Requires "platform" parameter');
 
       const mapped_platform = mapLegacyPlatform(platformParam);
       const platform = validateReqQueryPlatform(mapped_platform);
+      // the client reports its installed version, so require a specific
+      // semver version; a range would corrupt the ">=" + tag filter below
+      if (!valid(versionParam)) {
+        throw new BadRequestError(
+          `Invalid version (${versionParam}), expected a specific semver version`,
+        );
+      }
       const tag = versionParam;
 
       const channel = getStringParam(req, "channel") || "stable";
@@ -575,14 +559,21 @@ export class Pecans extends EventEmitter {
 
       const channel = getStringParam(req, "channel") || "stable";
       const tag = getStringParam(req, "version");
-      if (!tag) throw new Error('Requires "version" parameter');
+      if (!tag) throw new BadRequestError('Requires "version" parameter');
+      // the client reports its installed version, so require a specific
+      // semver version; a range would corrupt the ">=" + tag filter below
+      if (!valid(tag)) {
+        throw new BadRequestError(
+          `Invalid version (${tag}), expected a specific semver version`,
+        );
+      }
 
       const versions = await this.versions.filter({
         versionRange: ">=" + tag,
         platform,
         channel,
       });
-      if (versions.length === 0) throw new Error("Version not found");
+      if (versions.length === 0) throw new NotFoundError("Version not found");
 
       // Update needed?
       const latest = versions[0];
@@ -590,7 +581,9 @@ export class Pecans extends EventEmitter {
       // File exists
       const asset = latest.assets.find((i) => i.filename == "RELEASES");
       if (!asset) {
-        throw new Error(`RELEASES File not found for ${latest.version}`);
+        throw new NotFoundError(
+          `RELEASES File not found for ${latest.version}`,
+        );
       }
 
       const content = await this.backend.readAsset(asset);
@@ -620,10 +613,27 @@ export class Pecans extends EventEmitter {
     next: NextFunction,
   ) {
     try {
-      const version = getVersionFromQuery(req.query);
+      // the path param wins over ?version; an invalid path param is an
+      // explicit client error rather than silently serving the latest notes
+      const versionParam = getStringParam(req, "version");
+      if (
+        versionParam &&
+        versionParam !== "latest" &&
+        !validRange(versionParam)
+      ) {
+        throw new BadRequestError(
+          `Invalid version (${versionParam}), expected 'latest' or a semver range`,
+        );
+      }
+      const version = versionParam ?? getVersionFromQuery(req.query);
       const releases = await this.getReleases();
       const query = { version };
       const candidates = releases.queryReleases(query);
+      if (candidates.length === 0) {
+        throw new NotFoundError(
+          version ? `No release found for version ${version}` : "No releases",
+        );
+      }
       const release = candidates[0];
       const note = formatReleaseNote(release);
 

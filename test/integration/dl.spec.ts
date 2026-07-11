@@ -111,13 +111,14 @@ describe("/dl/:os/:arch", () => {
     await supertest(app).get("/dl/windows/32").expect(404);
   });
 
-  // Today an unknown channel throws a plain Error -> express default 500.
-  // Phase 6 (typed errors) will turn this into a 4xx.
-  it("500s on an unknown channel (until typed error handling lands)", async () => {
+  it("404s on an unknown channel", async () => {
     const { app } = configureTestAppWithReleases(
       buildStableReleaseSet(OWNER, REPO),
     );
-    await supertest(app).get("/dl/osx/64?channel=nightly").expect(500);
+    const res = await supertest(app)
+      .get("/dl/osx/64?channel=nightly")
+      .expect(404);
+    expect(res.text).toContain("Invalid Channel");
   });
 });
 

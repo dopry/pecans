@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { Backend } from "../../src/backends/backend";
 import { PecansRelease } from "../../src/models/PecansRelease";
 import { PecansReleases } from "../../src/models/PecansReleases";
-import { UnsupportedPlatformError } from "../../src/pecans";
+import { UnsupportedPlatformError } from "../../src/errors";
 import { Versions } from "../../src/versions";
 
 // Mock backend

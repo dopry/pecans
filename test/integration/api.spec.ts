@@ -165,12 +165,47 @@ describe("/notes", () => {
     expect(res.text).toBe("## 2.6.0\n\nNotes for 2.6.0\n");
   });
 
-  // Today an unknown version crashes formatReleaseNote (undefined release)
-  // -> 500. Phase 6 turns this into a 404.
-  it("500s for an unknown version (until typed error handling lands)", async () => {
+  it("honors the :version path parameter", async () => {
     const { app } = configureTestAppWithReleases(
       buildStableReleaseSet(OWNER, REPO),
     );
-    await supertest(app).get("/notes?version=99.0.0").expect(500);
+    const res = await supertest(app)
+      .get("/notes/2.6.0")
+      .set("Accept", "application/json")
+      .expect(200);
+    expect(res.body).toEqual({ note: "## 2.6.0\n\nNotes for 2.6.0\n" });
+  });
+
+  it("accepts the latest keyword as the path version", async () => {
+    const { app } = configureTestAppWithReleases(
+      buildStableReleaseSet(OWNER, REPO),
+    );
+    const res = await supertest(app)
+      .get("/notes/latest")
+      .set("Accept", "application/json")
+      .expect(200);
+    expect(res.body).toEqual({ note: "## 2.7.0\n\nNotes for 2.7.0\n" });
+  });
+
+  it("404s for an unknown path version", async () => {
+    const { app } = configureTestAppWithReleases(
+      buildStableReleaseSet(OWNER, REPO),
+    );
+    await supertest(app).get("/notes/99.0.0").expect(404);
+  });
+
+  it("400s for an invalid path version", async () => {
+    const { app } = configureTestAppWithReleases(
+      buildStableReleaseSet(OWNER, REPO),
+    );
+    await supertest(app).get("/notes/not-a-version").expect(400);
+  });
+
+  it("404s for an unknown version", async () => {
+    const { app } = configureTestAppWithReleases(
+      buildStableReleaseSet(OWNER, REPO),
+    );
+    const res = await supertest(app).get("/notes?version=99.0.0").expect(404);
+    expect(res.text).toContain("No release found");
   });
 });
