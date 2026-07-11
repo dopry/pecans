@@ -2,12 +2,17 @@ import { Webhooks } from "@octokit/webhooks";
 import nock from "nock";
 import supertest from "supertest";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { Backend, BackendOpts } from "../../src/backends/backend";
+import { PecansReleases } from "../../src/models/PecansReleases";
 import {
   buildStableReleaseSet,
   buildRelease,
   buildFullPlatformAssets,
 } from "../fixtures/builders";
-import { configureTestAppWithReleases } from "../harness";
+import {
+  configurePecansTestApp,
+  configureTestAppWithReleases,
+} from "../harness";
 import { nockGithubListReleases } from "../nock/nockGithubListReleases";
 
 nock.disableNetConnect();
@@ -103,5 +108,65 @@ describe("/webhook/refresh (GitHub release webhook)", () => {
       .set("X-Hub-Signature-256", signature)
       .send(payload)
       .expect(404);
+  });
+});
+
+describe("/webhook/refresh (generic backend secret middleware)", () => {
+  // non-GitHub backends inherit the base Backend middleware, which
+  // authenticates via an X-Pecans-Secret header or ?secret= query parameter
+  class RefreshCountingBackend extends Backend {
+    public fetchCount = 0;
+    constructor(opts?: BackendOpts) {
+      super(opts);
+    }
+    async fetchReleases(): Promise<PecansReleases> {
+      this.fetchCount++;
+      return new PecansReleases([]);
+    }
+  }
+
+  function buildGenericApp(opts?: BackendOpts) {
+    const backend = new RefreshCountingBackend(opts);
+    const { app } = configurePecansTestApp(backend);
+    return { backend, app };
+  }
+
+  it("refreshes and responds 200 given the secret as a query parameter", async () => {
+    const { backend, app } = buildGenericApp({ refreshSecret: SECRET });
+    const res = await supertest(app)
+      .post(`/webhook/refresh?secret=${SECRET}`)
+      .expect(200);
+    expect(res.body).toEqual({ refreshed: true });
+    expect(backend.fetchCount).toBe(1);
+  });
+
+  it("refreshes and responds 200 given the X-Pecans-Secret header", async () => {
+    const { backend, app } = buildGenericApp({ refreshSecret: SECRET });
+    await supertest(app)
+      .post("/webhook/refresh")
+      .set("X-Pecans-Secret", SECRET)
+      .expect(200);
+    expect(backend.fetchCount).toBe(1);
+  });
+
+  it("responds 403 for a wrong secret without refreshing", async () => {
+    const { backend, app } = buildGenericApp({ refreshSecret: SECRET });
+    const res = await supertest(app)
+      .post("/webhook/refresh?secret=wrong")
+      .expect(403);
+    expect(res.text).toContain("Invalid refresh secret");
+    expect(backend.fetchCount).toBe(0);
+  });
+
+  it("responds 403 when no secret is sent", async () => {
+    const { backend, app } = buildGenericApp({ refreshSecret: SECRET });
+    await supertest(app).post("/webhook/refresh").expect(403);
+    expect(backend.fetchCount).toBe(0);
+  });
+
+  it("is a no-op 404 when no refreshSecret is configured", async () => {
+    const { backend, app } = buildGenericApp();
+    await supertest(app).post(`/webhook/refresh?secret=${SECRET}`).expect(404);
+    expect(backend.fetchCount).toBe(0);
   });
 });

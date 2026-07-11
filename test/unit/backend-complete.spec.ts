@@ -5,6 +5,7 @@ import {
   BackendOpts,
   BackendSettings,
 } from "../../src/backends/backend";
+import { ForbiddenError } from "../../src/errors";
 import { PecansAsset, PecansAssetDTO } from "../../src/models/PecansAsset";
 import { PecansReleases } from "../../src/models/PecansReleases";
 
@@ -45,16 +46,27 @@ describe("Backend Complete Coverage", () => {
   describe("getRefreshWebhookMiddleware", () => {
     let backend: TestBackend;
     // express 5 declares Request.path readonly; the mock needs a mutable one
-    let mockReq: Omit<Partial<Request>, "path"> & { path?: string };
-    let mockRes: Partial<Response>;
+    let mockReq: Omit<Partial<Request>, "path" | "get"> & {
+      path?: string;
+      get: ReturnType<typeof vi.fn>;
+    };
+    let mockRes: Partial<Response> & {
+      status: ReturnType<typeof vi.fn>;
+      json: ReturnType<typeof vi.fn>;
+    };
     let mockNext: NextFunction;
 
     beforeEach(() => {
       mockReq = {
         path: "/api/refresh",
-        params: {},
+        query: {},
+        get: vi.fn().mockReturnValue(undefined),
       };
-      mockRes = {};
+      mockRes = {
+        status: vi.fn(),
+        json: vi.fn(),
+      };
+      mockRes.status.mockReturnValue(mockRes);
       mockNext = vi.fn();
     });
 
@@ -62,7 +74,7 @@ describe("Backend Complete Coverage", () => {
       backend = new TestBackend(); // No refreshSecret provided
       const middleware = backend.getRefreshWebhookMiddleware("/api/refresh");
 
-      middleware(mockReq as Request, mockRes as Response, mockNext);
+      middleware(mockReq as unknown as Request, mockRes as Response, mockNext);
 
       expect(mockNext).toHaveBeenCalledWith();
       expect(mockNext).toHaveBeenCalledTimes(1);
@@ -73,57 +85,70 @@ describe("Backend Complete Coverage", () => {
       mockReq.path = "/different/path";
       const middleware = backend.getRefreshWebhookMiddleware("/api/refresh");
 
-      middleware(mockReq as Request, mockRes as Response, mockNext);
+      middleware(mockReq as unknown as Request, mockRes as Response, mockNext);
 
       expect(mockNext).toHaveBeenCalledWith();
       expect(mockNext).toHaveBeenCalledTimes(1);
     });
 
-    it("should call next with 'bad secret' when secret does not match", () => {
+    it("should 403 when the secret does not match", () => {
       backend = new TestBackend({ refreshSecret: "test-secret" });
-      mockReq.params = { secret: "wrong-secret" };
+      mockReq.query = { secret: "wrong-secret" };
       const middleware = backend.getRefreshWebhookMiddleware("/api/refresh");
 
-      middleware(mockReq as Request, mockRes as Response, mockNext);
+      middleware(mockReq as unknown as Request, mockRes as Response, mockNext);
 
-      expect(mockNext).toHaveBeenCalledWith("bad secret");
+      expect(mockNext).toHaveBeenCalledWith(expect.any(ForbiddenError));
     });
 
-    it("should refresh cache and call next() on successful validation", async () => {
-      const refreshSecret = "test-secret";
-      backend = new TestBackend({ refreshSecret });
+    it("should 403 when no secret is provided on the watched path", () => {
+      backend = new TestBackend({ refreshSecret: "test-secret" });
+      const middleware = backend.getRefreshWebhookMiddleware("/api/refresh");
 
-      // Calculate the expected hash that would be generated
-      const crypto = await import("crypto");
-      const expectedHash = crypto
-        .createHash("sha256")
-        .update(refreshSecret)
-        .digest("base64");
+      middleware(mockReq as unknown as Request, mockRes as Response, mockNext);
 
-      mockReq.params = { secret: expectedHash };
+      expect(mockNext).toHaveBeenCalledWith(expect.any(ForbiddenError));
+    });
+
+    it("should refresh cache and respond 200 for a valid ?secret= query", async () => {
+      backend = new TestBackend({ refreshSecret: "test-secret" });
+      mockReq.query = { secret: "test-secret" };
 
       const refreshCacheSpy = vi
         .spyOn(backend, "refreshCache")
         .mockResolvedValue(backend.mockReleases);
       const middleware = backend.getRefreshWebhookMiddleware("/api/refresh");
 
-      await middleware(mockReq as Request, mockRes as Response, mockNext);
+      middleware(mockReq as unknown as Request, mockRes as Response, mockNext);
+      await vi.waitFor(() => expect(mockRes.json).toHaveBeenCalled());
 
       expect(refreshCacheSpy).toHaveBeenCalled();
-      expect(mockNext).toHaveBeenCalledWith();
+      expect(mockRes.status).toHaveBeenCalledWith(200);
+      expect(mockRes.json).toHaveBeenCalledWith({ refreshed: true });
+      expect(mockNext).not.toHaveBeenCalled();
+    });
+
+    it("should accept the secret from the X-Pecans-Secret header", async () => {
+      backend = new TestBackend({ refreshSecret: "test-secret" });
+      mockReq.get.mockImplementation((name: string) =>
+        name.toLowerCase() === "x-pecans-secret" ? "test-secret" : undefined,
+      );
+
+      const refreshCacheSpy = vi
+        .spyOn(backend, "refreshCache")
+        .mockResolvedValue(backend.mockReleases);
+      const middleware = backend.getRefreshWebhookMiddleware("/api/refresh");
+
+      middleware(mockReq as unknown as Request, mockRes as Response, mockNext);
+      await vi.waitFor(() => expect(mockRes.json).toHaveBeenCalled());
+
+      expect(refreshCacheSpy).toHaveBeenCalled();
+      expect(mockRes.status).toHaveBeenCalledWith(200);
     });
 
     it("should call next with error when refreshCache fails", async () => {
-      const refreshSecret = "test-secret";
-      backend = new TestBackend({ refreshSecret });
-
-      const crypto = await import("crypto");
-      const expectedHash = crypto
-        .createHash("sha256")
-        .update(refreshSecret)
-        .digest("base64");
-
-      mockReq.params = { secret: expectedHash };
+      backend = new TestBackend({ refreshSecret: "test-secret" });
+      mockReq.query = { secret: "test-secret" };
 
       const testError = new Error("Cache refresh failed");
       const refreshCacheSpy = vi
@@ -132,13 +157,12 @@ describe("Backend Complete Coverage", () => {
       const middleware = backend.getRefreshWebhookMiddleware("/api/refresh");
 
       // The middleware is not async, but refreshCache is, so we need to wait
-      middleware(mockReq as Request, mockRes as Response, mockNext);
-
-      // Wait a bit for the promise to resolve
-      await new Promise((resolve) => setTimeout(resolve, 10));
+      middleware(mockReq as unknown as Request, mockRes as Response, mockNext);
+      await vi.waitFor(() => expect(mockNext).toHaveBeenCalled());
 
       expect(refreshCacheSpy).toHaveBeenCalled();
       expect(mockNext).toHaveBeenCalledWith(testError);
+      expect(mockRes.json).not.toHaveBeenCalled();
     });
   });
 

@@ -169,7 +169,13 @@ export class PecansGitHubBackend extends Backend {
   // Return stream for an asset
   async serveAsset(asset: PecansAssetDTO, res: Response): Promise<void> {
     if (!this.opts.proxyAssets) {
-      res.redirect(asset.raw.browser_download_url);
+      // downloadUrl fallback for DTOs that predate the explicit URL fields
+      // (removed in 3.0)
+      const downloadUrl = asset.downloadUrl ?? asset.raw?.browser_download_url;
+      if (!downloadUrl) {
+        throw new Error(`Asset ${asset.id} has no downloadUrl`);
+      }
+      res.redirect(downloadUrl);
       return;
     } else {
       // native fetch follows redirects by default; "manual" returns the 302 so
@@ -183,8 +189,14 @@ export class PecansGitHubBackend extends Backend {
         headers["Authorization"] = `token ${this.token}`;
       }
       const options: RequestInit = { headers, redirect };
+      // apiUrl fallback for DTOs that predate the explicit URL fields
+      // (removed in 3.0)
+      const apiUrl = asset.apiUrl ?? asset.raw?.url;
+      if (!apiUrl) {
+        throw new Error(`Asset ${asset.id} has no apiUrl`);
+      }
       // get private url from github.
-      const assetRes = await fetch(asset.raw.url, options);
+      const assetRes = await fetch(apiUrl, options);
       const location = assetRes.headers.get("Location");
       if (location !== null) {
         // redirect user to limited use download url.
@@ -207,7 +219,12 @@ export class PecansGitHubBackend extends Backend {
       headers["Authorization"] = `token ${this.token}`;
     }
 
-    const url = asset.raw.url;
+    // apiUrl fallback for DTOs that predate the explicit URL fields
+    // (removed in 3.0)
+    const url = asset.apiUrl ?? asset.raw?.url;
+    if (!url) {
+      throw new Error(`Asset ${asset.id} has no apiUrl`);
+    }
     const opts: RequestInit = {
       method: "get",
       headers: headers,
@@ -267,6 +284,11 @@ export class PecansGitHubBackend extends Backend {
       type,
       size,
       content_type,
+      // explicit URLs so nothing downstream needs the GitHub-shaped raw:
+      // downloadUrl is the public redirect target, apiUrl the authenticated
+      // fetch target
+      downloadUrl: asset.browser_download_url,
+      apiUrl: asset.url,
       raw,
     };
     return new PecansAsset(dto);

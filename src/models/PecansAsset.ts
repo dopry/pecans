@@ -17,6 +17,23 @@ export interface PecansAssetDTO {
   content_type: string;
   filename: string;
   id: string;
+  /**
+   * Public URL clients can be redirected to for this asset. Backends should
+   * populate this explicitly; when absent, `PecansAsset` falls back to the
+   * GitHub-shaped `raw.browser_download_url` for compatibility with DTOs
+   * built before these fields existed (fallback removed in 3.0).
+   */
+  downloadUrl?: string;
+  /**
+   * Backend API URL for authenticated fetches of the asset content (e.g. the
+   * GitHub releases-asset API endpoint). Falls back to the GitHub-shaped
+   * `raw.url` when absent (fallback removed in 3.0).
+   */
+  apiUrl?: string;
+  /**
+   * Backend-specific payload the asset was normalized from. Kept for
+   * compatibility; prefer the explicit fields above.
+   */
   raw: any;
   size: number;
   // TODO:  use os, arch, and pkg in place of platform.
@@ -32,6 +49,8 @@ export class PecansAsset implements PecansAssetDTO {
   type: Platform;
   size: number;
   content_type: string;
+  downloadUrl?: string;
+  apiUrl?: string;
   raw: any;
 
   constructor(dto: PecansAssetDTO) {
@@ -41,6 +60,10 @@ export class PecansAsset implements PecansAssetDTO {
     this.raw = dto.raw;
     this.size = dto.size;
     this.type = dto.type;
+    // compat shim for DTOs that predate the explicit URL fields and only
+    // carry a GitHub-shaped raw payload (removed in 3.0)
+    this.downloadUrl = dto.downloadUrl ?? dto.raw?.browser_download_url;
+    this.apiUrl = dto.apiUrl ?? dto.raw?.url;
     this.os = filenameToOperatingSystem(this.filename);
     this.arch = filenameToArchitecture(this.filename, this.os);
     this.pkg = filenameToPackageFormat(this.filename);

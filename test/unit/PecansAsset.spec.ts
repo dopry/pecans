@@ -63,6 +63,41 @@ describe("PecansAsset", () => {
       );
       expect(asset.pkg).toBeUndefined();
     });
+
+    it("should carry explicit downloadUrl and apiUrl from the DTO", () => {
+      const asset = new PecansAsset(
+        createMockAssetDTO({
+          downloadUrl: "https://example.com/dl/app.dmg",
+          apiUrl: "https://api.example.com/assets/123",
+        }),
+      );
+      expect(asset.downloadUrl).toBe("https://example.com/dl/app.dmg");
+      expect(asset.apiUrl).toBe("https://api.example.com/assets/123");
+    });
+
+    // compat shim for DTOs that predate the explicit URL fields (removed in 3.0)
+    it("should fall back to the GitHub-shaped raw payload for missing URLs", () => {
+      const asset = new PecansAsset(
+        createMockAssetDTO({
+          raw: {
+            browser_download_url: "https://github.com/o/r/releases/d/app.dmg",
+            url: "https://api.github.com/repos/o/r/releases/assets/1",
+          },
+        }),
+      );
+      expect(asset.downloadUrl).toBe(
+        "https://github.com/o/r/releases/d/app.dmg",
+      );
+      expect(asset.apiUrl).toBe(
+        "https://api.github.com/repos/o/r/releases/assets/1",
+      );
+    });
+
+    it("should leave URLs undefined when neither DTO fields nor raw carry them", () => {
+      const asset = new PecansAsset(createMockAssetDTO());
+      expect(asset.downloadUrl).toBeUndefined();
+      expect(asset.apiUrl).toBeUndefined();
+    });
   });
 
   describe("satisfiesQuery", () => {

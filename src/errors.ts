@@ -22,6 +22,12 @@ export class BadRequestError extends HttpError {
   }
 }
 
+export class ForbiddenError extends HttpError {
+  constructor(message: string) {
+    super(message, 403);
+  }
+}
+
 export class NotFoundError extends HttpError {
   constructor(message: string) {
     super(message, 404);

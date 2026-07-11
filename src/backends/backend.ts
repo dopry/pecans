@@ -1,8 +1,9 @@
 import { Buffer } from "buffer";
-import { createHash } from "crypto";
+import { createHash, timingSafeEqual } from "crypto";
 import { NextFunction, Request, Response } from "express";
 import { pipeline, Writable } from "stream";
 import { promisify } from "util";
+import { ForbiddenError } from "../errors";
 import { PecansReleases } from "../models";
 import { PecansAsset, PecansAssetDTO } from "../models/PecansAsset";
 
@@ -74,14 +75,21 @@ export abstract class Backend {
     return this.cache;
   }
 
-  // return an express middlware to catch a specific path
-  // ex) `app.use(backend.getRefreshMiddleware('/api/backend/refresh'))`
+  // Return an express middleware guarding a cache-refresh endpoint, for
+  // backends without their own webhook verification (the GitHub backend
+  // overrides this with signed-payload verification via @octokit/webhooks).
+  //
+  // The caller authenticates by sending the configured refreshSecret in an
+  // `X-Pecans-Secret` header or `?secret=` query parameter; a request on the
+  // watched path with a missing or wrong secret gets a 403. When no
+  // refreshSecret is configured the middleware is a pass-through and the
+  // endpoint stays disabled — the secret requirement prevents DOS attacks
+  // against update infrastructure.
+  // ex) `app.use(backend.getRefreshWebhookMiddleware('/api/backend/refresh'))`
   getRefreshWebhookMiddleware(
-    // path that the firmware will watch.
+    // path that the middleware will watch.
     path: string,
-  ): (req: Request, res: Response, nex: NextFunction) => void {
-    // the default refresh callback expects a base64 encoded sha256 hash of the refreshSecret.
-    // the secret is to prevent DOS attacks against update infrastructure.
+  ): (req: Request, res: Response, next: NextFunction) => void {
     const middleware = (req: Request, res: Response, next: NextFunction) => {
       // only do stuff if a secret was provided, otherwise just call next.
       if (!this.hash) {
@@ -92,19 +100,36 @@ export abstract class Backend {
         next();
         return;
       }
-      if (this.hash != req.params.secret) {
-        next("bad secret");
+      // the middleware is mounted with use(), so req.params is never
+      // populated here - the secret arrives as a header or query parameter
+      const query = req.query.secret;
+      const provided =
+        req.get("x-pecans-secret") ??
+        (typeof query === "string" ? query : undefined);
+      if (!provided || !this.verifyRefreshSecret(provided)) {
+        next(new ForbiddenError("Invalid refresh secret"));
         return;
       }
       this.refreshCache()
         .then(() => {
-          next();
+          res.status(200).json({ refreshed: true });
         })
         .catch((err) => {
           next(err);
         });
     };
     return middleware;
+  }
+
+  // constant-time comparison of the provided secret's sha256 against the
+  // stored hash, so the comparison doesn't leak match progress via timing
+  private verifyRefreshSecret(provided: string): boolean {
+    if (!this.hash) return false;
+    const expected = Buffer.from(this.hash, "base64");
+    const actual = createHash("sha256").update(provided).digest();
+    return (
+      expected.length === actual.length && timingSafeEqual(expected, actual)
+    );
   }
 
   // Abstract method for backends to implement actual fetching logic
