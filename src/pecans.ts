@@ -19,6 +19,7 @@ import {
   PecansReleaseQuery,
   PecansReleases,
 } from "./models/index";
+import { ReleaseService } from "./service";
 import {
   OPERATING_SYSTEMS,
   Platform,
@@ -28,6 +29,7 @@ import {
   isPlatform,
   isValidArchForOS,
   mapLegacyPlatform,
+  platformToQuery,
 } from "./utils/";
 import {
   SupportedFileExtension,
@@ -38,9 +40,8 @@ import {
   formatReleaseNote,
   mergeReleaseNotes,
 } from "./utils/mergeReleaseNotes";
-import { resolveReleaseAssetForVersion } from "./utils/resolveForVersion";
 import { generateRELEASES, parseRELEASES } from "./utils/win-releases";
-import { VersionFilterOpts, Versions } from "./versions";
+import { Versions } from "./versions";
 
 const logger = Debug("pecans");
 
@@ -143,6 +144,13 @@ export class Pecans extends EventEmitter {
 
   public router: Router;
 
+  /** Unified release/asset resolution pipeline all route handlers use. */
+  protected service: ReleaseService;
+
+  /**
+   * @deprecated retained for host apps that reach into pecans.versions;
+   * route handlers resolve through ReleaseService. Will be removed in 3.0.
+   */
   versions: Versions;
 
   constructor(
@@ -155,7 +163,9 @@ export class Pecans extends EventEmitter {
     if (!this.opts.timeout) this.opts.timeout = 60 * 60 * 1000;
     if (!this.opts.basePath) this.opts.basePath = "";
 
-    // Create backend
+    this.service = new ReleaseService(this.backend, {
+      preferUniversal: this.opts.preferUniversal,
+    });
     this.versions = new Versions(this.backend);
     this.router = Router();
 
@@ -251,8 +261,7 @@ export class Pecans extends EventEmitter {
   }
 
   async queryReleases(query: PecansReleaseQuery): Promise<PecansRelease[]> {
-    const releases = await this.getReleases();
-    return releases.queryReleases(query);
+    return this.service.queryReleases(query);
   }
 
   async dl(req: Request, res: Response, next: NextFunction) {
@@ -336,7 +345,7 @@ export class Pecans extends EventEmitter {
   }
 
   public async getReleases(): Promise<PecansReleases> {
-    return this.backend.releases();
+    return this.service.getReleases();
   }
 
   protected async handleApiChannels(
@@ -374,13 +383,15 @@ export class Pecans extends EventEmitter {
       const channel = validateReqQueryChannel(req.query.channel || "*");
       const platform = getPlatformFromQuery(req.query);
       const version = getVersionFromQuery(req.query);
-      const opts: VersionFilterOpts = {
-        versionRange: version,
-        platform,
-        channel,
-      };
 
-      const versions = await this.versions.filter(opts);
+      const versions = await this.service.filterReleases({
+        ...(platform ? platformToQuery(platform) : {}),
+        channel,
+        version,
+        // legacy behavior: this surface always widened osx queries to
+        // universal builds, regardless of opts.preferUniversal
+        preferUniversal: true,
+      });
       res.send(versions);
     } catch (err) {
       next(err);
@@ -414,6 +425,9 @@ export class Pecans extends EventEmitter {
         );
       }
       const platform = validateReqQueryPlatform(mapLegacyPlatform(_platform));
+      // legacy composite ids translate to the discrete model at the HTTP
+      // edge; everything below resolves through the ReleaseService pipeline
+      const platformQuery = platformToQuery(platform);
 
       // If a specific version was requested, don't enforce a channel; an
       // absent tag means "latest" and keeps the requested/default channel.
@@ -421,11 +435,10 @@ export class Pecans extends EventEmitter {
 
       let release: PecansRelease | undefined = undefined;
       try {
-        release = await this.versions.resolve({
+        release = await this.service.resolveRelease({
+          ...platformQuery,
           channel: channel,
-          platform,
-          versionRange: tag,
-          preferUniversal: this.opts.preferUniversal,
+          version: tag ?? "latest",
         });
       } catch (err) {
         // don't fall back to any channel if we already searched them all;
@@ -437,22 +450,19 @@ export class Pecans extends EventEmitter {
       // we weren't able to find a release with the specified channel
       // try again without the channel restriction
       if (!release) {
-        release = await this.versions.resolve({
+        release = await this.service.resolveRelease({
+          ...platformQuery,
           channel: "*",
-          platform,
-          versionRange: tag,
-          preferUniversal: this.opts.preferUniversal,
+          version: tag ?? "latest",
         });
       }
 
       const asset = filename
         ? release.assets.find((i) => i.filename == filename)
-        : resolveReleaseAssetForVersion(
-            release,
-            platform,
-            this.opts.preferUniversal,
-            filetype,
-          );
+        : this.service.resolveAsset(release, {
+            ...platformQuery,
+            wanted: filetype,
+          });
 
       if (!asset)
         throw new NotFoundError(
@@ -514,10 +524,13 @@ export class Pecans extends EventEmitter {
       const channel = getStringParam(req, "channel") || "stable";
       const filetype = req.query.filetype ? req.query.filetype : "zip";
 
-      const versions = await this.versions.filter({
-        versionRange: ">=" + tag,
-        platform,
+      const versions = await this.service.filterReleases({
+        ...platformToQuery(platform),
+        version: ">=" + tag,
         channel,
+        // legacy behavior: the update surface always widened osx queries to
+        // universal builds, regardless of opts.preferUniversal
+        preferUniversal: true,
       });
       if (versions.length === 0) return res.status(204).send("No updates");
       const latest = versions[0];
@@ -568,10 +581,13 @@ export class Pecans extends EventEmitter {
         );
       }
 
-      const versions = await this.versions.filter({
-        versionRange: ">=" + tag,
-        platform,
+      const versions = await this.service.filterReleases({
+        ...platformToQuery(platform),
+        version: ">=" + tag,
         channel,
+        // legacy behavior: the update surface always widened osx queries to
+        // universal builds, regardless of opts.preferUniversal
+        preferUniversal: true,
       });
       if (versions.length === 0) throw new NotFoundError("Version not found");
 

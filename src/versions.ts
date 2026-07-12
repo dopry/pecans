@@ -1,8 +1,8 @@
 import { Backend } from "./backends/";
-import { PecansRelease } from "./models/PecansRelease";
-import { sortReleaseBySemVerDescending } from "./utils/sortReleaseBySemVerDescending";
-import { isPlatform, Platform } from "./utils";
 import { NotFoundError, UnsupportedPlatformError } from "./errors";
+import { PecansRelease } from "./models/PecansRelease";
+import { ReleaseService } from "./service";
+import { isPlatform, Platform, platformToQuery } from "./utils";
 
 export type PlatformQuery = Platform | undefined;
 
@@ -17,6 +17,11 @@ export interface VersionFilterOpts {
   preferUniversal?: boolean;
 }
 
+/**
+ * @deprecated thin adapter over ReleaseService, kept for API compatibility;
+ * use ReleaseService with discrete {os, arch, pkg} queries instead. Will be
+ * removed in 3.0.
+ */
 export class Versions {
   static filterDefaults: VersionFilterOpts = {
     versionRange: "latest",
@@ -25,7 +30,11 @@ export class Versions {
     preferUniversal: true,
   };
 
-  constructor(protected backend: Backend) {}
+  protected service: ReleaseService;
+
+  constructor(protected backend: Backend) {
+    this.service = new ReleaseService(backend);
+  }
 
   // Filter versions with criteria
   async filter(opts: VersionFilterOpts): Promise<PecansRelease[]> {
@@ -39,39 +48,15 @@ export class Versions {
       throw new UnsupportedPlatformError(_opts.platform);
     }
 
-    const releases = await this.list();
-
-    const matches = releases.filter((release) => {
-      if (!release.satisfiesChannel(_opts.channel)) {
-        return false;
-      }
-      // Not available for requested platform
-      if (_opts.platform && _opts.platform !== undefined) {
-        const platforms: Platform[] = [_opts.platform];
-        // if we prefer universal, add it to the list of platforms to match
-        if (_opts.platform.startsWith("osx") && _opts.preferUniversal) {
-          platforms.push("osx_universal");
-        }
-        const availableForPlatform = release.assets.some((a) => {
-          if (a.filename === "RELEASES") return false;
-          const match =
-            platforms.includes(a.type) ||
-            platforms.some((p) => a.type.startsWith(p));
-          return match;
-        });
-        if (!availableForPlatform) return false;
-      }
-      const satisfiesSemver = release.satisfiesSemVerRange(_opts.versionRange);
-      return satisfiesSemver;
+    // legacy composite platform ids translate to the discrete model at the
+    // adapter boundary; the service only speaks {os, arch, pkg}
+    const platform = _opts.platform ? platformToQuery(_opts.platform) : {};
+    return this.service.filterReleases({
+      ...platform,
+      channel: _opts.channel,
+      version: _opts.versionRange,
+      preferUniversal: _opts.preferUniversal,
     });
-    // console.log({ matches, _opts });
-
-    if (matches.length > 1 && _opts.versionRange == "latest") {
-      // depend on sort by release descending to get the latest.
-      return [matches[0]];
-    }
-
-    return matches;
   }
 
   //  Get a specific version by its tag
@@ -80,9 +65,7 @@ export class Versions {
   }
 
   async list() {
-    const releases = await this.backend.releases();
-    const versions = releases.getReleases();
-    return versions.sort(sortReleaseBySemVerDescending);
+    return this.service.list();
   }
 
   // Resolve a platform, by filtering then taking the first result

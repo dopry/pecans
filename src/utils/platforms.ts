@@ -1,10 +1,18 @@
-import { filenameToArchitecture } from "./Architecture";
+import {
+  Architecture,
+  filenameToArchitecture,
+  isArchitecture,
+} from "./Architecture";
 import {
   filenameToOperatingSystem,
   isOperatingSystem,
   OperatingSystem,
 } from "./OperatingSystem";
-import { filenameToPackageFormat } from "./PackageFormat";
+import {
+  filenameToPackageFormat,
+  isPackageFormat,
+  PackageFormat,
+} from "./PackageFormat";
 
 // platform identifier
 // {{os}}_{{packaging system}}_{{arch}}
@@ -86,6 +94,56 @@ export function mapLegacyPlatform(platform: string): string {
 
 export function isPlatform(obj: unknown): obj is Platform {
   return typeof obj == "string" && PLATFORMS.includes(obj as Platform);
+}
+
+/** The discrete parts of a composite platform id. */
+export interface PlatformParts {
+  os: OperatingSystem;
+  /** undefined when the id has no arch segment ("linux", "linux_deb") */
+  arch?: Architecture;
+  /** undefined when the id has no package segment */
+  pkg?: PackageFormat;
+}
+
+/** Split a composite platform id ("linux_deb_64") into its discrete parts. */
+export function parsePlatform(platform: Platform): PlatformParts {
+  const [os, ...rest] = platform.split("_");
+  if (!isOperatingSystem(os)) {
+    // unreachable for the Platform union; guards runtime casts
+    throw new Error(`Unrecognized OS in platform string (${platform})`);
+  }
+  return {
+    os,
+    arch: rest.find(isArchitecture),
+    pkg: rest.find(isPackageFormat),
+  };
+}
+
+/** Discrete query equivalent of a composite platform id. */
+export interface DiscretePlatformQuery {
+  os: OperatingSystem;
+  /** undefined = any architecture */
+  arch?: Architecture;
+  /** undefined = any package format; null = only assets without one */
+  pkg?: PackageFormat | null;
+}
+
+/**
+ * Translate a composite platform id ("linux_deb_64") into the discrete
+ * {os, arch, pkg} query the resolution pipeline works on. This encodes the
+ * legacy prefix-matching semantics exactly:
+ * - a bare os ("linux") matches any arch and any package format
+ * - an os+arch id ("linux_64") matches only assets WITHOUT a package format
+ *   ("linux_deb_64" never matched the "linux_64" prefix), hence pkg: null
+ * - an os+pkg id ("linux_deb") matches that package format on any arch
+ */
+export function platformToQuery(platform: Platform): DiscretePlatformQuery {
+  const { os, arch, pkg } = parsePlatform(platform);
+  return {
+    os,
+    arch,
+    pkg: pkg ?? (os === "linux" && arch ? null : undefined),
+  };
 }
 
 // Reduce a platfrom id to its OS,

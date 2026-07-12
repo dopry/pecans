@@ -623,9 +623,10 @@ describe("Pecans", () => {
           const next = createMockNext();
 
           // Make versions.filter throw
-          vi.spyOn(pecans.versions, "filter").mockRejectedValueOnce(
-            new Error("Filter error"),
-          );
+          vi.spyOn(
+            (pecans as any).service,
+            "filterReleases",
+          ).mockRejectedValueOnce(new Error("Filter error"));
 
           await (pecans as any).handleApiVersions(req, res, next);
 
@@ -1273,7 +1274,10 @@ describe("Pecans", () => {
           const res = createMockResponse();
           const next = createMockNext();
 
-          vi.spyOn(pecans.versions, "resolve").mockResolvedValueOnce({
+          vi.spyOn(
+            (pecans as any).service,
+            "resolveRelease",
+          ).mockResolvedValueOnce({
             version: "1.0.0",
             assets: [],
           } as any);
@@ -1293,7 +1297,7 @@ describe("Pecans", () => {
 
           let callCount = 0;
           const resolveSpy = vi
-            .spyOn(pecans.versions, "resolve")
+            .spyOn((pecans as any).service, "resolveRelease")
             .mockImplementation(async (opts) => {
               callCount++;
               // Log the arguments for debug
@@ -1346,7 +1350,7 @@ describe("Pecans", () => {
           const next = createMockNext();
 
           const resolveSpy = vi
-            .spyOn(pecans.versions, "resolve")
+            .spyOn((pecans as any).service, "resolveRelease")
             .mockImplementation(async (opts) => {
               throw new Error("Resolution failed");
             });
@@ -1410,7 +1414,10 @@ describe("Pecans", () => {
       describe("handleUpdateOSX", () => {
         it("should return 204 when no updates available", async () => {
           // Mock versions.filter to return empty array
-          vi.spyOn(pecans.versions, "filter").mockResolvedValueOnce([]);
+          vi.spyOn(
+            (pecans as any).service,
+            "filterReleases",
+          ).mockResolvedValueOnce([]);
 
           const req = createMockRequest({
             params: { platform: "osx_64", version: "1.0.0" },
@@ -1426,9 +1433,10 @@ describe("Pecans", () => {
 
         it("should return 204 when current version is latest", async () => {
           const mockRelease = { version: "1.0.0", published_at: new Date() };
-          vi.spyOn(pecans.versions, "filter").mockResolvedValueOnce([
-            mockRelease,
-          ] as any);
+          vi.spyOn(
+            (pecans as any).service,
+            "filterReleases",
+          ).mockResolvedValueOnce([mockRelease] as any);
 
           const req = createMockRequest({
             params: { platform: "osx_64", version: "1.0.0" },
@@ -1455,9 +1463,10 @@ describe("Pecans", () => {
               notes: "Old version",
             },
           ];
-          vi.spyOn(pecans.versions, "filter").mockResolvedValueOnce(
-            mockReleases as any,
-          );
+          vi.spyOn(
+            (pecans as any).service,
+            "filterReleases",
+          ).mockResolvedValueOnce(mockReleases as any);
 
           const req = createMockRequest({
             params: { platform: "osx_64", version: "1.0.0" },
@@ -1486,9 +1495,10 @@ describe("Pecans", () => {
               notes: "Beta version",
             },
           ];
-          vi.spyOn(pecans.versions, "filter").mockResolvedValueOnce(
-            mockReleases as any,
-          );
+          vi.spyOn(
+            (pecans as any).service,
+            "filterReleases",
+          ).mockResolvedValueOnce(mockReleases as any);
 
           const req = createMockRequest({
             params: { platform: "osx_64", version: "1.0.0", channel: "beta" },
@@ -1514,9 +1524,10 @@ describe("Pecans", () => {
               notes: "New version",
             },
           ];
-          vi.spyOn(pecans.versions, "filter").mockResolvedValueOnce(
-            mockReleases as any,
-          );
+          vi.spyOn(
+            (pecans as any).service,
+            "filterReleases",
+          ).mockResolvedValueOnce(mockReleases as any);
 
           const req = createMockRequest({
             params: { platform: "osx_64", version: "1.0.0" },
@@ -1535,9 +1546,10 @@ describe("Pecans", () => {
         });
 
         it("should call next with error on failure", async () => {
-          vi.spyOn(pecans.versions, "filter").mockRejectedValueOnce(
-            new Error("Filter error"),
-          );
+          vi.spyOn(
+            (pecans as any).service,
+            "filterReleases",
+          ).mockRejectedValueOnce(new Error("Filter error"));
 
           const req = createMockRequest({
             params: { platform: "osx_64", version: "1.0.0" },
@@ -1559,9 +1571,10 @@ describe("Pecans", () => {
               assets: [{ filename: "RELEASES", id: "1" }],
             },
           ];
-          vi.spyOn(pecans.versions, "filter").mockResolvedValueOnce(
-            mockReleases as any,
-          );
+          vi.spyOn(
+            (pecans as any).service,
+            "filterReleases",
+          ).mockResolvedValueOnce(mockReleases as any);
           vi.spyOn(mockBackend, "readAsset").mockResolvedValueOnce(
             Buffer.from(
               "DA39A3EE5E6B4B0D3255BFEF95601890AFD80709 test-1.0.0-full.nupkg 1024",
@@ -1591,9 +1604,10 @@ describe("Pecans", () => {
               assets: [{ filename: "RELEASES", id: "1" }],
             },
           ];
-          vi.spyOn(pecans.versions, "filter").mockResolvedValueOnce(
-            mockReleases as any,
-          );
+          vi.spyOn(
+            (pecans as any).service,
+            "filterReleases",
+          ).mockResolvedValueOnce(mockReleases as any);
           vi.spyOn(mockBackend, "readAsset").mockResolvedValueOnce(
             Buffer.from("mock RELEASES content"),
           );
@@ -1650,7 +1664,10 @@ describe("Pecans", () => {
         });
 
         it("should throw error when no versions found", async () => {
-          vi.spyOn(pecans.versions, "filter").mockResolvedValueOnce([]);
+          vi.spyOn(
+            (pecans as any).service,
+            "filterReleases",
+          ).mockResolvedValueOnce([]);
 
           const req = createMockRequest({
             params: { platform: "windows_32", version: "1.0.0" },
@@ -1670,9 +1687,10 @@ describe("Pecans", () => {
               assets: [{ filename: "other.exe", id: "1" }],
             },
           ];
-          vi.spyOn(pecans.versions, "filter").mockResolvedValueOnce(
-            mockReleases as any,
-          );
+          vi.spyOn(
+            (pecans as any).service,
+            "filterReleases",
+          ).mockResolvedValueOnce(mockReleases as any);
 
           const req = createMockRequest({
             params: { platform: "windows_32", version: "1.0.0" },
@@ -1686,9 +1704,10 @@ describe("Pecans", () => {
         });
 
         it("should call next with error on failure", async () => {
-          vi.spyOn(pecans.versions, "filter").mockRejectedValueOnce(
-            new Error("Filter error"),
-          );
+          vi.spyOn(
+            (pecans as any).service,
+            "filterReleases",
+          ).mockRejectedValueOnce(new Error("Filter error"));
 
           const req = createMockRequest({
             params: { platform: "windows_32", version: "1.0.0" },

@@ -7,6 +7,7 @@ export * from "./backends";
 export * from "./errors";
 export * from "./models";
 export * from "./pecans";
+export * from "./service";
 export * from "./utils/";
 export * from "./versions";
 
