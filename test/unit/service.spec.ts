@@ -262,4 +262,31 @@ describe("ReleaseService", () => {
       "app-osx-x64.dmg",
     );
   });
+
+  it("resolveAsset falls back to the default for an explicit preferUniversal: undefined", () => {
+    const rel = release("1.0.0", fullAssets);
+    const service = makeService([]);
+    const resolved = service.resolveAsset(rel, {
+      os: "osx",
+      arch: "64",
+      preferUniversal: undefined,
+    });
+    expect(resolved?.filename).toBe("app-osx-univ.dmg");
+  });
+
+  it("filterReleases enforces arch/pkg constraints without an os", async () => {
+    const x64Only = [
+      release("1.0.0", [asset("app-linux-x64.tar.gz", "linux_64")]),
+    ];
+    const service = makeService(x64Only);
+    const arm = await service.filterReleases({ channel: "*", arch: "arm64" });
+    expect(arm).toEqual([]);
+    const deb = await service.filterReleases({ channel: "*", pkg: "deb" });
+    expect(deb).toEqual([]);
+    const unpackaged = await service.filterReleases({
+      channel: "*",
+      pkg: null,
+    });
+    expect(unpackaged).toHaveLength(1);
+  });
 });

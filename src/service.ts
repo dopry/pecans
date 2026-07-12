@@ -155,9 +155,16 @@ export class ReleaseService {
     const releases = await this.list();
     const preferUniversal = filter.preferUniversal ?? this.preferUniversal();
 
+    // pkg: null is an explicit constraint ("no package format"), so only
+    // undefined means unconstrained
+    const platformConstrained =
+      filter.os !== undefined ||
+      filter.arch !== undefined ||
+      filter.pkg !== undefined;
+
     const matches = releases.filter((release) => {
       if (!release.satisfiesChannel(filter.channel)) return false;
-      if (filter.os) {
+      if (platformConstrained) {
         const available = release.assets.some(
           (asset) =>
             // the Squirrel.Windows manifest is metadata, not a download
@@ -190,9 +197,11 @@ export class ReleaseService {
     release: PecansReleaseDTO,
     filter: AssetFilter,
   ): PecansAssetDTO | undefined {
+    // ?? (not spread order) so an explicit preferUniversal: undefined still
+    // falls back to the service default, matching filterReleases
     return resolveAssetForRelease(release, {
-      preferUniversal: this.preferUniversal(),
       ...filter,
+      preferUniversal: filter.preferUniversal ?? this.preferUniversal(),
     });
   }
 
