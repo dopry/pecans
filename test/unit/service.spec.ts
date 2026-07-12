@@ -135,6 +135,13 @@ describe("assetMatchesPlatform", () => {
         preferUniversal: true,
       }),
     ).toBe(false);
+    // never widens arch-only filters - the filter itself must target osx
+    expect(
+      assetMatchesPlatform("osx_universal", {
+        arch: "arm64",
+        preferUniversal: true,
+      }),
+    ).toBe(false);
   });
 });
 

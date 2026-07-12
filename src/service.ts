@@ -53,7 +53,7 @@ export interface AssetFilter {
  * criteria. Works off the composite `type` (present on plain DTOs) so it
  * matches exactly what the legacy prefix matching matched, without needing
  * a constructed PecansAsset. With preferUniversal, an osx universal build
- * satisfies any requested osx arch.
+ * satisfies any requested arch when the filter targets osx.
  */
 export function assetMatchesPlatform(
   type: Platform,
@@ -67,9 +67,12 @@ export function assetMatchesPlatform(
     return false;
   }
   if (filter.arch && asset.arch !== filter.arch) {
+    // widening requires the FILTER to target osx - an arch-only filter must
+    // not be satisfied by universal osx builds (the asset os is already
+    // known to equal filter.os from the check above)
     const universalSatisfies =
       filter.preferUniversal &&
-      asset.os === "osx" &&
+      filter.os === "osx" &&
       asset.arch === "universal";
     if (!universalSatisfies) return false;
   }
