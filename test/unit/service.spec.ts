@@ -84,12 +84,13 @@ describe("parsePlatform / platformToQuery", () => {
   });
 
   // "linux_deb_64" never matched the "linux_64" prefix in the legacy
-  // matcher, so the discrete query must exclude packaged assets
-  it("linux os+arch ids query only assets without a package format", () => {
+  // matcher: an os+arch id means the platform's default package (the
+  // tarball), never the deb/rpm alternates
+  it("linux os+arch ids query the default package", () => {
     expect(platformToQuery("linux_64")).toEqual({
       os: "linux",
       arch: "64",
-      pkg: null,
+      pkg: "default",
     });
   });
 
@@ -105,15 +106,19 @@ describe("assetMatchesPlatform", () => {
     expect(assetMatchesPlatform("osx_64", { os: "linux" })).toBe(false);
   });
 
-  it("pkg null rejects packaged assets", () => {
+  it("pkg 'default' selects the platform default and rejects alternate formats", () => {
     expect(
-      assetMatchesPlatform("linux_64", { os: "linux", arch: "64", pkg: null }),
+      assetMatchesPlatform("linux_64", {
+        os: "linux",
+        arch: "64",
+        pkg: "default",
+      }),
     ).toBe(true);
     expect(
       assetMatchesPlatform("linux_deb_64", {
         os: "linux",
         arch: "64",
-        pkg: null,
+        pkg: "default",
       }),
     ).toBe(false);
   });
@@ -292,7 +297,7 @@ describe("ReleaseService", () => {
     expect(deb).toEqual([]);
     const unpackaged = await service.filterReleases({
       channel: "*",
-      pkg: null,
+      pkg: "default",
     });
     expect(unpackaged).toHaveLength(1);
   });

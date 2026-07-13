@@ -124,8 +124,8 @@ export interface DiscretePlatformQuery {
   os: OperatingSystem;
   /** undefined = any architecture */
   arch?: Architecture;
-  /** undefined = any package format; null = only assets without one */
-  pkg?: PackageFormat | null;
+  /** undefined = any package format; "default" = the platform default only */
+  pkg?: PackageFormat | "default";
 }
 
 /**
@@ -133,16 +133,17 @@ export interface DiscretePlatformQuery {
  * {os, arch, pkg} query the resolution pipeline works on. This encodes the
  * legacy prefix-matching semantics exactly:
  * - a bare os ("linux") matches any arch and any package format
- * - an os+arch id ("linux_64") matches only assets WITHOUT a package format
- *   ("linux_deb_64" never matched the "linux_64" prefix), hence pkg: null
- * - an os+pkg id ("linux_deb") matches that package format on any arch
+ * - an os+arch id ("linux_64") means the platform's DEFAULT package - the
+ *   tarball, never deb/rpm ("linux_deb_64" never matched the "linux_64"
+ *   prefix) - hence pkg: "default"
+ * - an os+pkg id ("linux_deb") matches that alternate format on any arch
  */
 export function platformToQuery(platform: Platform): DiscretePlatformQuery {
   const { os, arch, pkg } = parsePlatform(platform);
   return {
     os,
     arch,
-    pkg: pkg ?? (os === "linux" && arch ? null : undefined),
+    pkg: pkg ?? (os === "linux" && arch ? "default" : undefined),
   };
 }
 

@@ -11,7 +11,7 @@ import {
   getSupportedExt,
   SupportedFileExtension,
 } from "../utils/SupportedFileExtension";
-import { PecansAssetQuery } from "./PecansAssetQuery";
+import { PackageFormatQuery, PecansAssetQuery } from "./PecansAssetQuery";
 
 export interface PecansAssetDTO<TRaw = unknown> {
   content_type: string;
@@ -71,10 +71,11 @@ export class PecansAsset<TRaw = unknown> implements PecansAssetDTO<TRaw> {
     return arch == undefined || this.arch == arch;
   }
 
-  satisfiesPkg(pkg?: PackageFormat | null) {
-    // null = only assets without a package format (e.g. the composite
-    // "linux_64" platform never matched deb/rpm assets)
-    if (pkg === null) return this.pkg == undefined;
+  satisfiesPkg(pkg?: PackageFormatQuery) {
+    // an asset without an alternate package format IS the platform's
+    // default package; "default" selects exactly those (e.g. the composite
+    // "linux_64" platform serves the tarball, never deb/rpm)
+    if (pkg === "default") return this.pkg == undefined;
     return pkg == undefined || this.pkg == pkg;
   }
 

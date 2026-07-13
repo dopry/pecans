@@ -1,6 +1,7 @@
 import { Backend } from "./backends/";
 import { NotFoundError } from "./errors";
 import { PecansAssetDTO } from "./models/PecansAsset";
+import { PackageFormatQuery } from "./models/PecansAssetQuery";
 import { PecansRelease, PecansReleaseDTO } from "./models/PecansRelease";
 import { PecansReleaseQuery } from "./models/PecansReleaseQuery";
 import { PecansReleases } from "./models/PecansReleases";
@@ -8,7 +9,6 @@ import { PecansReleases } from "./models/PecansReleases";
 // re-exports resolveForVersion, whose deprecation adapter imports this module
 import { Architecture } from "./utils/Architecture";
 import { OperatingSystem } from "./utils/OperatingSystem";
-import { PackageFormat } from "./utils/PackageFormat";
 import { parsePlatform, Platform } from "./utils/platforms";
 import {
   getSupportedExt,
@@ -31,8 +31,8 @@ export interface ReleaseFilter {
   os?: OperatingSystem;
   /** undefined = any architecture */
   arch?: Architecture;
-  /** undefined = any package format; null = only assets without one */
-  pkg?: PackageFormat | null;
+  /** undefined = any package format; "default" = the platform default only */
+  pkg?: PackageFormatQuery;
   /** accept osx universal builds for any osx arch; defaults to the service option */
   preferUniversal?: boolean;
 }
@@ -41,7 +41,8 @@ export interface ReleaseFilter {
 export interface AssetFilter {
   os?: OperatingSystem;
   arch?: Architecture;
-  pkg?: PackageFormat | null;
+  /** undefined = any package format; "default" = the platform default only */
+  pkg?: PackageFormatQuery;
   /** extension to prefer (e.g. ".zip"); others remain as fallbacks */
   wanted?: SupportedFileExtension;
   /** accept osx universal builds for any osx arch */
@@ -61,7 +62,8 @@ export function assetMatchesPlatform(
 ): boolean {
   const asset = parsePlatform(type);
   if (filter.os && asset.os !== filter.os) return false;
-  if (filter.pkg === null) {
+  if (filter.pkg === "default") {
+    // an asset without an alternate package format IS the platform default
     if (asset.pkg !== undefined) return false;
   } else if (filter.pkg && asset.pkg !== filter.pkg) {
     return false;
@@ -158,8 +160,8 @@ export class ReleaseService {
     const releases = await this.list();
     const preferUniversal = filter.preferUniversal ?? this.preferUniversal();
 
-    // pkg: null is an explicit constraint ("no package format"), so only
-    // undefined means unconstrained
+    // pkg: "default" is an explicit constraint (the platform's default
+    // package), so only undefined means unconstrained
     const platformConstrained =
       filter.os !== undefined ||
       filter.arch !== undefined ||
