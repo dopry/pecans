@@ -155,7 +155,7 @@ export function platformToQuery(platform: Platform): DiscretePlatformQuery {
   };
 }
 
-// Reduce a platfrom id to its OS,
+// Reduce a platform id to its OS,
 export function platformToType(platform: Platform): OperatingSystem {
   const [os] = platform.split("_");
   if (isOperatingSystem(os)) return os;

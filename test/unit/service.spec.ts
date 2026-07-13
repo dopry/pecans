@@ -8,13 +8,17 @@ import {
   ReleaseService,
   resolveAssetForRelease,
 } from "../../src/service";
-import { parsePlatform, platformToQuery } from "../../src/utils/platforms";
+import {
+  parsePlatform,
+  Platform,
+  platformToQuery,
+} from "../../src/utils/platforms";
 
-function asset(filename: string, type: string) {
+function asset(filename: string, type: Platform) {
   return {
     id: `asset-${filename}`,
     filename,
-    type: type as never,
+    type,
     size: 1000,
     content_type: "application/octet-stream",
     raw: {},
