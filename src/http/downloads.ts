@@ -141,7 +141,7 @@ export async function dl(
       throw new NotFoundError("No Matching Releases Found");
     }
     // releases are sorted in version descending order so the first element
-    // should be the highest version that matched the que
+    // should be the highest version that matched the query
     const release = releases[0];
     const extensions = getDownloadExtensionsByOs(os, pkg);
     const assetQuery = { arch, version, pkg, extensions };

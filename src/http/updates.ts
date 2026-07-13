@@ -5,7 +5,11 @@ import { mergeReleaseNotes } from "../utils/mergeReleaseNotes";
 import { mapLegacyPlatform, platformToQuery } from "../utils/platforms";
 import { generateRELEASES, parseRELEASES } from "../utils/win-releases";
 import { PecansHttpContext } from "./context";
-import { getStringParam, validateReqQueryPlatform } from "./query";
+import {
+  getStringParam,
+  getStringValueFromRequestQuery,
+  validateReqQueryPlatform,
+} from "./query";
 
 /** GET /update - @deprecated redirect to /update/:platform/:version. */
 export function handleUpdateRedirect(
@@ -15,12 +19,17 @@ export function handleUpdateRedirect(
   next: NextFunction,
 ) {
   try {
-    if (!req.query.version)
-      throw new BadRequestError('Requires "version" parameter');
-    if (!req.query.platform)
-      throw new BadRequestError('Requires "platform" parameter');
+    // repeated params parse as arrays; only single strings form a valid
+    // redirect path, and they are encoded before being embedded in it
+    const version = getStringValueFromRequestQuery(req.query, "version");
+    if (!version) throw new BadRequestError('Requires "version" parameter');
+    const platform = getStringValueFromRequestQuery(req.query, "platform");
+    if (!platform) throw new BadRequestError('Requires "platform" parameter');
     return res.redirect(
-      "/update/" + req.query.platform + "/" + req.query.version,
+      "/update/" +
+        encodeURIComponent(platform) +
+        "/" +
+        encodeURIComponent(version),
     );
   } catch (err) {
     next(err);
@@ -58,7 +67,10 @@ export async function handleUpdateOSX(
     const tag = versionParam;
 
     const channel = getStringParam(req, "channel") || "stable";
-    const filetype = req.query.filetype ? req.query.filetype : "zip";
+    // non-string filetype values (repeated params) fall back to the default
+    // rather than being interpolated into the feed url
+    const filetype =
+      getStringValueFromRequestQuery(req.query, "filetype") || "zip";
 
     const versions = await ctx.service.filterReleases({
       ...platformToQuery(platform),
@@ -75,7 +87,7 @@ export async function handleUpdateOSX(
     const notesSlice = versions.length === 1 ? [latest] : versions.slice(0, -1);
     const url = `${ctx.getBaseUrl(req)}/download/version/${
       latest.version
-    }/${platform}?filetype=${filetype}`;
+    }/${platform}?filetype=${encodeURIComponent(filetype)}`;
     const releaseNotes = mergeReleaseNotes(
       notesSlice,
       ctx.includeVersionInReleaseNotes(),
