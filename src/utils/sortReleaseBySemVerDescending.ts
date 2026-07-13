@@ -1,5 +1,7 @@
 import { gt } from "semver";
-import { PecansRelease } from "../models";
+// keep the module graph cycle-free: import the specific model module
+// rather than the ../models barrel (which re-enters this file)
+import { PecansRelease } from "../models/PecansRelease";
 
 // Compare two version
 export function sortReleaseBySemVerDescending(

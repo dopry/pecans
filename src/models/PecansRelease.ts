@@ -1,5 +1,7 @@
 import { satisfies, validRange } from "semver";
-import { channelFromVersion as channelFromVersion } from "../utils";
+// keep the module graph cycle-free: import specific util modules rather
+// than the ../utils barrel
+import { channelFromVersion } from "../utils/channelFromVersion";
 import { PecansAssetQuery } from "./PecansAssetQuery";
 import { PecansAsset, PecansAssetDTO } from "./PecansAsset";
 import { PecansReleaseQuery } from "./PecansReleaseQuery";

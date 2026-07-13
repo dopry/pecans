@@ -1,12 +1,12 @@
+// keep the module graph cycle-free: import specific util modules rather
+// than the ../utils barrel
+import { Architecture, filenameToArchitecture } from "../utils/Architecture";
 import {
-  Architecture,
-  filenameToArchitecture,
   filenameToOperatingSystem,
-  filenameToPackageFormat,
   OperatingSystem,
-  PackageFormat,
-  Platform,
-} from "../utils";
+} from "../utils/OperatingSystem";
+import { filenameToPackageFormat, PackageFormat } from "../utils/PackageFormat";
+import { Platform } from "../utils/platforms";
 import {
   getSupportedExt,
   SupportedFileExtension,

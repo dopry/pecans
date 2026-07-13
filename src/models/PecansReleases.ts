@@ -1,4 +1,6 @@
-import { sortReleaseBySemVerDescending } from "../utils";
+// keep the module graph cycle-free: import specific util modules rather
+// than the ../utils barrel
+import { sortReleaseBySemVerDescending } from "../utils/sortReleaseBySemVerDescending";
 import { PecansChannel } from "./PecansChannel";
 import { PecansRelease } from "./PecansRelease";
 import { PecansReleaseQuery } from "./PecansReleaseQuery";

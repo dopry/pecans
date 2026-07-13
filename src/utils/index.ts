@@ -4,6 +4,5 @@ export * from "./PackageFormat";
 export * from "./platforms";
 export * from "./channelFromVersion";
 export * from "./mergeReleaseNotes";
-export * from "./resolveForVersion";
 export * from "./sortReleaseBySemVerDescending";
 export * from "./win-releases";

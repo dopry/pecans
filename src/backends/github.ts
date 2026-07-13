@@ -11,7 +11,10 @@ import {
   PecansReleaseDTO,
   isPecansAsset,
 } from "../models";
-import { channelFromVersion, filenameToPlatform } from "../utils/";
+// keep the module graph cycle-free: import specific util modules rather
+// than the ../utils barrel
+import { channelFromVersion } from "../utils/channelFromVersion";
+import { filenameToPlatform } from "../utils/platforms";
 import { PecansReleases } from "../models/PecansReleases";
 import { clean } from "semver";
 

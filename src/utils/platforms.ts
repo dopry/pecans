@@ -1,10 +1,18 @@
-import { filenameToArchitecture } from "./Architecture";
+import {
+  Architecture,
+  filenameToArchitecture,
+  isArchitecture,
+} from "./Architecture";
 import {
   filenameToOperatingSystem,
   isOperatingSystem,
   OperatingSystem,
 } from "./OperatingSystem";
-import { filenameToPackageFormat } from "./PackageFormat";
+import {
+  filenameToPackageFormat,
+  isPackageFormat,
+  PackageFormat,
+} from "./PackageFormat";
 
 // platform identifier
 // {{os}}_{{packaging system}}_{{arch}}
@@ -88,7 +96,68 @@ export function isPlatform(obj: unknown): obj is Platform {
   return typeof obj == "string" && PLATFORMS.includes(obj as Platform);
 }
 
-// Reduce a platfrom id to its OS,
+/** The discrete parts of a composite platform id. */
+export interface PlatformParts {
+  os: OperatingSystem;
+  /** undefined when the id has no arch segment ("linux", "linux_deb") */
+  arch?: Architecture;
+  /** undefined when the id has no package segment */
+  pkg?: PackageFormat;
+}
+
+/** Split a composite platform id ("linux_deb_64") into its discrete parts. */
+export function parsePlatform(platform: Platform): PlatformParts {
+  const [os, ...rest] = platform.split("_");
+  if (!isOperatingSystem(os)) {
+    // unreachable for the Platform union; guards runtime casts
+    throw new Error(`Unrecognized OS in platform string (${platform})`);
+  }
+  return {
+    os,
+    arch: rest.find(isArchitecture),
+    pkg: rest.find(isPackageFormat),
+  };
+}
+
+/**
+ * Package-format criterion for the download-resolution filters (the
+ * structural PecansAssetQuery takes a plain PackageFormat). An asset
+ * without an alternate package format (deb/rpm) IS the platform's default
+ * package (tarball, dmg, setup.exe); "default" selects exactly those.
+ * Omitted = unconstrained.
+ */
+export type PackageFormatFilter = PackageFormat | "default";
+
+/** Discrete query equivalent of a composite platform id. */
+export interface DiscretePlatformQuery {
+  os: OperatingSystem;
+  /** undefined = any architecture */
+  arch?: Architecture;
+  /** undefined = any package format; "default" = the platform default only */
+  pkg?: PackageFormatFilter;
+}
+
+/**
+ * Translate a composite platform id ("linux_deb_64") into the discrete
+ * {os, arch, pkg} query the resolution pipeline works on. The composite
+ * grammar is {os}[_pkg][_arch], and this encodes the legacy prefix-matching
+ * semantics exactly:
+ * - a bare os ("linux") matches any arch and any package format
+ * - an os+arch id ("linux_64", "windows_64") has no pkg segment, so it
+ *   means the platform's DEFAULT package - "linux_deb_64" never matched
+ *   the "linux_64" prefix - hence pkg: "default", uniformly for every os
+ * - an os+pkg id ("linux_deb") matches that alternate format on any arch
+ */
+export function platformToQuery(platform: Platform): DiscretePlatformQuery {
+  const { os, arch, pkg } = parsePlatform(platform);
+  return {
+    os,
+    arch,
+    pkg: pkg ?? (arch ? "default" : undefined),
+  };
+}
+
+// Reduce a platform id to its OS,
 export function platformToType(platform: Platform): OperatingSystem {
   const [os] = platform.split("_");
   if (isOperatingSystem(os)) return os;
