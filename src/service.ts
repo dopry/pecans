@@ -1,15 +1,15 @@
 import { Backend } from "./backends/";
 import { NotFoundError } from "./errors";
 import { PecansAssetDTO } from "./models/PecansAsset";
-import { PackageFormatQuery } from "./models/PecansAssetQuery";
 import { PecansRelease, PecansReleaseDTO } from "./models/PecansRelease";
 import { PecansReleaseQuery } from "./models/PecansReleaseQuery";
 import { PecansReleases } from "./models/PecansReleases";
 // import from the specific util modules, not the ./utils barrel - the barrel
 // re-exports resolveForVersion, whose deprecation adapter imports this module
+// (the model modules above follow the same rule)
 import { Architecture } from "./utils/Architecture";
 import { OperatingSystem } from "./utils/OperatingSystem";
-import { parsePlatform, Platform } from "./utils/platforms";
+import { PackageFormatQuery, parsePlatform, Platform } from "./utils/platforms";
 import {
   getSupportedExt,
   SUPPORTED_FILE_EXTENSIONS,

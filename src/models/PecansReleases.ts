@@ -1,4 +1,6 @@
-import { sortReleaseBySemVerDescending } from "../utils";
+// specific module import to stay out of the ../utils barrel (import cycle
+// via the deprecated resolveForVersion adapter)
+import { sortReleaseBySemVerDescending } from "../utils/sortReleaseBySemVerDescending";
 import { PecansChannel } from "./PecansChannel";
 import { PecansRelease } from "./PecansRelease";
 import { PecansReleaseQuery } from "./PecansReleaseQuery";

@@ -1,17 +1,18 @@
+// import from the specific util modules, not the ../utils barrel - the
+// barrel re-exports resolveForVersion, whose deprecation adapter imports
+// the service module that consumes this model (import cycle)
+import { Architecture, filenameToArchitecture } from "../utils/Architecture";
 import {
-  Architecture,
-  filenameToArchitecture,
   filenameToOperatingSystem,
-  filenameToPackageFormat,
   OperatingSystem,
-  PackageFormat,
-  Platform,
-} from "../utils";
+} from "../utils/OperatingSystem";
+import { filenameToPackageFormat, PackageFormat } from "../utils/PackageFormat";
+import { Platform } from "../utils/platforms";
 import {
   getSupportedExt,
   SupportedFileExtension,
 } from "../utils/SupportedFileExtension";
-import { PackageFormatQuery, PecansAssetQuery } from "./PecansAssetQuery";
+import { PecansAssetQuery } from "./PecansAssetQuery";
 
 export interface PecansAssetDTO<TRaw = unknown> {
   content_type: string;
@@ -71,11 +72,7 @@ export class PecansAsset<TRaw = unknown> implements PecansAssetDTO<TRaw> {
     return arch == undefined || this.arch == arch;
   }
 
-  satisfiesPkg(pkg?: PackageFormatQuery) {
-    // an asset without an alternate package format IS the platform's
-    // default package; "default" selects exactly those (e.g. the composite
-    // "linux_64" platform serves the tarball, never deb/rpm)
-    if (pkg === "default") return this.pkg == undefined;
+  satisfiesPkg(pkg?: PackageFormat) {
     return pkg == undefined || this.pkg == pkg;
   }
 

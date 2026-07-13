@@ -1,5 +1,7 @@
 import { gt } from "semver";
-import { PecansRelease } from "../models";
+// direct module import to stay out of the ../models barrel, which would
+// re-enter this file through models/PecansReleases (import cycle)
+import { PecansRelease } from "../models/PecansRelease";
 
 // Compare two version
 export function sortReleaseBySemVerDescending(
