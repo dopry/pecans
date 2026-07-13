@@ -4,9 +4,8 @@ import { PecansAssetDTO } from "./models/PecansAsset";
 import { PecansRelease, PecansReleaseDTO } from "./models/PecansRelease";
 import { PecansReleaseQuery } from "./models/PecansReleaseQuery";
 import { PecansReleases } from "./models/PecansReleases";
-// import from the specific util modules, not the ./utils barrel - the barrel
-// re-exports resolveForVersion, whose deprecation adapter imports this module
-// (the model modules above follow the same rule)
+// keep the module graph cycle-free: import specific util modules rather
+// than the ./utils barrel (the models above follow the same rule)
 import { Architecture } from "./utils/Architecture";
 import { OperatingSystem } from "./utils/OperatingSystem";
 import {
@@ -124,10 +123,9 @@ export function resolveAssetForRelease(
 
 /**
  * Unified release/asset resolution pipeline on the discrete
- * {os, arch, pkg, extensions} model. Wraps a Backend; all route handlers and
- * the deprecated Versions/resolveReleaseAssetForVersion adapters resolve
- * through this single path. Legacy composite platform ids ("osx_64") are
- * translated at the HTTP edge via platformToQuery.
+ * {os, arch, pkg, extensions} model. Wraps a Backend; all route handlers
+ * resolve through this single path. Legacy composite platform ids
+ * ("osx_64") are translated at the HTTP edge via platformToQuery.
  */
 export class ReleaseService {
   constructor(

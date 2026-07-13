@@ -1,5 +1,5 @@
-// specific module import to stay out of the ../utils barrel (import cycle
-// via the deprecated resolveForVersion adapter)
+// keep the module graph cycle-free: import specific util modules rather
+// than the ../utils barrel
 import { sortReleaseBySemVerDescending } from "../utils/sortReleaseBySemVerDescending";
 import { PecansChannel } from "./PecansChannel";
 import { PecansRelease } from "./PecansRelease";

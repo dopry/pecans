@@ -1,6 +1,5 @@
-// import from the specific util modules, not the ../utils barrel - the
-// barrel re-exports resolveForVersion, whose deprecation adapter imports
-// the service module that consumes these query types (import cycle)
+// keep the module graph cycle-free: import specific util modules rather
+// than the ../utils barrel
 import { Architecture } from "../utils/Architecture";
 import { OperatingSystem } from "../utils/OperatingSystem";
 import { PackageFormat } from "../utils/PackageFormat";

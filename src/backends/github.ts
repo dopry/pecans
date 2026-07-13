@@ -11,9 +11,8 @@ import {
   PecansReleaseDTO,
   isPecansAsset,
 } from "../models";
-// specific module imports to stay out of the ../utils barrel - it
-// re-exports the deprecated resolveForVersion adapter, which imports the
-// service module, which imports this backend (import cycle)
+// keep the module graph cycle-free: import specific util modules rather
+// than the ../utils barrel
 import { channelFromVersion } from "../utils/channelFromVersion";
 import { filenameToPlatform } from "../utils/platforms";
 import { PecansReleases } from "../models/PecansReleases";

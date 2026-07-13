@@ -12,10 +12,27 @@ import {
   mapLegacyPlatform,
   isPlatform,
 } from "../../src/utils";
-import { resolveReleaseAssetForVersion } from "../../src/utils/resolveForVersion";
+import { resolveAssetForRelease } from "../../src/service";
+import { platformToQuery } from "../../src/utils/platforms";
 import { filenameToPackageFormat } from "../../src/utils/PackageFormat";
 import { filenameToArchitecture } from "../../src/utils/Architecture";
 import { SupportedFileExtension } from "../../src/utils/SupportedFileExtension";
+
+// exercise the resolution pipeline through the composite-id signature the
+// removed resolveReleaseAssetForVersion adapter used, so the table-driven
+// pins below keep guarding the legacy composite semantics
+function resolveReleaseAssetForVersion(
+  release: PecansReleaseDTO,
+  platform: Platform,
+  preferUniversal = true,
+  wanted?: SupportedFileExtension,
+) {
+  return resolveAssetForRelease(release, {
+    ...platformToQuery(platform),
+    preferUniversal,
+    wanted,
+  });
+}
 
 type FilenameResolveTestTuple = [
   filename: string,
@@ -320,7 +337,7 @@ describe("Platforms", function () {
     fileNameByPlatformTests.forEach(([platform, filename]) => {
       it(`resolves ${platform} to ${filename}`, () => {
         const target = resolveReleaseAssetForVersion(release, platform, false);
-        expect(target.filename).toBe(filename);
+        expect(target?.filename).toBe(filename);
       });
     });
     fileNameByPlatformAndExtTests.forEach(([platform, ext, filename]) => {
@@ -331,7 +348,7 @@ describe("Platforms", function () {
           false,
           ext,
         );
-        expect(target.filename).toBe(filename);
+        expect(target?.filename).toBe(filename);
       });
     });
   });
@@ -341,7 +358,7 @@ describe("Platforms", function () {
     fileNameByPlatformUniversalTests.forEach(([platform, filename]) => {
       it(`resolves ${platform} to ${filename}`, () => {
         const target = resolveReleaseAssetForVersion(release, platform, true);
-        expect(target.filename).toBe(filename);
+        expect(target?.filename).toBe(filename);
       });
     });
 
@@ -361,7 +378,7 @@ describe("Platforms", function () {
           // these have been removed, so expect undefined
           expect(target).toBeUndefined();
         } else {
-          expect(target.filename).toBe(filename);
+          expect(target?.filename).toBe(filename);
         }
       });
     });
@@ -376,7 +393,7 @@ describe("Platforms", function () {
             true,
             ext,
           );
-          expect(target.filename).toBe(filename);
+          expect(target?.filename).toBe(filename);
         });
       },
     );
@@ -394,7 +411,7 @@ describe("Platforms", function () {
           // these have been removed, so expect undefined
           expect(target).toBeUndefined();
         } else {
-          expect(target.filename).toBe(filename);
+          expect(target?.filename).toBe(filename);
         }
       });
     });

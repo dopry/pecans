@@ -1,10 +1,27 @@
 import { describe, expect, it } from "vitest";
 import { PecansAssetDTO, PecansReleaseDTO } from "../../src/models";
-import { Platform } from "../../src/utils/platforms";
-import { resolveReleaseAssetForVersion } from "../../src/utils/resolveForVersion";
+import { resolveAssetForRelease } from "../../src/service";
+import { Platform, platformToQuery } from "../../src/utils/platforms";
+import { SupportedFileExtension } from "../../src/utils/SupportedFileExtension";
 
-describe("resolveForVersion", () => {
-  describe("resolveReleaseAssetForVersion", () => {
+// the composite-id signature of the removed resolveReleaseAssetForVersion
+// adapter, kept as a local shim so these pins keep guarding the ranking
+// semantics through the pipeline
+function resolveReleaseAssetForVersion(
+  release: PecansReleaseDTO,
+  platform: Platform,
+  preferUniversal = true,
+  wanted?: SupportedFileExtension,
+) {
+  return resolveAssetForRelease(release, {
+    ...platformToQuery(platform),
+    preferUniversal,
+    wanted,
+  });
+}
+
+describe("resolveAssetForRelease", () => {
+  describe("composite platform resolution", () => {
     // Helper function to create test assets
     const createAsset = (filename: string, type: Platform): PecansAssetDTO => ({
       content_type: "application/octet-stream",

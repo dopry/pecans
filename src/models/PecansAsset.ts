@@ -1,6 +1,5 @@
-// import from the specific util modules, not the ../utils barrel - the
-// barrel re-exports resolveForVersion, whose deprecation adapter imports
-// the service module that consumes this model (import cycle)
+// keep the module graph cycle-free: import specific util modules rather
+// than the ../utils barrel
 import { Architecture, filenameToArchitecture } from "../utils/Architecture";
 import {
   filenameToOperatingSystem,

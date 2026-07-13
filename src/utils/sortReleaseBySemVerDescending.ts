@@ -1,6 +1,6 @@
 import { gt } from "semver";
-// direct module import to stay out of the ../models barrel, which would
-// re-enter this file through models/PecansReleases (import cycle)
+// keep the module graph cycle-free: import the specific model module
+// rather than the ../models barrel (which re-enters this file)
 import { PecansRelease } from "../models/PecansRelease";
 
 // Compare two version

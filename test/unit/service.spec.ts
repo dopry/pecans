@@ -257,11 +257,44 @@ describe("ReleaseService", () => {
     expect(strict).toEqual([]);
   });
 
+  it("list returns all releases sorted by semver descending", async () => {
+    const service = makeService(releases);
+    const listed = await service.list();
+    expect(listed.map((r) => r.version)).toEqual([
+      "2.1.0-beta.1",
+      "2.0.0",
+      "1.5.0",
+    ]);
+  });
+
+  it("resolveRelease returns the newest match", async () => {
+    const service = makeService(releases);
+    const resolved = await service.resolveRelease({
+      channel: "stable",
+      version: ">=1.0.0",
+      ...platformToQuery("osx_64"),
+    });
+    expect(resolved.version).toBe("2.0.0");
+  });
+
   it("resolveRelease throws NotFoundError when nothing matches", async () => {
     const service = makeService(releases);
     await expect(
       service.resolveRelease({ channel: "nightly" }),
     ).rejects.toBeInstanceOf(NotFoundError);
+    await expect(
+      service.resolveRelease({ channel: "*", version: ">=9.0.0" }),
+    ).rejects.toThrow("Release not found");
+  });
+
+  it("filterReleases combines version range, platform, and channel", async () => {
+    const service = makeService(releases);
+    const matches = await service.filterReleases({
+      version: ">=1.5.0",
+      channel: "stable",
+      ...platformToQuery("windows_64"),
+    });
+    expect(matches.map((r) => r.version)).toEqual(["2.0.0", "1.5.0"]);
   });
 
   it("resolveAsset applies the service preferUniversal default", () => {

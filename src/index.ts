@@ -9,7 +9,6 @@ export * from "./models";
 export * from "./pecans";
 export * from "./service";
 export * from "./utils/";
-export * from "./versions";
 
 export function configure() {
   const PECANS_BACKEND = process.env.PECANS_BACKEND || "PecansGithubBackend";
