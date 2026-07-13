@@ -9,7 +9,11 @@ import { PecansReleases } from "./models/PecansReleases";
 // (the model modules above follow the same rule)
 import { Architecture } from "./utils/Architecture";
 import { OperatingSystem } from "./utils/OperatingSystem";
-import { PackageFormatQuery, parsePlatform, Platform } from "./utils/platforms";
+import {
+  PackageFormatFilter,
+  parsePlatform,
+  Platform,
+} from "./utils/platforms";
 import {
   getSupportedExt,
   SUPPORTED_FILE_EXTENSIONS,
@@ -32,7 +36,7 @@ export interface ReleaseFilter {
   /** undefined = any architecture */
   arch?: Architecture;
   /** undefined = any package format; "default" = the platform default only */
-  pkg?: PackageFormatQuery;
+  pkg?: PackageFormatFilter;
   /** accept osx universal builds for any osx arch; defaults to the service option */
   preferUniversal?: boolean;
 }
@@ -42,7 +46,7 @@ export interface AssetFilter {
   os?: OperatingSystem;
   arch?: Architecture;
   /** undefined = any package format; "default" = the platform default only */
-  pkg?: PackageFormatQuery;
+  pkg?: PackageFormatFilter;
   /** extension to prefer (e.g. ".zip"); others remain as fallbacks */
   wanted?: SupportedFileExtension;
   /** accept osx universal builds for any osx arch */

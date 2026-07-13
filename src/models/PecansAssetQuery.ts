@@ -13,7 +13,8 @@ export interface PecansAssetQuery {
    * Alternate package format to require (deb/rpm); omitted = unconstrained.
    * An asset without an alternate format is the platform's default package
    * (tarball, dmg, setup.exe) - selecting only those is a download-semantics
-   * concern, expressed as pkg: "default" on the ReleaseService filters.
+   * concern, expressed as pkg: "default" on the ReleaseService filters
+   * (PackageFormatFilter).
    */
   pkg?: PackageFormat;
   filename?: string;

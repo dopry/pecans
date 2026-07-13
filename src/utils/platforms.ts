@@ -120,12 +120,13 @@ export function parsePlatform(platform: Platform): PlatformParts {
 }
 
 /**
- * Package-format criterion for download resolution. An asset without an
- * alternate package format (deb/rpm) IS the platform's default package
- * (tarball, dmg, setup.exe); "default" selects exactly those. Omitted =
- * unconstrained.
+ * Package-format criterion for the download-resolution filters (the
+ * structural PecansAssetQuery takes a plain PackageFormat). An asset
+ * without an alternate package format (deb/rpm) IS the platform's default
+ * package (tarball, dmg, setup.exe); "default" selects exactly those.
+ * Omitted = unconstrained.
  */
-export type PackageFormatQuery = PackageFormat | "default";
+export type PackageFormatFilter = PackageFormat | "default";
 
 /** Discrete query equivalent of a composite platform id. */
 export interface DiscretePlatformQuery {
@@ -133,7 +134,7 @@ export interface DiscretePlatformQuery {
   /** undefined = any architecture */
   arch?: Architecture;
   /** undefined = any package format; "default" = the platform default only */
-  pkg?: PackageFormatQuery;
+  pkg?: PackageFormatFilter;
 }
 
 /**
