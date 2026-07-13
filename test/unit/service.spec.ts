@@ -88,19 +88,16 @@ describe("parsePlatform / platformToQuery", () => {
   });
 
   // "linux_deb_64" never matched the "linux_64" prefix in the legacy
-  // matcher: an os+arch id means the platform's default package (the
-  // tarball), never the deb/rpm alternates
-  it("linux os+arch ids query the default package", () => {
+  // matcher: an os+arch id has no pkg segment, so it means the platform's
+  // default package, uniformly for every os
+  it("os+arch ids query the default package", () => {
     expect(platformToQuery("linux_64")).toEqual({
       os: "linux",
       arch: "64",
       pkg: "default",
     });
-  });
-
-  it("osx and windows os+arch ids leave pkg unconstrained", () => {
-    expect(platformToQuery("osx_64").pkg).toBeUndefined();
-    expect(platformToQuery("windows_64").pkg).toBeUndefined();
+    expect(platformToQuery("osx_64").pkg).toBe("default");
+    expect(platformToQuery("windows_64").pkg).toBe("default");
   });
 });
 

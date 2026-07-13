@@ -139,12 +139,13 @@ export interface DiscretePlatformQuery {
 
 /**
  * Translate a composite platform id ("linux_deb_64") into the discrete
- * {os, arch, pkg} query the resolution pipeline works on. This encodes the
- * legacy prefix-matching semantics exactly:
+ * {os, arch, pkg} query the resolution pipeline works on. The composite
+ * grammar is {os}[_pkg][_arch], and this encodes the legacy prefix-matching
+ * semantics exactly:
  * - a bare os ("linux") matches any arch and any package format
- * - an os+arch id ("linux_64") means the platform's DEFAULT package - the
- *   tarball, never deb/rpm ("linux_deb_64" never matched the "linux_64"
- *   prefix) - hence pkg: "default"
+ * - an os+arch id ("linux_64", "windows_64") has no pkg segment, so it
+ *   means the platform's DEFAULT package - "linux_deb_64" never matched
+ *   the "linux_64" prefix - hence pkg: "default", uniformly for every os
  * - an os+pkg id ("linux_deb") matches that alternate format on any arch
  */
 export function platformToQuery(platform: Platform): DiscretePlatformQuery {
@@ -152,7 +153,7 @@ export function platformToQuery(platform: Platform): DiscretePlatformQuery {
   return {
     os,
     arch,
-    pkg: pkg ?? (os === "linux" && arch ? "default" : undefined),
+    pkg: pkg ?? (arch ? "default" : undefined),
   };
 }
 

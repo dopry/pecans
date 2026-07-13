@@ -436,7 +436,6 @@ describe("Pecans", () => {
         pecans = new Pecans(mockBackend);
         expect(pecans).toBeInstanceOf(Pecans);
         expect(pecans.router).toBeDefined();
-        expect(pecans.versions).toBeDefined();
       });
 
       it("should merge custom options with defaults", () => {

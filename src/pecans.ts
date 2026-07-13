@@ -41,7 +41,6 @@ import {
   mergeReleaseNotes,
 } from "./utils/mergeReleaseNotes";
 import { generateRELEASES, parseRELEASES } from "./utils/win-releases";
-import { Versions } from "./versions";
 
 const logger = Debug("pecans");
 
@@ -147,12 +146,6 @@ export class Pecans extends EventEmitter {
   /** Unified release/asset resolution pipeline all route handlers use. */
   protected service: ReleaseService;
 
-  /**
-   * @deprecated retained for host apps that reach into pecans.versions;
-   * route handlers resolve through ReleaseService. Will be removed in 3.0.
-   */
-  versions: Versions;
-
   constructor(
     protected backend: Backend,
     opts: PecansOptions = Pecans.defaults,
@@ -166,7 +159,6 @@ export class Pecans extends EventEmitter {
     this.service = new ReleaseService(this.backend, {
       preferUniversal: this.opts.preferUniversal,
     });
-    this.versions = new Versions(this.backend);
     this.router = Router();
 
     // Log requests
