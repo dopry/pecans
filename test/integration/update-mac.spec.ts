@@ -51,6 +51,32 @@ describe("/update/:platform/:version (Squirrel.Mac)", () => {
     expect(res.body.notes).toBe("Notes for 2.7.0\nNotes for 2.6.0\n");
   });
 
+  it("honors an explicit ?filetype override in the feed url", async () => {
+    const { app } = configureTestAppWithReleases(
+      buildStableReleaseSet(OWNER, REPO),
+    );
+    const res = await supertest(app)
+      .get("/update/osx/2.5.0?filetype=dmg")
+      .expect(200);
+    expect(res.body.url).toMatch(
+      /\/download\/version\/2\.7\.0\/osx_64\?filetype=dmg$/,
+    );
+  });
+
+  // regression: raw req.query values must never be interpolated into the
+  // feed url - repeated params (arrays) fall back to the default filetype
+  it("falls back to filetype=zip for repeated ?filetype params", async () => {
+    const { app } = configureTestAppWithReleases(
+      buildStableReleaseSet(OWNER, REPO),
+    );
+    const res = await supertest(app)
+      .get("/update/osx/2.5.0?filetype=dmg&filetype=exe")
+      .expect(200);
+    expect(res.body.url).toMatch(
+      /\/download\/version\/2\.7\.0\/osx_64\?filetype=zip$/,
+    );
+  });
+
   it("accepts legacy platform aliases like darwin", async () => {
     const { app } = configureTestAppWithReleases(
       buildStableReleaseSet(OWNER, REPO),
@@ -151,5 +177,29 @@ describe("/update (deprecated redirect)", () => {
     );
     await supertest(app).get("/update?platform=osx").expect(400);
     await supertest(app).get("/update?version=2.5.0").expect(400);
+  });
+
+  // regression: repeated params parse as arrays and must 400 rather than
+  // producing a malformed redirect path like /update/osx,win/1.0.0
+  it("400s on repeated query params", async () => {
+    const { app } = configureTestAppWithReleases(
+      buildStableReleaseSet(OWNER, REPO),
+    );
+    await supertest(app)
+      .get("/update?platform=osx&platform=win&version=2.5.0")
+      .expect(400);
+    await supertest(app)
+      .get("/update?platform=osx&version=2.5.0&version=2.6.0")
+      .expect(400);
+  });
+
+  it("encodes the platform and version into the redirect path", async () => {
+    const { app } = configureTestAppWithReleases(
+      buildStableReleaseSet(OWNER, REPO),
+    );
+    const res = await supertest(app)
+      .get("/update?platform=osx%2F..&version=2.5.0")
+      .expect(302);
+    expect(res.headers.location).toBe("/update/osx%2F../2.5.0");
   });
 });

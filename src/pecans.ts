@@ -2,16 +2,25 @@ import Debug from "debug";
 import { NextFunction, Request, Response, Router } from "express";
 import EventEmitter from "node:events";
 import { ParsedQs } from "qs";
-import { valid, validRange } from "semver";
 import { Backend } from "./backends/";
+import { errorHandler, NotFoundError } from "./errors";
 import {
-  BadRequestError,
-  errorHandler,
-  NotFoundError,
-  UnsupportedChannelError,
-  UnsupportedPlatformError,
-  UnsupportedTagError,
-} from "./errors";
+  createApiChannelsHandler,
+  createApiStatusHandler,
+  createApiVersionsHandler,
+} from "./http/api";
+import { PecansHttpContext } from "./http/context";
+import {
+  createDlFilenameHandler,
+  createDlHandler,
+  createDownloadHandler,
+} from "./http/downloads";
+import { createNotesHandler } from "./http/notes";
+import {
+  createUpdateOSXHandler,
+  createUpdateRedirectHandler,
+  createUpdateWinHandler,
+} from "./http/updates";
 import {
   PecansAssetDTO,
   PecansRelease,
@@ -20,27 +29,10 @@ import {
   PecansReleases,
 } from "./models/index";
 import { ReleaseService } from "./service";
-import {
-  OPERATING_SYSTEMS,
-  Platform,
-  filenameToPlatform,
-  getPkgFromQuery,
-  isOperatingSystem,
-  isPlatform,
-  isValidArchForOS,
-  mapLegacyPlatform,
-  platformToQuery,
-} from "./utils/";
-import {
-  SupportedFileExtension,
-  getDownloadExtensionsByOs,
-  isSupportedFileExtension,
-} from "./utils/SupportedFileExtension";
-import {
-  formatReleaseNote,
-  mergeReleaseNotes,
-} from "./utils/mergeReleaseNotes";
-import { generateRELEASES, parseRELEASES } from "./utils/win-releases";
+
+// the query helpers moved to src/http/query.ts with the route handlers;
+// re-exported here so the package root keeps the same names
+export * from "./http/query";
 
 const logger = Debug("pecans");
 
@@ -59,76 +51,11 @@ export interface PecansSettings {
 
 export type PecansOptions = Partial<PecansSettings>;
 
-export type ReqQueryValue =
-  string | ParsedQs | (string | ParsedQs)[] | string[] | ParsedQs[] | undefined;
-
-/** single-segment route params are strings; anything else is treated as absent */
-export function getStringParam(req: Request, name: string): string | undefined {
-  const value = req.params[name];
-  return typeof value === "string" ? value : undefined;
-}
-
-export function validateReqQueryChannel(channel: ReqQueryValue): string {
-  if (typeof channel !== "string") {
-    throw new UnsupportedChannelError(channel);
-  }
-  return channel;
-}
-
-//
-export function validateReqQueryPlatform(platform: ReqQueryValue): Platform {
-  if (!isPlatform(platform)) throw new UnsupportedPlatformError(platform);
-  return platform;
-}
-
-export function validateReqQueryTag(tag?: ReqQueryValue): string | undefined {
-  if (tag == undefined) return;
-  if (typeof tag !== "string") {
-    throw new UnsupportedTagError(tag);
-  }
-  // 'latest' is a pecans keyword, everything else must be a semver range
-  if (tag !== "latest" && !validRange(tag)) {
-    throw new UnsupportedTagError(tag);
-  }
-  return tag;
-}
-
-// return a string value from the req.query if it is a single string,
-// otherwise return undefined
-export function getStringValueFromRequestQuery(
-  query: ParsedQs,
-  param: string,
-): string | undefined {
-  if (!query[param]) return undefined;
-  const value = query[param];
-  return typeof value === "string" ? value : undefined;
-}
-
-export function getVersionFromQuery(query: ParsedQs): string | undefined {
-  const value = getStringValueFromRequestQuery(query, "version");
-  return value && (validRange(value) || value == "latest") ? value : undefined;
-}
-
-export function getFilenameFromQuery(query: ParsedQs): string | undefined {
-  return getStringValueFromRequestQuery(query, "filename");
-}
-
-export function getFiletypeFromQuery(
-  query: ParsedQs,
-): SupportedFileExtension | undefined {
-  const value = getStringValueFromRequestQuery(query, "filetype");
-  if (!value) return undefined;
-  const ext = value.startsWith(".") ? value : `.${value}`;
-  if (!isSupportedFileExtension(ext))
-    throw new BadRequestError(`Unsupported filetype requested (${value})`);
-  return ext;
-}
-
-export function getPlatformFromQuery(query: ParsedQs): Platform | undefined {
-  const value = getStringValueFromRequestQuery(query, "platform");
-  return value && isPlatform(value) ? value : undefined;
-}
-
+/**
+ * Composition root: wires the backend, the ReleaseService pipeline, and the
+ * route handlers (src/http/*) onto an express Router, and emits the
+ * beforeDownload/afterDownload events around asset serving.
+ */
 export class Pecans extends EventEmitter {
   protected startTime = Date.now();
   protected opts: PecansSettings;
@@ -146,6 +73,23 @@ export class Pecans extends EventEmitter {
   /** Unified release/asset resolution pipeline all route handlers use. */
   protected service: ReleaseService;
 
+  /** The capabilities the src/http/* handlers get from this class. */
+  protected ctx: PecansHttpContext;
+
+  /** Route handlers built once from the src/http/* factories over ctx. */
+  protected handlers: {
+    download: ReturnType<typeof createDownloadHandler>;
+    dl: ReturnType<typeof createDlHandler>;
+    dlfilename: ReturnType<typeof createDlFilenameHandler>;
+    apiChannels: ReturnType<typeof createApiChannelsHandler>;
+    apiStatus: ReturnType<typeof createApiStatusHandler>;
+    apiVersions: ReturnType<typeof createApiVersionsHandler>;
+    updateRedirect: ReturnType<typeof createUpdateRedirectHandler>;
+    updateOSX: ReturnType<typeof createUpdateOSXHandler>;
+    updateWin: ReturnType<typeof createUpdateWinHandler>;
+    notes: ReturnType<typeof createNotesHandler>;
+  };
+
   constructor(
     protected backend: Backend,
     opts: PecansOptions = Pecans.defaults,
@@ -159,6 +103,34 @@ export class Pecans extends EventEmitter {
     this.service = new ReleaseService(this.backend, {
       preferUniversal: this.opts.preferUniversal,
     });
+
+    this.ctx = {
+      service: this.service,
+      getReleases: () => this.getReleases(),
+      queryReleases: (query) => this.queryReleases(query),
+      getBaseUrl: (req) => this.getBaseUrl(req),
+      serveAsset: (req, res, release, asset) =>
+        this.serveAsset(req, res, release, asset),
+      readAsset: (asset) => this.backend.readAsset(asset),
+      uptimeSeconds: () => (Date.now() - this.startTime) / 1000,
+      validateChannelName: (name) => this.validateChannelName(name),
+      includeVersionInReleaseNotes: () =>
+        this.opts.includeVersionInReleaseNotes,
+    };
+
+    this.handlers = {
+      download: createDownloadHandler(this.ctx),
+      dl: createDlHandler(this.ctx),
+      dlfilename: createDlFilenameHandler(this.ctx),
+      apiChannels: createApiChannelsHandler(this.ctx),
+      apiStatus: createApiStatusHandler(this.ctx),
+      apiVersions: createApiVersionsHandler(this.ctx),
+      updateRedirect: createUpdateRedirectHandler(this.ctx),
+      updateOSX: createUpdateOSXHandler(this.ctx),
+      updateWin: createUpdateWinHandler(this.ctx),
+      notes: createNotesHandler(this.ctx),
+    };
+
     this.router = Router();
 
     // Log requests
@@ -223,88 +195,83 @@ export class Pecans extends EventEmitter {
     this.router.use(errorHandler());
   }
 
+  // handler bodies live in src/http/* as factories over the context; these
+  // delegates keep the class surface (and its bind() wiring above) unchanged
+
   async dlfilename(req: Request, res: Response, next: NextFunction) {
-    try {
-      const filename = getStringParam(req, "filename");
-      // an absent filename must not fall through to queryReleases, where an
-      // undefined filename matches every release
-      if (!filename) {
-        throw new BadRequestError("filename is required");
-      }
-      const query = { filename };
-      const releases = await this.getReleases();
-      const matchingReleases = releases.queryReleases(query);
-      if (matchingReleases.length == 0) {
-        throw new NotFoundError(`${filename} not found`);
-      }
-      const release = matchingReleases[0];
-      const matchingAssets = release.queryAssets(query);
-      // Defensive check kept as safety net, the following should never be true with the current implementation of
-      // queryReleases. queryReleases calls queryAssets internally with the same query.  So the matchingAssets should
-      // always be > 0
-      if (matchingAssets.length == 0) {
-        throw new NotFoundError(`${filename} not found`);
-      }
-      const asset = matchingAssets[0];
-      await this.serveAsset(req, res, release, asset);
-    } catch (err) {
-      next(err);
-    }
+    return this.handlers.dlfilename(req, res, next);
+  }
+
+  async dl(req: Request, res: Response, next: NextFunction) {
+    return this.handlers.dl(req, res, next);
+  }
+
+  protected async handleDownload(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ) {
+    return this.handlers.download(req, res, next);
+  }
+
+  protected async handleApiChannels(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ) {
+    return this.handlers.apiChannels(req, res, next);
+  }
+
+  protected async handleApiStatus(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ) {
+    return this.handlers.apiStatus(req, res, next);
+  }
+
+  protected async handleApiVersions(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ) {
+    return this.handlers.apiVersions(req, res, next);
+  }
+
+  protected handleUpdateRedirect(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ) {
+    return this.handlers.updateRedirect(req, res, next);
+  }
+
+  protected async handleUpdateOSX(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ) {
+    return this.handlers.updateOSX(req, res, next);
+  }
+
+  protected async handleUpdateWin(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ) {
+    return this.handlers.updateWin(req, res, next);
+  }
+
+  protected async handleServeNotes(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ) {
+    return this.handlers.notes(req, res, next);
   }
 
   async queryReleases(query: PecansReleaseQuery): Promise<PecansRelease[]> {
     return this.service.queryReleases(query);
-  }
-
-  async dl(req: Request, res: Response, next: NextFunction) {
-    try {
-      const os = getStringParam(req, "os");
-      if (!isOperatingSystem(os)) {
-        throw new NotFoundError(
-          `Unrecognized OS (${os}) expecting one of ${OPERATING_SYSTEMS.join(", ")}`,
-        );
-      }
-
-      const arch = getStringParam(req, "arch");
-      if (!arch || !isValidArchForOS(os, arch)) {
-        throw new NotFoundError(`Unsupported Arch (${arch}) for OS (${os})`);
-      }
-
-      const channel = req.query.channel
-        ? validateReqQueryChannel(req.query.channel)
-        : "stable";
-      await this.validateChannelName(channel);
-      const version = getVersionFromQuery(req.query);
-      const pkg = getPkgFromQuery(req.query);
-
-      const releaseQuery: PecansReleaseQuery = {
-        channel,
-        os,
-        arch,
-        version,
-        pkg,
-      };
-
-      const releases = await this.queryReleases(releaseQuery);
-      if (releases.length == 0) {
-        throw new NotFoundError("No Matching Releases Found");
-      }
-      // releases are sorted in version descending order so the first element
-      // should be the highest version that matched the que
-      const release = releases[0];
-      const extensions = getDownloadExtensionsByOs(os, pkg);
-      const assetQuery = { arch, version, pkg, extensions };
-      const matchingAssets = release.queryAssets(assetQuery);
-
-      if (matchingAssets.length == 0) {
-        throw new NotFoundError("No Matching Assets Found");
-      }
-
-      const asset = matchingAssets[0];
-      await this.serveAsset(req, res, release, asset);
-    } catch (e) {
-      next(e);
-    }
   }
 
   async validateChannelName(name: string): Promise<void> {
@@ -338,326 +305,6 @@ export class Pecans extends EventEmitter {
 
   public async getReleases(): Promise<PecansReleases> {
     return this.service.getReleases();
-  }
-
-  protected async handleApiChannels(
-    req: Request,
-    res: Response,
-    next: NextFunction,
-  ) {
-    try {
-      const releases = await this.getReleases();
-      const channels = releases.getChannels();
-      res.json(channels);
-    } catch (err) {
-      next(err);
-    }
-  }
-
-  protected async handleApiStatus(
-    req: Request,
-    res: Response,
-    next: NextFunction,
-  ) {
-    try {
-      res.send({ uptime: (Date.now() - this.startTime) / 1000 });
-    } catch (err) {
-      next(err);
-    }
-  }
-
-  protected async handleApiVersions(
-    req: Request,
-    res: Response,
-    next: NextFunction,
-  ) {
-    try {
-      const channel = validateReqQueryChannel(req.query.channel || "*");
-      const platform = getPlatformFromQuery(req.query);
-      const version = getVersionFromQuery(req.query);
-
-      const versions = await this.service.filterReleases({
-        ...(platform ? platformToQuery(platform) : {}),
-        channel,
-        version,
-        // legacy behavior: this surface always widened osx queries to
-        // universal builds, regardless of opts.preferUniversal
-        preferUniversal: true,
-      });
-      res.send(versions);
-    } catch (err) {
-      next(err);
-    }
-  }
-
-  // Handler for download routes
-  protected async handleDownload(
-    req: Request,
-    res: Response,
-    next: NextFunction,
-  ) {
-    try {
-      let channel = validateReqQueryChannel(
-        getStringParam(req, "channel") || req.query.channel || "stable",
-      );
-      const tag = validateReqQueryTag(
-        getStringParam(req, "tag") ?? req.query.tag,
-      );
-      const filename = getStringParam(req, "filename");
-      const filetype = getFiletypeFromQuery(req.query);
-
-      // platform autodetection from the user agent was removed in 2.0;
-      // selecting a platform is the client's responsibility
-      const _platform = filename
-        ? filenameToPlatform(filename)
-        : getStringParam(req, "platform");
-      if (!_platform) {
-        throw new BadRequestError(
-          "Platform is required. Specify a platform in the URL, e.g. /download/osx_64.",
-        );
-      }
-      const platform = validateReqQueryPlatform(mapLegacyPlatform(_platform));
-      // legacy composite ids translate to the discrete model at the HTTP
-      // edge; everything below resolves through the ReleaseService pipeline
-      const platformQuery = platformToQuery(platform);
-
-      // If a specific version was requested, don't enforce a channel; an
-      // absent tag means "latest" and keeps the requested/default channel.
-      if (tag && tag != "latest") channel = "*";
-
-      let release: PecansRelease | undefined = undefined;
-      try {
-        release = await this.service.resolveRelease({
-          ...platformQuery,
-          channel: channel,
-          version: tag ?? "latest",
-        });
-      } catch (err) {
-        // don't fall back to any channel if we already searched them all;
-        // a specific tag widened channel to "*" above, so this covers both
-        // "unrestricted" and "specific version requested"
-        if (channel == "*") throw err;
-      }
-
-      // we weren't able to find a release with the specified channel
-      // try again without the channel restriction
-      if (!release) {
-        release = await this.service.resolveRelease({
-          ...platformQuery,
-          channel: "*",
-          version: tag ?? "latest",
-        });
-      }
-
-      const asset = filename
-        ? release.assets.find((i) => i.filename == filename)
-        : this.service.resolveAsset(release, {
-            ...platformQuery,
-            wanted: filetype,
-          });
-
-      if (!asset)
-        throw new NotFoundError(
-          `No download available for platform ${platform} for version ${release.version} (${channel})`,
-        );
-
-      // Call analytic middleware, then serve; await so rejections reach the
-      // catch below instead of orphaning the promise
-      await this.serveAsset(req, res, release, asset);
-    } catch (err) {
-      next(err);
-    }
-  }
-
-  // Request to update
-  protected handleUpdateRedirect(
-    req: Request,
-    res: Response,
-    next: NextFunction,
-  ) {
-    try {
-      if (!req.query.version)
-        throw new BadRequestError('Requires "version" parameter');
-      if (!req.query.platform)
-        throw new BadRequestError('Requires "platform" parameter');
-      return res.redirect(
-        "/update/" + req.query.platform + "/" + req.query.version,
-      );
-    } catch (err) {
-      next(err);
-    }
-  }
-
-  // Updater used by OSX (Squirrel.Mac) and others
-  protected async handleUpdateOSX(
-    req: Request,
-    res: Response,
-    next: NextFunction,
-  ) {
-    try {
-      const versionParam = getStringParam(req, "version");
-      const platformParam = getStringParam(req, "platform");
-      if (!versionParam)
-        throw new BadRequestError('Requires "version" parameter');
-      if (!platformParam)
-        throw new BadRequestError('Requires "platform" parameter');
-
-      const mapped_platform = mapLegacyPlatform(platformParam);
-      const platform = validateReqQueryPlatform(mapped_platform);
-      // the client reports its installed version, so require a specific
-      // semver version; a range would corrupt the ">=" + tag filter below
-      if (!valid(versionParam)) {
-        throw new BadRequestError(
-          `Invalid version (${versionParam}), expected a specific semver version`,
-        );
-      }
-      const tag = versionParam;
-
-      const channel = getStringParam(req, "channel") || "stable";
-      const filetype = req.query.filetype ? req.query.filetype : "zip";
-
-      const versions = await this.service.filterReleases({
-        ...platformToQuery(platform),
-        version: ">=" + tag,
-        channel,
-        // legacy behavior: the update surface always widened osx queries to
-        // universal builds, regardless of opts.preferUniversal
-        preferUniversal: true,
-      });
-      if (versions.length === 0) return res.status(204).send("No updates");
-      const latest = versions[0];
-      if (latest.version == tag) return res.status(204).send("No updates");
-
-      const notesSlice =
-        versions.length === 1 ? [latest] : versions.slice(0, -1);
-      const url = `${this.getBaseUrl(req)}/download/version/${
-        latest.version
-      }/${platform}?filetype=${filetype}`;
-      const releaseNotes = mergeReleaseNotes(
-        notesSlice,
-        this.opts.includeVersionInReleaseNotes,
-      );
-
-      res.status(200).send({
-        url,
-        name: latest.version,
-        notes: releaseNotes,
-        pub_date: latest.published_at.toISOString(),
-      });
-    } catch (err) {
-      next(err);
-    }
-  }
-
-  // Update Windows (Squirrel.Windows)
-  // Auto-updates: Squirrel.Windows: serve RELEASES from latest version
-  // Currently, it will only serve a full.nupkg of the latest release with a normalized filename (for pre-release)
-  protected async handleUpdateWin(
-    req: Request,
-    res: Response,
-    next: NextFunction,
-  ) {
-    try {
-      const _platform = getStringParam(req, "platform") || "";
-      const mapped_platform = mapLegacyPlatform(_platform);
-      const platform = validateReqQueryPlatform(mapped_platform);
-
-      const channel = getStringParam(req, "channel") || "stable";
-      const tag = getStringParam(req, "version");
-      if (!tag) throw new BadRequestError('Requires "version" parameter');
-      // the client reports its installed version, so require a specific
-      // semver version; a range would corrupt the ">=" + tag filter below
-      if (!valid(tag)) {
-        throw new BadRequestError(
-          `Invalid version (${tag}), expected a specific semver version`,
-        );
-      }
-
-      const versions = await this.service.filterReleases({
-        ...platformToQuery(platform),
-        version: ">=" + tag,
-        channel,
-        // legacy behavior: the update surface always widened osx queries to
-        // universal builds, regardless of opts.preferUniversal
-        preferUniversal: true,
-      });
-      if (versions.length === 0) throw new NotFoundError("Version not found");
-
-      // Update needed?
-      const latest = versions[0];
-
-      // File exists
-      const asset = latest.assets.find((i) => i.filename == "RELEASES");
-      if (!asset) {
-        throw new NotFoundError(
-          `RELEASES File not found for ${latest.version}`,
-        );
-      }
-
-      const content = await this.backend.readAsset(asset);
-      let releases = await parseRELEASES(content.toString("utf-8"));
-      releases = releases
-        // Change filename to use download proxy
-        .map((entry) => {
-          entry.filename = this.getBaseUrl(req) + "/dl/" + entry.filename;
-          return entry;
-        });
-
-      const output = generateRELEASES(releases);
-
-      // Content-Length is bytes, not UTF-16 code units
-      res.header("Content-Length", Buffer.byteLength(output).toString());
-      res.attachment("RELEASES");
-      res.send(output);
-    } catch (err) {
-      next(err);
-    }
-  }
-
-  // Serve releases notes
-  protected async handleServeNotes(
-    req: Request,
-    res: Response,
-    next: NextFunction,
-  ) {
-    try {
-      // the path param wins over ?version; an invalid path param is an
-      // explicit client error rather than silently serving the latest notes
-      const versionParam = getStringParam(req, "version");
-      if (
-        versionParam &&
-        versionParam !== "latest" &&
-        !validRange(versionParam)
-      ) {
-        throw new BadRequestError(
-          `Invalid version (${versionParam}), expected 'latest' or a semver range`,
-        );
-      }
-      const version = versionParam ?? getVersionFromQuery(req.query);
-      const releases = await this.getReleases();
-      const query = { version };
-      const candidates = releases.queryReleases(query);
-      if (candidates.length === 0) {
-        throw new NotFoundError(
-          version ? `No release found for version ${version}` : "No releases",
-        );
-      }
-      const release = candidates[0];
-      const note = formatReleaseNote(release);
-
-      res.format({
-        "application/json": function () {
-          res.send({
-            note,
-          });
-        },
-        default: function () {
-          res.send(note);
-        },
-      });
-    } catch (err) {
-      next(err);
-    }
   }
 
   // Serve an asset to the response
