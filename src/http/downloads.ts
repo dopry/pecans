@@ -4,7 +4,10 @@ import { PecansRelease } from "../models/PecansRelease";
 import { PecansReleaseQuery } from "../models/PecansReleaseQuery";
 import { OPERATING_SYSTEMS, isOperatingSystem } from "../utils/OperatingSystem";
 import { isValidArchForOS } from "../utils/Architecture";
-import { getPkgFromQuery } from "../utils/PackageFormat";
+import {
+  filetypeToPackageFormat,
+  getPkgFromQuery,
+} from "../utils/PackageFormat";
 import {
   filenameToPlatform,
   mapLegacyPlatform,
@@ -46,8 +49,14 @@ export function createDownloadHandler(ctx: PecansHttpContext) {
       }
       const platform = validateReqQueryPlatform(mapLegacyPlatform(_platform));
       // legacy composite ids translate to the discrete model at the HTTP
-      // edge; everything below resolves through the ReleaseService pipeline
-      const platformQuery = platformToQuery(platform);
+      // edge; everything below resolves through the ReleaseService pipeline.
+      // An msix filetype implies the msix package format, since msix assets
+      // never match a composite id's "default" package constraint.
+      const filetypePkg = filetypeToPackageFormat(filetype);
+      const platformQuery = {
+        ...platformToQuery(platform),
+        ...(filetypePkg ? { pkg: filetypePkg } : {}),
+      };
 
       // If a specific version was requested, don't enforce a channel; an
       // absent tag means "latest" and keeps the requested/default channel.

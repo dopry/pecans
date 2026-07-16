@@ -212,6 +212,37 @@ const tests: FilenameResolveTestTuple[] = [
     undefined,
     platforms.WINDOWS_32,
   ],
+  [
+    "Visibox_5.0.13.0_x64.msix",
+    "windows",
+    "64",
+    "msix",
+    platforms.WINDOWS_MSIX_64,
+  ],
+  [
+    "Visibox_5.0.13.0_x86.msix",
+    "windows",
+    "32",
+    "msix",
+    platforms.WINDOWS_MSIX_32,
+  ],
+  [
+    "Visibox_5.0.13.0_arm64.msix",
+    "windows",
+    "arm64",
+    "msix",
+    // arm64 isn't a supported windows platform (there is no windows_arm64),
+    // so the WINDOWS_MSIX_ARM64 key doesn't exist and the asset is dropped
+    // at ingestion like any other arm64 windows asset
+    null,
+  ],
+  [
+    "Visibox-5.0.13.msixbundle",
+    "windows",
+    "universal",
+    "msix",
+    platforms.WINDOWS_MSIX_UNIVERSAL,
+  ],
   ["atom-1.0.9-delta.nupkg", "windows", "64", undefined, null],
   ["RELEASES", "windows", "universal", undefined, null],
   ["enterprise-amd64.tar.gz", "linux", "64", undefined, platforms.LINUX_64],

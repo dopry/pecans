@@ -674,6 +674,46 @@ describe("PecansGitHubBackend", () => {
       expect(consoleErrorSpy).toHaveBeenCalled();
     });
 
+    it("should keep msix assets alongside exe assets", () => {
+      const githubRelease = {
+        id: 1,
+        tag_name: "v5.0.13",
+        published_at: "2026-05-22T00:00:00Z",
+        body: "MSIX release",
+        assets: [
+          {
+            id: 1,
+            name: "Visibox-Setup-5.0.13.exe",
+            size: 1000,
+            content_type: "application/octet-stream",
+          },
+          {
+            id: 2,
+            name: "Visibox_5.0.13.0_x64.msix",
+            size: 1000,
+            content_type: "application/octet-stream",
+          },
+          {
+            id: 3,
+            name: "Visibox-5.0.13.msixbundle",
+            size: 1000,
+            content_type: "application/octet-stream",
+          },
+        ],
+      };
+
+      const result = backend.normalizeRelease(githubRelease as any);
+
+      expect(result.assets).toHaveLength(3);
+      expect(result.assets.map((a) => a.type)).toEqual([
+        "windows_64",
+        "windows_msix_64",
+        "windows_msix_universal",
+      ]);
+      expect(result.assets[1].pkg).toBe("msix");
+      expect(result.assets[2].arch).toBe("universal");
+    });
+
     it("should filter out assets that fail to normalize", () => {
       const consoleLogSpy = vi
         .spyOn(console, "log")

@@ -2,6 +2,7 @@ import { NextFunction, Request, Response } from "express";
 import { valid } from "semver";
 import { BadRequestError, NotFoundError } from "../errors";
 import { mergeReleaseNotes } from "../utils/mergeReleaseNotes";
+import { filetypeToPackageFormat } from "../utils/PackageFormat";
 import { mapLegacyPlatform, platformToQuery } from "../utils/platforms";
 import { generateRELEASES, parseRELEASES } from "../utils/win-releases";
 import { PecansHttpContext } from "./context";
@@ -64,9 +65,14 @@ export function createUpdateOSXHandler(ctx: PecansHttpContext) {
       // rather than being interpolated into the feed url
       const filetype =
         getStringValueFromRequestQuery(req.query, "filetype") || "zip";
+      // an msix filetype implies the msix package format: Electron's MSIX
+      // updater consumes this same Squirrel.Mac-shaped feed with
+      // ?filetype=msix, and its assets never match the platform default
+      const pkg = filetypeToPackageFormat(filetype);
 
       const versions = await ctx.service.filterReleases({
         ...platformToQuery(platform),
+        ...(pkg ? { pkg } : {}),
         version: ">=" + tag,
         channel,
         // legacy behavior: the update surface always widened osx queries to
