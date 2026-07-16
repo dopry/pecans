@@ -5,17 +5,21 @@ import { ParsedQs } from "qs";
 import { Backend } from "./backends/";
 import { errorHandler, NotFoundError } from "./errors";
 import {
-  handleApiChannels,
-  handleApiStatus,
-  handleApiVersions,
+  createApiChannelsHandler,
+  createApiStatusHandler,
+  createApiVersionsHandler,
 } from "./http/api";
 import { PecansHttpContext } from "./http/context";
-import { dl, dlfilename, handleDownload } from "./http/downloads";
-import { handleServeNotes } from "./http/notes";
 import {
-  handleUpdateOSX,
-  handleUpdateRedirect,
-  handleUpdateWin,
+  createDlFilenameHandler,
+  createDlHandler,
+  createDownloadHandler,
+} from "./http/downloads";
+import { createNotesHandler } from "./http/notes";
+import {
+  createUpdateOSXHandler,
+  createUpdateRedirectHandler,
+  createUpdateWinHandler,
 } from "./http/updates";
 import {
   PecansAssetDTO,
@@ -72,6 +76,20 @@ export class Pecans extends EventEmitter {
   /** The capabilities the src/http/* handlers get from this class. */
   protected ctx: PecansHttpContext;
 
+  /** Route handlers built once from the src/http/* factories over ctx. */
+  protected handlers: {
+    download: ReturnType<typeof createDownloadHandler>;
+    dl: ReturnType<typeof createDlHandler>;
+    dlfilename: ReturnType<typeof createDlFilenameHandler>;
+    apiChannels: ReturnType<typeof createApiChannelsHandler>;
+    apiStatus: ReturnType<typeof createApiStatusHandler>;
+    apiVersions: ReturnType<typeof createApiVersionsHandler>;
+    updateRedirect: ReturnType<typeof createUpdateRedirectHandler>;
+    updateOSX: ReturnType<typeof createUpdateOSXHandler>;
+    updateWin: ReturnType<typeof createUpdateWinHandler>;
+    notes: ReturnType<typeof createNotesHandler>;
+  };
+
   constructor(
     protected backend: Backend,
     opts: PecansOptions = Pecans.defaults,
@@ -98,6 +116,19 @@ export class Pecans extends EventEmitter {
       validateChannelName: (name) => this.validateChannelName(name),
       includeVersionInReleaseNotes: () =>
         this.opts.includeVersionInReleaseNotes,
+    };
+
+    this.handlers = {
+      download: createDownloadHandler(this.ctx),
+      dl: createDlHandler(this.ctx),
+      dlfilename: createDlFilenameHandler(this.ctx),
+      apiChannels: createApiChannelsHandler(this.ctx),
+      apiStatus: createApiStatusHandler(this.ctx),
+      apiVersions: createApiVersionsHandler(this.ctx),
+      updateRedirect: createUpdateRedirectHandler(this.ctx),
+      updateOSX: createUpdateOSXHandler(this.ctx),
+      updateWin: createUpdateWinHandler(this.ctx),
+      notes: createNotesHandler(this.ctx),
     };
 
     this.router = Router();
@@ -164,15 +195,15 @@ export class Pecans extends EventEmitter {
     this.router.use(errorHandler());
   }
 
-  // handler bodies live in src/http/*; these delegates keep the class
-  // surface (and its bind() wiring above) unchanged
+  // handler bodies live in src/http/* as factories over the context; these
+  // delegates keep the class surface (and its bind() wiring above) unchanged
 
   async dlfilename(req: Request, res: Response, next: NextFunction) {
-    return dlfilename(this.ctx, req, res, next);
+    return this.handlers.dlfilename(req, res, next);
   }
 
   async dl(req: Request, res: Response, next: NextFunction) {
-    return dl(this.ctx, req, res, next);
+    return this.handlers.dl(req, res, next);
   }
 
   protected async handleDownload(
@@ -180,7 +211,7 @@ export class Pecans extends EventEmitter {
     res: Response,
     next: NextFunction,
   ) {
-    return handleDownload(this.ctx, req, res, next);
+    return this.handlers.download(req, res, next);
   }
 
   protected async handleApiChannels(
@@ -188,7 +219,7 @@ export class Pecans extends EventEmitter {
     res: Response,
     next: NextFunction,
   ) {
-    return handleApiChannels(this.ctx, req, res, next);
+    return this.handlers.apiChannels(req, res, next);
   }
 
   protected async handleApiStatus(
@@ -196,7 +227,7 @@ export class Pecans extends EventEmitter {
     res: Response,
     next: NextFunction,
   ) {
-    return handleApiStatus(this.ctx, req, res, next);
+    return this.handlers.apiStatus(req, res, next);
   }
 
   protected async handleApiVersions(
@@ -204,7 +235,7 @@ export class Pecans extends EventEmitter {
     res: Response,
     next: NextFunction,
   ) {
-    return handleApiVersions(this.ctx, req, res, next);
+    return this.handlers.apiVersions(req, res, next);
   }
 
   protected handleUpdateRedirect(
@@ -212,7 +243,7 @@ export class Pecans extends EventEmitter {
     res: Response,
     next: NextFunction,
   ) {
-    return handleUpdateRedirect(this.ctx, req, res, next);
+    return this.handlers.updateRedirect(req, res, next);
   }
 
   protected async handleUpdateOSX(
@@ -220,7 +251,7 @@ export class Pecans extends EventEmitter {
     res: Response,
     next: NextFunction,
   ) {
-    return handleUpdateOSX(this.ctx, req, res, next);
+    return this.handlers.updateOSX(req, res, next);
   }
 
   protected async handleUpdateWin(
@@ -228,7 +259,7 @@ export class Pecans extends EventEmitter {
     res: Response,
     next: NextFunction,
   ) {
-    return handleUpdateWin(this.ctx, req, res, next);
+    return this.handlers.updateWin(req, res, next);
   }
 
   protected async handleServeNotes(
@@ -236,7 +267,7 @@ export class Pecans extends EventEmitter {
     res: Response,
     next: NextFunction,
   ) {
-    return handleServeNotes(this.ctx, req, res, next);
+    return this.handlers.notes(req, res, next);
   }
 
   async queryReleases(query: PecansReleaseQuery): Promise<PecansRelease[]> {
