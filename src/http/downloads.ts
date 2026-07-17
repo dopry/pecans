@@ -51,8 +51,12 @@ export function createDownloadHandler(ctx: PecansHttpContext) {
       // legacy composite ids translate to the discrete model at the HTTP
       // edge; everything below resolves through the ReleaseService pipeline.
       // An msix filetype implies the msix package format, since msix assets
-      // never match a composite id's "default" package constraint.
-      const filetypePkg = filetypeToPackageFormat(filetype);
+      // never match a composite id's "default" package constraint. An
+      // explicit filename already identifies the asset (and its pkg), so a
+      // stray ?filetype must not constrain release resolution there.
+      const filetypePkg = filename
+        ? undefined
+        : filetypeToPackageFormat(filetype);
       const platformQuery = {
         ...platformToQuery(platform),
         ...(filetypePkg ? { pkg: filetypePkg } : {}),

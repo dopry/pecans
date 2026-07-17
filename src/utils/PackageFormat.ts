@@ -23,11 +23,13 @@ export function filenameToPackageFormat(
 }
 
 /**
- * msix downloads are requested via ?filetype=msix|msixbundle rather than a
- * composite platform id (there is no windows_msix platform in the wild), so
- * those filetypes imply the msix package format on the resolution filters.
- * Other filetypes never imply a pkg: legacy requests like ?filetype=deb keep
- * their platform-default resolution semantics.
+ * On the legacy HTTP surface, msix downloads are requested via
+ * ?filetype=msix|msixbundle rather than a composite platform id: deployed
+ * clients send ids like windows_64, so the internal windows_msix* ids
+ * (introduced for ingestion) aren't part of the request vocabulary. Those
+ * filetypes therefore imply the msix package format on the resolution
+ * filters. Other filetypes never imply a pkg: legacy requests like
+ * ?filetype=deb keep their platform-default resolution semantics.
  */
 export function filetypeToPackageFormat(
   filetype?: string,

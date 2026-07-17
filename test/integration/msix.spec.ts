@@ -188,6 +188,21 @@ describe("/download with msix", () => {
     const res = await supertest(app).get("/download/windows_64").expect(302);
     expect(res.headers.location).toContain("app-2.7.0-x64-setup.exe");
   });
+
+  it("a stray ?filetype=msix must not break exact-filename downloads", async () => {
+    // the filename fully identifies the asset; the filetype->pkg implication
+    // only applies when resolving by platform. The stable set has no msix
+    // assets, so constraining release resolution to pkg msix would 404 here.
+    const { app, backend } = configureTestAppWithReleases(
+      buildStableReleaseSet(OWNER, REPO),
+    );
+    const asset = await findAsset(backend, "2.7.0", "app-2.7.0-x64-setup.exe");
+    nockGithubReleasesAssetRedirect(nock, OWNER, REPO, asset);
+    const res = await supertest(app)
+      .get("/download/2.7.0/app-2.7.0-x64-setup.exe?filetype=msix")
+      .expect(302);
+    expect(res.headers.location).toContain("app-2.7.0-x64-setup.exe");
+  });
 });
 
 describe("/dl with msix", () => {
