@@ -122,6 +122,22 @@ describe("/update/:platform/:version?filetype=msix (Electron MSIX)", () => {
     );
   });
 
+  it("canonicalizes the filetype casing in the feed url", async () => {
+    // filetypeToPackageFormat accepts "MSIX" case-insensitively, and the
+    // download route's filetype validation is case-sensitive - the feed url
+    // must embed the lowercased filetype or the follow-up download 400s
+    const { app } = configureTestAppWithReleases(
+      buildMsixReleaseSet(OWNER, REPO),
+    );
+    const res = await supertest(app)
+      .get("/update/win32-x64/2.5.0?filetype=MSIX")
+      .expect(200);
+    expectSquirrelMacResponse(res.body);
+    expect(res.body.url).toMatch(
+      /\/download\/version\/2\.7\.0\/windows_64\?filetype=msix$/,
+    );
+  });
+
   it("serves updates from .msixbundle-only releases for arch-specific clients", async () => {
     // a bundle is multi-arch by definition, so it satisfies windows_64
     const { app } = configureTestAppWithReleases(
