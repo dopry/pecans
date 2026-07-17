@@ -140,9 +140,7 @@ describe("/update/:platform/:version?filetype=msix (Electron MSIX)", () => {
     const { app } = configureTestAppWithReleases(
       buildMsixReleaseSet(OWNER, REPO),
     );
-    const res = await supertest(app)
-      .get("/update/win32-x64/2.5.0")
-      .expect(200);
+    const res = await supertest(app).get("/update/win32-x64/2.5.0").expect(200);
     expectSquirrelMacResponse(res.body);
     expect(res.body.url).toMatch(
       /\/download\/version\/2\.7\.0\/windows_64\?filetype=zip$/,
@@ -185,9 +183,7 @@ describe("/dl with msix", () => {
     );
     const asset = await findAsset(backend, "2.7.0", "app_2.7.0_x64.msix");
     nockGithubReleasesAssetRedirect(nock, OWNER, REPO, asset);
-    const res = await supertest(app)
-      .get("/dl/windows/64?pkg=msix")
-      .expect(302);
+    const res = await supertest(app).get("/dl/windows/64?pkg=msix").expect(302);
     expect(res.headers.location).toContain("app_2.7.0_x64.msix");
   });
 
