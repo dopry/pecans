@@ -15,15 +15,16 @@ import { beforeAll, describe, expect, it } from "vitest";
 
 const root = fileURLToPath(new URL("../../", import.meta.url));
 const distDir = join(root, "dist");
-// tsup's JS entry — run it with `node` directly so the build is
-// cross-platform (the .bin/tsup.cmd shim can't be spawned without a shell).
-const tsupEntry = join(root, "node_modules", "tsup", "dist", "cli-node.js");
+// TypeScript's JS entry — run it with `node` directly so the build is
+// cross-platform (the .bin/tsc.cmd shim can't be spawned without a shell).
+const tscEntry = join(root, "node_modules", "typescript", "bin", "tsc");
 
 describe("built ESM package consumption", () => {
   beforeAll(() => {
-    // Build fresh so the test always reflects the current source.
+    // Build fresh so the test always reflects the current source. Run tsc
+    // directly (not `npm run build`) so the invocation is shell-free.
     rmSync(distDir, { recursive: true, force: true });
-    execFileSync(process.execPath, [tsupEntry], {
+    execFileSync(process.execPath, [tscEntry, "-p", "tsconfig.build.json"], {
       cwd: root,
       stdio: "inherit",
     });

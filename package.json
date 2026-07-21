@@ -39,7 +39,6 @@
     "semantic-release": "^21.1.1",
     "sinon": "^14.0.0",
     "supertest": "^7.2.2",
-    "tsup": "^8.5.1",
     "tsx": "^4.23.0",
     "typescript": "^5.9.2",
     "typescript-eslint": "^8.63.0",
@@ -58,7 +57,7 @@
     "url": "git+https://github.com/dopry/pecans.git"
   },
   "scripts": {
-    "build": "tsup",
+    "build": "node --eval \"require('node:fs').rmSync('dist', { recursive: true, force: true })\" && tsc -p tsconfig.build.json",
     "dev": "tsx watch src/index.ts",
     "start": "node dist/index.js",
     "lint": "eslint .",

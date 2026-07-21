@@ -61,7 +61,7 @@ The server provides several endpoint patterns:
 
 ### Build & Release
 
-- ESM-only build (`dist/index.js`) via tsup
+- ESM-only build: `tsc -p tsconfig.build.json` emits `dist/` mirroring `src/`
 - Use `npm run build` to compile TypeScript
 - Semantic release handles versioning automatically
 - Follow conventional commit format for releases
