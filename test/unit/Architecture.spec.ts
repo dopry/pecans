@@ -184,18 +184,18 @@ describe("Architecture", () => {
 
     it("should return correct architectures for windows", () => {
       const result = getSupportedArchByOs("windows");
-      expect(result).toEqual(["32", "64", "universal"]);
+      expect(result).toEqual(["32", "64", "arm64", "universal"]);
     });
 
     it("should return correct architectures for linux", () => {
       const result = getSupportedArchByOs("linux");
-      expect(result).toEqual(["32", "64"]);
+      expect(result).toEqual(["32", "64", "arm64"]);
     });
 
     it("should handle default case (same as linux)", () => {
       // Testing the default case by using an invalid OS that falls through
       const result = getSupportedArchByOs("invalid" as OperatingSystem);
-      expect(result).toEqual(["32", "64"]);
+      expect(result).toEqual(["32", "64", "arm64"]);
     });
   });
 
@@ -218,11 +218,11 @@ describe("Architecture", () => {
       it("should validate supported windows architectures", () => {
         expect(isValidArchForOS("windows", "32")).toBe(true);
         expect(isValidArchForOS("windows", "64")).toBe(true);
+        expect(isValidArchForOS("windows", "arm64")).toBe(true);
         expect(isValidArchForOS("windows", "universal")).toBe(true);
       });
 
       it("should reject invalid windows architectures", () => {
-        expect(isValidArchForOS("windows", "arm64")).toBe(false);
         expect(isValidArchForOS("windows", "invalid")).toBe(false);
       });
     });
@@ -231,10 +231,10 @@ describe("Architecture", () => {
       it("should validate supported linux architectures", () => {
         expect(isValidArchForOS("linux", "32")).toBe(true);
         expect(isValidArchForOS("linux", "64")).toBe(true);
+        expect(isValidArchForOS("linux", "arm64")).toBe(true);
       });
 
       it("should reject invalid linux architectures", () => {
-        expect(isValidArchForOS("linux", "arm64")).toBe(false);
         expect(isValidArchForOS("linux", "universal")).toBe(false);
         expect(isValidArchForOS("linux", "invalid")).toBe(false);
       });
@@ -245,7 +245,7 @@ describe("Architecture", () => {
         const invalidOS = "unknown" as OperatingSystem;
         expect(isValidArchForOS(invalidOS, "32")).toBe(true);
         expect(isValidArchForOS(invalidOS, "64")).toBe(true);
-        expect(isValidArchForOS(invalidOS, "arm64")).toBe(false);
+        expect(isValidArchForOS(invalidOS, "arm64")).toBe(true);
         expect(isValidArchForOS(invalidOS, "universal")).toBe(false);
       });
     });

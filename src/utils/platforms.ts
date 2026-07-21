@@ -21,12 +21,15 @@ export const PLATFORMS = [
   "linux",
   "linux_32",
   "linux_64",
+  "linux_arm64",
   "linux_rpm",
   "linux_rpm_32",
   "linux_rpm_64",
+  "linux_rpm_arm64",
   "linux_deb",
   "linux_deb_32",
   "linux_deb_64",
+  "linux_deb_arm64",
   "osx",
   "osx_universal",
   "osx_32",
@@ -35,9 +38,11 @@ export const PLATFORMS = [
   "windows",
   "windows_32",
   "windows_64",
+  "windows_arm64",
   "windows_msix",
   "windows_msix_32",
   "windows_msix_64",
+  "windows_msix_arm64",
   "windows_msix_universal",
 ] as const;
 
@@ -48,12 +53,15 @@ export const platforms: Record<string, Platform> = {
   LINUX: "linux",
   LINUX_32: "linux_32",
   LINUX_64: "linux_64",
+  LINUX_ARM64: "linux_arm64",
   LINUX_RPM: "linux_rpm",
   LINUX_RPM_32: "linux_rpm_32",
   LINUX_RPM_64: "linux_rpm_64",
+  LINUX_RPM_ARM64: "linux_rpm_arm64",
   LINUX_DEB: "linux_deb",
   LINUX_DEB_32: "linux_deb_32",
   LINUX_DEB_64: "linux_deb_64",
+  LINUX_DEB_ARM64: "linux_deb_arm64",
   OSX: "osx",
   OSX_32: "osx_32",
   OSX_64: "osx_64",
@@ -62,12 +70,14 @@ export const platforms: Record<string, Platform> = {
   WINDOWS: "windows",
   WINDOWS_32: "windows_32",
   WINDOWS_64: "windows_64",
+  WINDOWS_ARM64: "windows_arm64",
   WINDOWS_MSIX: "windows_msix",
   WINDOWS_MSIX_32: "windows_msix_32",
   WINDOWS_MSIX_64: "windows_msix_64",
+  WINDOWS_MSIX_ARM64: "windows_msix_arm64",
   // .msixbundle is a multi-architecture bundle by definition, so it ingests
-  // as universal; there is no arm64 windows platform, so single-arch arm64
-  // .msix assets are dropped at ingestion like any other arm64 windows asset
+  // as universal; single-arch arm64 .msix assets ingest as
+  // windows_msix_arm64
   WINDOWS_MSIX_UNIVERSAL: "windows_msix_universal",
 };
 
@@ -97,6 +107,11 @@ export const legacyPlatformMap: Record<string, Platform> = {
   win32: platforms.WINDOWS_32,
   "win32-x64": platforms.WINDOWS_64,
   "win32-amd64": platforms.WINDOWS_64,
+  // update.electronjs.org-style arm64 ids
+  "win-arm64": platforms.WINDOWS_ARM64,
+  "win32-arm64": platforms.WINDOWS_ARM64,
+  "windows-arm64": platforms.WINDOWS_ARM64,
+  "linux-arm64": platforms.LINUX_ARM64,
 };
 
 export function mapLegacyPlatform(platform: string): string {

@@ -2,7 +2,10 @@ import nock from "nock";
 import supertest from "supertest";
 import { afterEach, describe, expect, it } from "vitest";
 import {
+  buildAsset,
+  buildFullPlatformAssets,
   buildMixedChannelReleaseSet,
+  buildRelease,
   buildStableReleaseSet,
 } from "../fixtures/builders.js";
 import { configureTestAppWithReleases, findAsset } from "../harness.js";
@@ -39,6 +42,35 @@ describe("/dl/:os/:arch", () => {
     nockGithubReleasesAssetRedirect(nock, OWNER, REPO, asset);
     const res = await supertest(app).get(url).expect(302);
     expect(res.headers.location).toContain(filename);
+  });
+
+  it("serves windows and linux arm64 assets", async () => {
+    // arm64 assets alongside the standard fixture set; previously these
+    // were dropped at ingestion (no windows_arm64/linux_arm64 platforms)
+    const version = "3.0.0";
+    const release = buildRelease({
+      owner: OWNER,
+      repo: REPO,
+      version,
+      assets: [
+        ...buildFullPlatformAssets(OWNER, REPO, version),
+        buildAsset(OWNER, REPO, `app-${version}-win32-arm64-setup.exe`),
+        buildAsset(OWNER, REPO, `app-${version}-linux-arm64.tar.gz`),
+      ],
+    });
+    const { app, backend } = configureTestAppWithReleases([release]);
+
+    for (const [url, filename] of [
+      ["/dl/windows/arm64", `app-${version}-win32-arm64-setup.exe`],
+      ["/dl/linux/arm64", `app-${version}-linux-arm64.tar.gz`],
+      // the x64 defaults keep resolving despite the arm64 assets
+      ["/dl/windows/64", `app-${version}-x64-setup.exe`],
+    ] as const) {
+      const asset = await findAsset(backend, version, filename);
+      nockGithubReleasesAssetRedirect(nock, OWNER, REPO, asset);
+      const res = await supertest(app).get(url).expect(302);
+      expect(res.headers.location).toContain(filename);
+    }
   });
 
   it("?version selects an older release", async () => {
@@ -89,7 +121,8 @@ describe("/dl/:os/:arch", () => {
     const { app } = configureTestAppWithReleases(
       buildStableReleaseSet(OWNER, REPO),
     );
-    const res = await supertest(app).get("/dl/linux/arm64").expect(404);
+    // linux has no universal builds (arm64 became a valid linux arch in 2.0)
+    const res = await supertest(app).get("/dl/linux/universal").expect(404);
     expect(res.text).toContain("Unsupported Arch");
   });
 

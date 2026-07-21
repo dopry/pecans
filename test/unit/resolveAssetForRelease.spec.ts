@@ -139,6 +139,56 @@ describe("resolveAssetForRelease", () => {
       });
     });
 
+    describe("arm64 default policy", () => {
+      it("never resolves arm64 for an unconstrained-arch windows query", () => {
+        // the specificity rule alone would rank windows_arm64 over
+        // windows_64 by string length; bare-os requests must keep serving
+        // the broad x64 population
+        const assets = [
+          createAsset("app-win32-arm64-setup.exe", "windows_arm64"),
+          createAsset("app-win32-x64-setup.exe", "windows_64"),
+        ];
+        const release = createRelease(assets);
+
+        const result = resolveReleaseAssetForVersion(release, "windows");
+        expect(result).toBe(assets[1]);
+      });
+
+      it("resolves arm64 when explicitly requested", () => {
+        const assets = [
+          createAsset("app-win32-arm64-setup.exe", "windows_arm64"),
+          createAsset("app-win32-x64-setup.exe", "windows_64"),
+        ];
+        const release = createRelease(assets);
+
+        const result = resolveReleaseAssetForVersion(release, "windows_arm64");
+        expect(result).toBe(assets[0]);
+      });
+
+      it("still prefers osx universal over arm64 on bare osx queries", () => {
+        const assets = [
+          createAsset("app-arm64.dmg", "osx_arm64"),
+          createAsset("app-universal.dmg", "osx_universal"),
+          createAsset("app-x64.dmg", "osx_64"),
+        ];
+        const release = createRelease(assets);
+
+        const result = resolveReleaseAssetForVersion(release, "osx");
+        expect(result).toBe(assets[1]);
+      });
+
+      it("ranks linux arm64 below x64 on bare linux queries", () => {
+        const assets = [
+          createAsset("app-linux-arm64.tar.gz", "linux_arm64"),
+          createAsset("app-linux-x64.tar.gz", "linux_64"),
+        ];
+        const release = createRelease(assets);
+
+        const result = resolveReleaseAssetForVersion(release, "linux");
+        expect(result).toBe(assets[1]);
+      });
+    });
+
     describe("sorting logic", () => {
       it("should prefer longer platform types (more specific)", () => {
         const assets = [

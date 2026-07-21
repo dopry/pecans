@@ -231,10 +231,7 @@ const tests: FilenameResolveTestTuple[] = [
     "windows",
     "arm64",
     "msix",
-    // arm64 isn't a supported windows platform (there is no windows_arm64),
-    // so the WINDOWS_MSIX_ARM64 key doesn't exist and the asset is dropped
-    // at ingestion like any other arm64 windows asset
-    null,
+    platforms.WINDOWS_MSIX_ARM64,
   ],
   [
     "Visibox-5.0.13.msixbundle",
@@ -268,6 +265,25 @@ const tests: FilenameResolveTestTuple[] = [
     undefined,
     platforms.WINDOWS_64,
   ],
+  // arm64 is a first-class platform in 2.0: these assets previously had no
+  // platform key and were dropped at ingestion
+  [
+    "app-2.7.0-win32-arm64-setup.exe",
+    "windows",
+    "arm64",
+    undefined,
+    platforms.WINDOWS_ARM64,
+  ],
+  [
+    "app-2.7.0-linux-arm64.tar.gz",
+    "linux",
+    "arm64",
+    undefined,
+    platforms.LINUX_ARM64,
+  ],
+  ["app-2.7.0-arm64.deb", "linux", "arm64", "deb", platforms.LINUX_DEB_ARM64],
+  ["app-2.7.0-arm64.rpm", "linux", "arm64", "rpm", platforms.LINUX_RPM_ARM64],
+  ["app-armv7l.tar.gz", "linux", "arm64", undefined, platforms.LINUX_ARM64],
 ];
 
 const fileNameByPlatformTests: [platform: Platform, filename: string][] = [
