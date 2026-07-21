@@ -49,9 +49,10 @@ the cache without waiting for expiry; it is enabled by configuring a
   payload signature is verified with
   [@octokit/webhooks](https://github.com/octokit/webhooks.js).
 - **Other backends** (base `Backend` middleware): send the `refreshSecret`
-  in an `X-Pecans-Secret` header or a `?secret=` query parameter. A valid
+  in an `X-Pecans-Secret` header (the `?secret=` query parameter was removed
+  in 2.0 — query strings leak secrets into proxy and access logs). A valid
   request responds `200 {"refreshed": true}`; a missing or wrong secret
-  responds `403`.
+  responds `403`. Use a high-entropy secret, e.g. `openssl rand -hex 32`.
 
 ## Documentation
 

@@ -131,7 +131,9 @@ describe("Backend Complete Coverage", () => {
       expect(mockNext).toHaveBeenCalledWith(expect.any(ForbiddenError));
     });
 
-    it("should refresh cache and respond 200 for a valid ?secret= query", async () => {
+    it("rejects a valid secret sent as a ?secret= query (removed in 2.0)", async () => {
+      // query strings leak secrets into proxy/access logs; the header is
+      // the only accepted transport
       backend = new TestBackend({ refreshSecret: "test-secret" });
       mockReq.query = { secret: "test-secret" };
 
@@ -141,12 +143,11 @@ describe("Backend Complete Coverage", () => {
       const middleware = backend.getRefreshWebhookMiddleware("/api/refresh");
 
       middleware(mockReq as unknown as Request, mockRes as Response, mockNext);
-      await vi.waitFor(() => expect(mockRes.json).toHaveBeenCalled());
+      await vi.waitFor(() => expect(mockNext).toHaveBeenCalled());
 
-      expect(refreshCacheSpy).toHaveBeenCalled();
-      expect(mockRes.status).toHaveBeenCalledWith(200);
-      expect(mockRes.json).toHaveBeenCalledWith({ refreshed: true });
-      expect(mockNext).not.toHaveBeenCalled();
+      expect(refreshCacheSpy).not.toHaveBeenCalled();
+      expect(mockNext).toHaveBeenCalledWith(expect.any(ForbiddenError));
+      expect(mockRes.json).not.toHaveBeenCalled();
     });
 
     it("should accept the secret from the X-Pecans-Secret header", async () => {
@@ -169,7 +170,9 @@ describe("Backend Complete Coverage", () => {
 
     it("should call next with error when refreshCache fails", async () => {
       backend = new TestBackend({ refreshSecret: "test-secret" });
-      mockReq.query = { secret: "test-secret" };
+      mockReq.get.mockImplementation((name: string) =>
+        name.toLowerCase() === "x-pecans-secret" ? "test-secret" : undefined,
+      );
 
       const testError = new Error("Cache refresh failed");
       const refreshCacheSpy = vi
