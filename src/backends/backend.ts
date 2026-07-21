@@ -74,6 +74,10 @@ export abstract class Backend<TRaw = unknown> {
       const promise = this.cacheRefreshPromise ?? this.refreshCache();
       // If we don't have any cache, wait for the refresh to complete
       if (!this.cache) return promise;
+      // Stale data is served below while the refresh runs in the background;
+      // its failure is already logged in refreshCache and must not surface
+      // as an unhandled rejection that kills the process (#14)
+      promise.catch(() => {});
     }
     // Cache is present, return it
     return this.cache;
