@@ -1,6 +1,6 @@
 {
   "name": "@dopry/pecans",
-  "version": "2.0.0-next.18",
+  "version": "0.0.0-semantic-release",
   "description": "Server to make GitHub releases (private) available to download with Squirrel support",
   "engines": {
     "node": ">=22.12"
@@ -21,8 +21,6 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@semantic-release/changelog": "^7.0.0",
-    "@semantic-release/git": "^11.0.0",
     "@types/debug": "^4.1.13",
     "@types/express": "^5.0.6",
     "@types/node": "^26.1.1",
@@ -79,26 +77,8 @@
     "plugins": [
       "@semantic-release/commit-analyzer",
       "@semantic-release/release-notes-generator",
-      [
-        "@semantic-release/changelog",
-        {
-          "changelogFile": "CHANGES.md"
-        }
-      ],
-      [
-        "@semantic-release/npm"
-      ],
-      [
-        "@semantic-release/git",
-        {
-          "assets": [
-            "CHANGES.md",
-            "package.json",
-            "package-lock.json"
-          ],
-          "message": "chore(release): ${nextRelease.version}\n\n${nextRelease.notes}"
-        }
-      ]
+      "@semantic-release/npm",
+      "@semantic-release/github"
     ]
   },
   "types": "./dist/index.d.ts",
