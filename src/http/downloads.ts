@@ -35,7 +35,9 @@ export function createDownloadHandler(ctx: PecansHttpContext) {
       // honored strictly: no matching release means 404, never a silent
       // fallback that hands prerelease builds to stable users (#15). Only
       // the defaulted channel on bare /download/:platform links keeps the
-      // legacy any-channel fallback.
+      // legacy any-channel fallback. An empty ?channel= (typically an
+      // unpopulated template variable) names no channel, so || is
+      // deliberate: it is treated as absent, not as an explicit request.
       const requestedChannel =
         getStringParam(req, "channel") || req.query.channel || undefined;
       const channelExplicit = requestedChannel !== undefined;

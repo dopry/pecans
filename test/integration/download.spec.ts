@@ -180,6 +180,33 @@ describe("/download/:platform?", () => {
     await supertest(app).get("/download/osx?channel=stable").expect(404);
   });
 
+  // an empty ?channel= (e.g. an unpopulated template variable) names no
+  // channel: it behaves like the bare route, keeping the defaulted-channel
+  // fallback rather than 404ing as an explicit empty channel
+  it("treats an empty ?channel= as absent, keeping the fallback", async () => {
+    const beta = ["2.8.0-beta.2", "2.8.0-beta.1"].map((version) =>
+      buildRelease({
+        owner: OWNER,
+        repo: REPO,
+        version,
+        prerelease: true,
+        assets: buildFullPlatformAssets(OWNER, REPO, version),
+      }),
+    );
+    const { app, backend } = configureTestAppWithReleases(beta);
+    const asset = await findAsset(
+      backend,
+      "2.8.0-beta.2",
+      "app-2.8.0-beta.2-univ.dmg",
+    );
+    nockGithubReleasesAssetRedirect(nock, OWNER, REPO, asset);
+    await expectRedirectTo(
+      app,
+      "/download/osx?channel=",
+      "app-2.8.0-beta.2-univ.dmg",
+    );
+  });
+
   // "latest" is not a platform; the route shape is /download/:platform only
   it("400s on /download/latest (unsupported route shape)", async () => {
     const { app } = configureTestAppWithReleases(
