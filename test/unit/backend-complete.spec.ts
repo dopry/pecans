@@ -73,6 +73,7 @@ describe("Backend Complete Coverage", () => {
         json: vi.fn<(body?: unknown) => Response>(),
       };
       mockRes.status.mockReturnValue(mockRes as Response);
+      mockRes.json.mockReturnValue(mockRes as Response);
       mockNext = vi.fn();
     });
 

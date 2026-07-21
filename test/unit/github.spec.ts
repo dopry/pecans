@@ -73,6 +73,8 @@ describe("PecansGitHubBackend", () => {
 
   afterEach(() => {
     vi.unstubAllGlobals();
+    // restore the console spies so they don't leak into other test files
+    vi.restoreAllMocks();
   });
 
   describe("getEnvironment", () => {
