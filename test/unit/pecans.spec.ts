@@ -1194,7 +1194,24 @@ describe("Pecans", () => {
           expect((pecans as any).serveAsset).toHaveBeenCalled();
         });
 
-        it("should handle channel parameter", async () => {
+        it("serves an explicitly requested channel that has releases", async () => {
+          const req = createMockRequest({
+            params: { platform: "osx_64" },
+            query: { channel: "stable" },
+          });
+          const res = createMockResponse();
+          const next = createMockNext();
+
+          vi.spyOn(pecans as any, "serveAsset").mockResolvedValue(undefined);
+
+          await (pecans as any).handleDownload(req, res, next);
+
+          expect((pecans as any).serveAsset).toHaveBeenCalled();
+        });
+
+        // an explicit channel must not fall back to other channels (#15);
+        // the mock backend only has stable releases
+        it("errors on an explicitly requested channel with no releases", async () => {
           const req = createMockRequest({
             params: { platform: "osx_64" },
             query: { channel: "beta" },
@@ -1206,7 +1223,8 @@ describe("Pecans", () => {
 
           await (pecans as any).handleDownload(req, res, next);
 
-          expect((pecans as any).serveAsset).toHaveBeenCalled();
+          expect((pecans as any).serveAsset).not.toHaveBeenCalled();
+          expect(next).toHaveBeenCalledWith(expect.any(NotFoundError));
         });
 
         it("should handle tag parameter", async () => {
