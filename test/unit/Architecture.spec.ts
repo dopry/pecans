@@ -107,6 +107,51 @@ describe("Architecture", () => {
       });
     });
 
+    describe("token-delimited matching (regressions)", () => {
+      it("does not read version digits as an architecture", () => {
+        expect(filenameToArchitecture("MyApp-1.32.0-mac.dmg", "osx")).toBe(
+          "64",
+        );
+        expect(
+          filenameToArchitecture("app-0.64.0-linux.tar.gz", "linux"),
+        ).toBe("64");
+      });
+
+      it("reads x86_64 as 64-bit, not x86", () => {
+        expect(filenameToArchitecture("app-x86_64.rpm", "linux")).toBe("64");
+      });
+
+      it("does not read letters inside words as arm", () => {
+        expect(
+          filenameToArchitecture("Charmap-1.0.0-linux.tar.gz", "linux"),
+        ).toBe("64");
+      });
+
+      it("ranks the arch marker above the win32 platform id", () => {
+        // electron-packager convention: app-win32-<arch>
+        expect(filenameToArchitecture("app-win32-x64.zip", "windows")).toBe(
+          "64",
+        );
+        expect(filenameToArchitecture("app-win32-ia32.zip", "windows")).toBe(
+          "32",
+        );
+        expect(
+          filenameToArchitecture("App-win32-arm64-setup.exe", "windows"),
+        ).toBe("arm64");
+      });
+
+      it("detects armv7l-style ids as arm64", () => {
+        expect(filenameToArchitecture("app-armv7l.tar.gz", "linux")).toBe(
+          "arm64",
+        );
+      });
+
+      it("detects 32bit/64bit suffixes", () => {
+        expect(filenameToArchitecture("setup-64bit.exe", "windows")).toBe("64");
+        expect(filenameToArchitecture("setup-32bit.exe", "windows")).toBe("32");
+      });
+    });
+
     describe("64-bit fallback", () => {
       it("should default to 64-bit for unrecognized patterns", () => {
         expect(filenameToArchitecture("app.dmg", "osx")).toBe("64");

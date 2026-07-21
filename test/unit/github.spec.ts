@@ -794,7 +794,9 @@ describe("PecansGitHubBackend", () => {
 
       expect(result.id).toBe("123");
       expect(result.filename).toBe("app-v1.0.0-win32-x64.exe");
-      expect(result.type).toBe("windows_32");
+      // win32 is electron-packager's platform id, x64 the actual arch;
+      // the pre-2.0 heuristics misread this as windows_32
+      expect(result.type).toBe("windows_64");
       expect(result.size).toBe(1000);
       expect(result.content_type).toBe("application/octet-stream");
       // raw carries the full GitHub asset for this backend's later use
