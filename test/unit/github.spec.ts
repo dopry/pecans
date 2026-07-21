@@ -12,20 +12,20 @@ import {
 
 // Mock dependencies
 vi.mock("@octokit/rest", () => ({
-  Octokit: vi.fn(() => ({
-    rest: {
-      repos: {
-        listReleases: vi.fn(),
-      },
+  Octokit: vi.fn(
+    class {
+      rest = { repos: { listReleases: vi.fn() } };
+      paginate = vi.fn();
     },
-    paginate: vi.fn(),
-  })),
+  ),
 }));
 
 vi.mock("@octokit/webhooks", () => ({
-  Webhooks: vi.fn(() => ({
-    on: vi.fn(),
-  })),
+  Webhooks: vi.fn(
+    class {
+      on = vi.fn();
+    },
+  ),
   createNodeMiddleware: vi.fn(),
 }));
 
@@ -54,8 +54,21 @@ describe("PecansGitHubBackend", () => {
     };
     mockWebhooks = { on: vi.fn() };
 
-    vi.mocked(Octokit).mockReturnValue(mockOctokit);
-    vi.mocked(Webhooks).mockReturnValue(mockWebhooks);
+    // vitest 4 requires constructor mocks to be implemented with a class
+    vi.mocked(Octokit).mockImplementation(
+      class {
+        constructor() {
+          return mockOctokit;
+        }
+      } as unknown as typeof Octokit,
+    );
+    vi.mocked(Webhooks).mockImplementation(
+      class {
+        constructor() {
+          return mockWebhooks;
+        }
+      } as unknown as typeof Webhooks,
+    );
   });
 
   afterEach(() => {
