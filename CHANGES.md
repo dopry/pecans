@@ -1,3 +1,205 @@
+# [2.0.0-next.18](https://github.com/dopry/pecans/compare/v2.0.0-next.17...v2.0.0-next.18) (2026-07-21)
+
+
+* feat!: unified ReleaseService resolution pipeline on discrete os/arch/pkg (Phase 7 PR B) ([#44](https://github.com/dopry/pecans/issues/44)) ([8a2f06a](https://github.com/dopry/pecans/commit/8a2f06ae254bac6c9f03ec848abdb76702fce652))
+
+
+### Bug Fixes
+
+* **github:** default octokit to native fetch to prevent empty release lists ([#28](https://github.com/dopry/pecans/issues/28)) ([0f6eac6](https://github.com/dopry/pecans/commit/0f6eac6260001ff2aac91a80db0c12ee8193c0aa))
+* honor route params in downloads, dead code removal, small fixes (Phase 2) ([#31](https://github.com/dopry/pecans/issues/31)) ([9fd8f79](https://github.com/dopry/pecans/commit/9fd8f79bf0917a67a7c81a8042bdd708d4e71539))
+* semantic-release trusted publishing ([4f1ee88](https://github.com/dopry/pecans/commit/4f1ee882d41586551e95a3f606b3433f20285b68))
+* semantic-release trusted publishing ([#53](https://github.com/dopry/pecans/issues/53)) ([3d4d4ce](https://github.com/dopry/pecans/commit/3d4d4cee75d91c01ec65b0bbbff51914028f7260))
+* working generic refresh webhook; document raw as the backend-private asset slot (Phase 7 PR A) ([#43](https://github.com/dopry/pecans/issues/43)) ([23d1d9f](https://github.com/dopry/pecans/commit/23d1d9fb19a496f9e71c62d688d71551fb5b4134))
+
+
+### chore
+
+* esm only ([#24](https://github.com/dopry/pecans/issues/24)) ([1b8a546](https://github.com/dopry/pecans/commit/1b8a54618733a9c1d3d3314d78d60e8a4906c844))
+
+
+### Features
+
+* dependency modernization — Express 5, octokit 22, remove UA autodetection (Phase 5) ([#41](https://github.com/dopry/pecans/issues/41)) ([8ea329a](https://github.com/dopry/pecans/commit/8ea329a4bb4bd442f2f55679653e2e92bc586037))
+* modernize packaging and dev tooling (Phase 3) ([#32](https://github.com/dopry/pecans/issues/32)) ([3345ed7](https://github.com/dopry/pecans/commit/3345ed7a0f1b189379f5efc34eafb580d14c4ded))
+* recognize .msix / .msixbundle assets and 'msix' package format ([#46](https://github.com/dopry/pecans/issues/46)) ([4f848b9](https://github.com/dopry/pecans/commit/4f848b9529094a70af2a9a301a3a304c26b39f51)), closes [#26](https://github.com/dopry/pecans/issues/26)
+* typed HTTP errors with router-scoped error handling (Phase 6) ([#42](https://github.com/dopry/pecans/issues/42)) ([e3b7b54](https://github.com/dopry/pecans/commit/e3b7b540b454c278c99d787950914cb6fd06ad17))
+
+
+### BREAKING CHANGES
+
+* @dopry/pecans is now ESM-only. require('@dopry/pecans')
+is no longer supported; use import (Node >= 22.12).
+
+Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_017zXcPSv6FFTPgD59T4KudM
+
+* refactor: import model types with import type in runtime modules
+
+Follows up on Copilot review: PecansRelease/PecansReleases (and other
+names used only in type positions) are classes, so tsc accepts plain
+imports, but with verbatimModuleSyntax they would stay in the emitted
+JS as runtime imports. Convert the type-only usages to import type to
+keep the runtime module graph minimal and cycle-free.
+
+Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_017zXcPSv6FFTPgD59T4KudM
+* Pecans no longer exposes a versions property.
+
+Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_015zUyj4PpSog9RkrYxzFRhM
+
+* feat!: remove the Versions and resolveReleaseAssetForVersion adapters
+
+The deprecation shims this PR introduced are dropped instead of carried
+to 3.0: route handlers and consumers resolve through ReleaseService /
+resolveAssetForRelease directly. The table-driven specs that pinned the
+legacy composite-id resolution semantics are migrated onto the pipeline
+(via platformToQuery) so the behavioral pins survive the adapter
+removal; unique Versions coverage moved into service.spec.
+
+Pre-existing deprecations (GitHubBackend, PecansSettings.timeout,
+PecansReleaseDTO.channel) keep their 3.0 schedule.
+* Versions, VersionFilterOpts, PlatformQuery, and
+resolveReleaseAssetForVersion are no longer exported.
+
+Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_015zUyj4PpSog9RkrYxzFRhM
+* getArchFromUserAgent, getOsFromUserAgent, and
+getPlatformFromUserAgent now take the internal UserAgentDetails type
+instead of express-useragent's Details, and getArchFromUserAgent
+defaults Windows and Linux to '64' (32-bit desktops are effectively
+extinct; the function is not used internally).
+
+pecans consumed exactly four booleans from the unmaintained
+express-useragent package; src/utils/userAgent.ts derives them from the
+User-Agent header directly, with mobile exclusions the old library
+handled via separate flags (iOS UAs contain 'like Mac OS X', Android
+UAs contain 'Linux'). The middleware attaches the same req.useragent
+shape. Unit specs cover the parser; the Phase 1 UA-driven download
+contract tests pass unchanged.
+
+Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_015zUyj4PpSog9RkrYxzFRhM
+
+* fix: validate update-route params through getStringParam consistently
+
+Review feedback: handleUpdateOSX truthiness-checked req.params directly
+but read values through getStringParam, and handleUpdateWin had no
+version guard at all; a missing tag would have produced a '>=undefined'
+range. Validate once through the helper and reuse the validated values.
+
+Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_015zUyj4PpSog9RkrYxzFRhM
+
+* fix: exclude Macintosh+Mobile webview UAs from macOS detection
+
+Review feedback (partial): a Mobile token alongside Macintosh indicates
+an iPad-class webview masquerading as a Mac; genuine macOS browsers
+never send it. Fixture + test added. Note true iPadOS desktop-mode UAs
+are byte-identical to Mac Safari and undetectable by any parser.
+
+Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_015zUyj4PpSog9RkrYxzFRhM
+
+* fix: short-circuit dlfilename when the filename param is absent
+
+Review feedback: an undefined filename passed into queryReleases matches
+every release (the predicate treats undefined as no-filter), which would
+serve an arbitrary asset instead of a 404. Unreachable via the current
+route but guarded for consistency with the update handlers.
+
+Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_015zUyj4PpSog9RkrYxzFRhM
+
+* feat: remove user-agent platform autodetection
+* selecting a platform is now the client's
+responsibility. GET / is no longer a download route, and the platform
+segment is required on /download, /download/version/:tag, and
+/download/channel/:channel (a missing platform returns 400). The
+user-agent parser, its middleware, and the getPlatformFromUserAgent /
+getArchFromUserAgent / getOsFromUserAgent helpers are removed.
+
+Autodetection only ever served bare browser links - Squirrel update
+clients and /dl/* always send explicit platforms - and reliable device
+detection is better handled client-side where UA Client Hints are
+available. Reverting this commit restores the feature wholesale if
+anyone misses it.
+
+Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_015zUyj4PpSog9RkrYxzFRhM
+
+* fix: remove imports orphaned by the autodetection removal
+
+Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_015zUyj4PpSog9RkrYxzFRhM
+
+* fix: validate tag ranges early in validateReqQueryTag
+
+Review feedback: validRange's result was discarded, so invalid tags only
+failed deep in release matching with a generic 'Invalid Range Specified'
+error. Invalid ranges now throw UnsupportedTagError at the parameter
+boundary ('latest' stays allowed), and the error message no longer says
+'channel' for tags (copy-paste from UnsupportedChannelError).
+
+Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_015zUyj4PpSog9RkrYxzFRhM
+* build output moves from dist/cjs + dist/mjs to a tsup
+bundle (dist/index.js CJS, dist/index.mjs ESM). Deep imports into dist
+paths no longer resolve; all models (PecansRelease, PecansAsset,
+PecansReleases, ...) are now exported from the package root instead.
+
+- replace the dual-tsc + fixup.sh build with tsup (CJS + ESM + d.ts +
+  sourcemaps, node22 target); consolidate four tsconfigs into one
+  typecheck-only tsconfig.json
+- add a proper exports map with types for both module systems; verified
+  with publint and arethetypeswrong (all green: node10/node16/bundler)
+- declare debug and qs as real dependencies - both are imported directly
+  but were only present transitively via express, which broke the ESM
+  bundle (inlined CJS require calls)
+- guard the run-directly check with typeof require so the ESM build is
+  importable; node dist/index.js still starts the server
+- ts-node out of runtime dependencies; dev now runs tsx watch; start
+  runs the compiled dist; drop nodemon
+- ESLint 9 flat config + prettier (replaces the stale mocha-era
+  .eslintrc); fix the 19 findings it surfaced (unused imports/vars,
+  case-block declarations, error causes, no-useless-assignment)
+- add explicit @types/node; add lint/format/typecheck scripts
+- package.json: type commonjs, sideEffects false, canonical repo url
+
+Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_015zUyj4PpSog9RkrYxzFRhM
+
+* fix: rank .tar.gz assets by their full extension in resolveForVersion
+
+path.extname reports '.gz' for .tar.gz filenames, so the sort fallback
+ranked them at prefs.indexOf(-1) - ahead of every genuine preference -
+whenever .tgz and .tar.gz assets coexisted. Use getSupportedExt, which
+handles the double extension, matching the Phase 2 fix to
+PecansAsset.satisfiesExtensions. Regression test added.
+
+Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_015zUyj4PpSog9RkrYxzFRhM
+
+* fix: throw Error from configure(), correct Listening typo
+
+Review feedback: the default switch case in configure() threw a raw
+string (no stack trace); the startup log said 'Lisening'. The test that
+pinned the typo is updated to match.
+
+Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_015zUyj4PpSog9RkrYxzFRhM
+
+* fix: throw on invalid os in getDownloadExtensionsByOs
+
+Review feedback: the switch had no default, so an invalid OperatingSystem
+cast in at runtime silently returned undefined against the declared
+SupportedFileExtension[] return type. Fail loudly instead; edge-case test
+updated to pin the throw.
+
+Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_015zUyj4PpSog9RkrYxzFRhM
+
 # [2.0.0-next.17](https://github.com/dopry/pecans/compare/v2.0.0-next.16...v2.0.0-next.17) (2025-09-20)
 
 
