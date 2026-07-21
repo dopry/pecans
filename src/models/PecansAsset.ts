@@ -71,8 +71,10 @@ export class PecansAsset<TRaw = unknown> implements PecansAssetDTO<TRaw> {
     arch: Architecture;
     pkg?: PackageFormat;
   } {
-    const { raw: _raw, ...pub } = this;
-    return pub;
+    // explicit allowlist rather than a rest-spread denylist, so a future
+    // private field can never leak by omission
+    const { os, arch, pkg, id, filename, type, size, content_type } = this;
+    return { os, arch, pkg, id, filename, type, size, content_type };
   }
 
   satisfiesQuery(query: PecansAssetQuery) {
