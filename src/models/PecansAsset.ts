@@ -59,6 +59,22 @@ export class PecansAsset<TRaw = unknown> implements PecansAssetDTO<TRaw> {
     this.pkg = filenameToPackageFormat(this.filename);
   }
 
+  /**
+   * Public serialization shape: everything except `raw`. raw is the
+   * backend-private payload (for the GitHub backend, the full API asset
+   * object including uploader identity and API urls) and must never leak
+   * through JSON surfaces like /api/versions - especially when pecans
+   * fronts a private repository.
+   */
+  toJSON(): Omit<PecansAssetDTO, "raw"> & {
+    os: OperatingSystem;
+    arch: Architecture;
+    pkg?: PackageFormat;
+  } {
+    const { raw: _raw, ...pub } = this;
+    return pub;
+  }
+
   satisfiesQuery(query: PecansAssetQuery) {
     return (
       this.satisfiesOS(query.os) &&
