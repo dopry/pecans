@@ -28,6 +28,22 @@ describe("/api/channels", () => {
     expect(stable.versions_count).toBe(3);
   });
 
+  // the full PecansChannel embeds every release recursively; the public
+  // payload is the slim summary only
+  it("serves the slim public channel shape without embedded releases", async () => {
+    const { app } = configureTestAppWithReleases(
+      buildStableReleaseSet(OWNER, REPO),
+    );
+    const res = await supertest(app).get("/api/channels").expect(200);
+    const [stable] = res.body;
+    expect(Object.keys(stable).sort()).toEqual([
+      "latest",
+      "name",
+      "published_at",
+      "versions_count",
+    ]);
+  });
+
   it("lists every channel when prereleases exist", async () => {
     const { app } = configureTestAppWithReleases(
       buildMixedChannelReleaseSet(OWNER, REPO),
@@ -50,6 +66,27 @@ describe("/api/versions", () => {
     const res = await supertest(app).get("/api/versions").expect(200);
     const versions = res.body.map((r: { version: string }) => r.version);
     expect(versions).toEqual(["2.7.0", "2.6.0", "2.5.0"]);
+  });
+
+  // raw is the backend-private payload (the GitHub API asset object,
+  // including uploader identity and API urls); it must never serialize
+  // into API responses, especially for servers fronting private repos
+  it("never exposes the backend-private raw payload on assets", async () => {
+    const { app } = configureTestAppWithReleases(
+      buildStableReleaseSet(OWNER, REPO),
+    );
+    const res = await supertest(app).get("/api/versions").expect(200);
+    const assets = res.body.flatMap(
+      (release: { assets: Record<string, unknown>[] }) => release.assets,
+    );
+    expect(assets.length).toBeGreaterThan(0);
+    for (const asset of assets) {
+      expect(asset).not.toHaveProperty("raw");
+      // the discrete platform fields remain part of the public shape
+      expect(asset).toHaveProperty("os");
+      expect(asset).toHaveProperty("arch");
+      expect(asset).toHaveProperty("filename");
+    }
   });
 
   it("?channel filters to that channel", async () => {

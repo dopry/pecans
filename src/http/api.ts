@@ -12,7 +12,15 @@ export function createApiChannelsHandler(ctx: PecansHttpContext) {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
       const releases = await ctx.getReleases();
-      const channels = releases.getChannels();
+      // public shape only: the full PecansChannel embeds every release (and
+      // latest_release) recursively, which bloats the payload; module
+      // consumers keep the rich objects via getChannels()
+      const channels = releases.getChannels().map((channel) => ({
+        name: channel.name,
+        latest: channel.latest,
+        versions_count: channel.versions_count,
+        published_at: channel.published_at,
+      }));
       res.json(channels);
     } catch (err) {
       next(err);
