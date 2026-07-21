@@ -57,7 +57,7 @@
     "url": "git+https://github.com/dopry/pecans.git"
   },
   "scripts": {
-    "build": "node --eval \"fs.rmSync('dist', { recursive: true, force: true })\" && tsc -p tsconfig.build.json",
+    "build": "node --eval \"require('node:fs').rmSync('dist', { recursive: true, force: true })\" && tsc -p tsconfig.build.json",
     "dev": "tsx watch src/index.ts",
     "start": "node dist/index.js",
     "lint": "eslint .",
