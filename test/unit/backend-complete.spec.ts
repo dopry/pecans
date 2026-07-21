@@ -1,5 +1,5 @@
 import type { NextFunction, Request, Response } from "express";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, type Mock, vi } from "vitest";
 import {
   Backend,
   type BackendOpts,
@@ -53,9 +53,11 @@ describe("Backend Complete Coverage", () => {
       path?: string;
       get: ReturnType<typeof vi.fn>;
     };
+    // vitest 4's untyped vi.fn() no longer satisfies express's signatures,
+    // so the mocks carry explicit call signatures
     let mockRes: Partial<Response> & {
-      status: ReturnType<typeof vi.fn>;
-      json: ReturnType<typeof vi.fn>;
+      status: Mock<(code: number) => Response>;
+      json: Mock<(body?: unknown) => Response>;
     };
     let mockNext: NextFunction;
 
@@ -67,10 +69,11 @@ describe("Backend Complete Coverage", () => {
         get: vi.fn().mockReturnValue(undefined),
       };
       mockRes = {
-        status: vi.fn(),
-        json: vi.fn(),
+        status: vi.fn<(code: number) => Response>(),
+        json: vi.fn<(body?: unknown) => Response>(),
       };
-      mockRes.status.mockReturnValue(mockRes);
+      mockRes.status.mockReturnValue(mockRes as Response);
+      mockRes.json.mockReturnValue(mockRes as Response);
       mockNext = vi.fn();
     });
 
