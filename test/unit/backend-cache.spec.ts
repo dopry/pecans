@@ -294,6 +294,25 @@ describe("Backend Caching", () => {
       }
     });
 
+    it("does not leak an unhandled rejection when a fire-and-forget refresh fails", async () => {
+      // the GitHub webhook's release handler calls refreshCache() without
+      // awaiting it; a failure there must not kill the process either (#14)
+      backend.shouldFailFetch = true;
+
+      const onUnhandled = vi.fn();
+      process.on("unhandledRejection", onUnhandled);
+      try {
+        void backend.refreshCache();
+
+        await new Promise((resolve) => setImmediate(resolve));
+        await new Promise((resolve) => setImmediate(resolve));
+
+        expect(onUnhandled).not.toHaveBeenCalled();
+      } finally {
+        process.off("unhandledRejection", onUnhandled);
+      }
+    });
+
     it("should allow retry after failed refresh", async () => {
       // Populate initial cache
       await backend.releases();
