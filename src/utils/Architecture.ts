@@ -48,10 +48,10 @@ export function getSupportedArchByOs(os: OperatingSystem): Architecture[] {
     case "osx":
       return ["64", "32", "arm64", "universal"];
     case "windows":
-      return ["32", "64", "universal"];
+      return ["32", "64", "arm64", "universal"];
     case "linux":
     default:
-      return ["32", "64"];
+      return ["32", "64", "arm64"];
   }
 }
 

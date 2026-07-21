@@ -111,6 +111,17 @@ export function resolveAssetForRelease(
   });
 
   const sorted = candidates.sort((a1, a2) => {
+    // an unconstrained-arch query never defaults to arm64: bare-os requests
+    // ("/download/windows") serve the broad x64/universal population, so
+    // arm64 builds rank last unless the filter asks for them - without
+    // this, the specificity rule below would prefer "windows_arm64" over
+    // "windows_64" purely by string length
+    if (!filter.arch) {
+      const a1arm = parsePlatform(a1.type).arch === "arm64" ? 1 : 0;
+      const a2arm = parsePlatform(a2.type).arch === "arm64" ? 1 : 0;
+      if (a1arm !== a2arm) return a1arm - a2arm;
+    }
+
     // more specific composite platform ids win ("osx_universal" >
     // "osx_arm64" > "osx_64" > "osx") - legacy ordering preserved verbatim;
     // candidates are already narrowed to the requested platform, so this

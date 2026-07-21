@@ -2,6 +2,7 @@ import nock from "nock";
 import supertest from "supertest";
 import { afterEach, describe, expect, it } from "vitest";
 import {
+  buildAsset,
   buildFullPlatformAssets,
   buildMixedChannelReleaseSet,
   buildRelease,
@@ -82,6 +83,31 @@ describe("/download/:platform?", () => {
       await expectRedirectTo(app, `/download/${platform}`, filename);
     },
   );
+
+  it("serves arm64 via alias but never as the bare-os default", async () => {
+    const version = "3.0.0";
+    const release = buildRelease({
+      owner: OWNER,
+      repo: REPO,
+      version,
+      assets: [
+        ...buildFullPlatformAssets(OWNER, REPO, version),
+        buildAsset(OWNER, REPO, `app-${version}-win32-arm64-setup.exe`),
+      ],
+    });
+    const { app, backend } = configureTestAppWithReleases([release]);
+
+    for (const [url, filename] of [
+      // update.electronjs.org-style alias resolves the arm64 build
+      ["/download/win32-arm64", `app-${version}-win32-arm64-setup.exe`],
+      // the bare-os query keeps serving the x64 population
+      ["/download/windows", `app-${version}-x64-setup.exe`],
+    ] as const) {
+      const asset = await findAsset(backend, version, filename);
+      nockGithubReleasesAssetRedirect(nock, OWNER, REPO, asset);
+      await expectRedirectTo(app, url, filename);
+    }
+  });
 
   it("serves the platform build when preferUniversal is off", async () => {
     const { app, backend } = configureTestAppWithReleases(
