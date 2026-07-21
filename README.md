@@ -5,11 +5,11 @@ Pecans is an Electron Release Server.
 ## Features
 
 - Download URLs (the client chooses the platform; user-agent autodetection was removed in 2.0)
-  - `/download/:platform` — latest build for a platform (`osx_64`, `windows_64`, … legacy aliases like `darwin`, `win32`, `mac-arm64` are accepted)
+  - `/download/:platform` — latest build for a platform (`osx_64`, `windows_64`, `windows_arm64`, `linux_arm64`, … legacy and update.electronjs.org-style aliases like `darwin`, `win32`, `mac-arm64`, `win32-arm64`, `linux-arm64` are accepted; bare-os requests such as `/download/windows` never default to an arm64 build)
   - `/download/channel/:channel/:platform` — latest build on a release channel
   - `/download/version/:tag/:platform` — a specific version
   - `/download/:tag/:filename` — a specific release asset by filename
-  - `/dl/:os/:arch` — resolve by discrete OS (`osx`, `windows`, `linux`) and arch (`32`, `64`, `arm64`, `universal`); supports `?channel`, `?version`, and `?pkg` (`deb`/`rpm`) queries
+  - `/dl/:os/:arch` — resolve by discrete OS (`osx`, `windows`, `linux`) and arch (`32`, `64`, `arm64`, `universal`; arm64 is supported for all three OSes since 2.0); supports `?channel`, `?version`, and `?pkg` (`deb`/`rpm`) queries
   - `/dl/:filename` — a release asset by filename
 - Auto-updates with [Squirrel](https://github.com/Squirrel)
   - For Mac using Squirrel.Mac
