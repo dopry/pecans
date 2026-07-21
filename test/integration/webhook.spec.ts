@@ -1,4 +1,5 @@
 import { Webhooks } from "@octokit/webhooks";
+import express from "express";
 import nock from "nock";
 import supertest from "supertest";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -9,6 +10,7 @@ import {
   buildRelease,
   buildFullPlatformAssets,
 } from "../fixtures/builders.js";
+import { configure } from "../../src/index.js";
 import {
   configurePecansTestApp,
   configureTestAppWithReleases,
@@ -176,5 +178,56 @@ describe("/webhook/refresh (generic backend secret middleware)", () => {
     const { backend, app } = buildGenericApp();
     await supertest(app).post(`/webhook/refresh?secret=${SECRET}`).expect(404);
     expect(backend.fetchCount).toBe(0);
+  });
+});
+
+describe("PECANS_REFRESH_SECRET env wiring (configure())", () => {
+  afterEach(() => {
+    delete process.env.PECANS_REFRESH_SECRET;
+    nock.cleanAll();
+  });
+
+  it("enables the refresh webhook on the standalone server", async () => {
+    process.env.PECANS_REFRESH_SECRET = SECRET;
+    const { pecans } = configure();
+    const app = express();
+    app.use(pecans.router);
+
+    // the refresh triggered by the webhook fetches the release list
+    nockGithubListReleases(
+      nock,
+      OWNER,
+      REPO,
+      buildStableReleaseSet(OWNER, REPO),
+    );
+
+    const { payload, signature } = await signedReleaseEvent(SECRET);
+    await supertest(app)
+      .post("/webhook/refresh")
+      .set("Content-Type", "application/json")
+      .set("X-GitHub-Event", "release")
+      .set("X-GitHub-Delivery", "env-wiring-delivery")
+      .set("X-Hub-Signature-256", signature)
+      .send(payload)
+      .expect(200);
+  });
+
+  it("keeps the webhook disabled when the env var is unset", async () => {
+    const { pecans } = configure();
+    const app = express();
+    app.use(pecans.router);
+    app.use((req, res) => {
+      res.status(404).send("Page not found");
+    });
+
+    const { payload, signature } = await signedReleaseEvent(SECRET);
+    await supertest(app)
+      .post("/webhook/refresh")
+      .set("Content-Type", "application/json")
+      .set("X-GitHub-Event", "release")
+      .set("X-GitHub-Delivery", "env-wiring-delivery-2")
+      .set("X-Hub-Signature-256", signature)
+      .send(payload)
+      .expect(404);
   });
 });
