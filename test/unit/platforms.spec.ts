@@ -253,6 +253,21 @@ const tests: FilenameResolveTestTuple[] = [
   ["atom-amd64.deb", "linux", "64", "deb", platforms.LINUX_DEB_64],
   ["atom-ia32.rpm", "linux", "32", "rpm", platforms.LINUX_RPM_32],
   ["atom-amd64.rpm", "linux", "64", "rpm", platforms.LINUX_RPM_64],
+  // token-matching regressions: version digits and letters inside words
+  // are not arch markers, so these ingest as linux_64 instead of being
+  // misclassified (1.32.0 read as 32-bit) or dropped ("Charmap" read as
+  // arm, for which no linux platform exists)
+  ["MyApp-1.32.0-linux.tar.gz", "linux", "64", undefined, platforms.LINUX_64],
+  ["Charmap-1.0.0-linux.tar.gz", "linux", "64", undefined, platforms.LINUX_64],
+  ["app-x86_64.rpm", "linux", "64", "rpm", platforms.LINUX_RPM_64],
+  // electron-packager convention: win32 is the platform id, x64 the arch
+  [
+    "app-2.7.0-win32-x64-setup.exe",
+    "windows",
+    "64",
+    undefined,
+    platforms.WINDOWS_64,
+  ],
 ];
 
 const fileNameByPlatformTests: [platform: Platform, filename: string][] = [
