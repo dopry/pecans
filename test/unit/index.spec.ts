@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { PecansGitHubBackend } from "../../src/backends/index.js";
-import { configure } from "../../src/index.js";
+import { configure, parseTrustProxy } from "../../src/index.js";
 
 describe("Index", () => {
   let originalEnv: NodeJS.ProcessEnv;
@@ -103,6 +103,25 @@ describe("Index", () => {
 
       // Clean up
       delete process.env.PECANS_BACKEND;
+    });
+  });
+
+  describe("parseTrustProxy", () => {
+    it("parses JSON scalars and arrays", () => {
+      expect(parseTrustProxy("true")).toBe(true);
+      expect(parseTrustProxy("false")).toBe(false);
+      expect(parseTrustProxy("2")).toBe(2);
+      expect(parseTrustProxy('["loopback","10.0.0.0/8"]')).toEqual([
+        "loopback",
+        "10.0.0.0/8",
+      ]);
+    });
+
+    it("passes non-JSON strings through verbatim", () => {
+      expect(parseTrustProxy("loopback")).toBe("loopback");
+      expect(parseTrustProxy("10.0.0.0/8, loopback")).toBe(
+        "10.0.0.0/8, loopback",
+      );
     });
   });
 

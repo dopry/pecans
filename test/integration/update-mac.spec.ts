@@ -28,6 +28,33 @@ describe("/update/:platform/:version (Squirrel.Mac)", () => {
     await supertest(app).get("/update/osx/2.7.0").expect(204);
   });
 
+  // TRUST_PROXY exists for this: behind a TLS-terminating proxy the feed's
+  // download url must come out https, which requires express to trust
+  // X-Forwarded-Proto (main() wires the env var to app.set("trust proxy"))
+  it("emits https download urls when the app trusts the proxy", async () => {
+    const { app } = configureTestAppWithReleases(
+      buildStableReleaseSet(OWNER, REPO),
+    );
+    app.set("trust proxy", true);
+    const res = await supertest(app)
+      .get("/update/osx/2.5.0")
+      .set("X-Forwarded-Proto", "https")
+      .expect(200);
+    expect(res.body.url).toMatch(/^https:\/\//);
+  });
+
+  it("keeps http urls when the proxy is not trusted", async () => {
+    const { app } = configureTestAppWithReleases(
+      buildStableReleaseSet(OWNER, REPO),
+    );
+    const res = await supertest(app)
+      .get("/update/osx/2.5.0")
+      .set("X-Forwarded-Proto", "https")
+      .expect(200);
+    expect(res.body.url).toMatch(/^http:\/\//);
+    expect(res.body.url).not.toMatch(/^https:\/\//);
+  });
+
   it("204s when the client is ahead of every release", async () => {
     const { app } = configureTestAppWithReleases(
       buildStableReleaseSet(OWNER, REPO),
