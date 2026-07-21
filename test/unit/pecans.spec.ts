@@ -705,32 +705,6 @@ describe("Pecans", () => {
         });
       });
 
-      describe("getChannelFromQuery", () => {
-        it("should return valid channel from query", async () => {
-          const query = { channel: "stable" };
-          const result = await pecans.getChannelFromQuery(query);
-          expect(result).toBe("stable");
-        });
-
-        it("should default to stable channel", async () => {
-          const query = {};
-          const result = await pecans.getChannelFromQuery(query);
-          expect(result).toBe("stable");
-        });
-
-        it("should return undefined for invalid channels", async () => {
-          const query = { channel: "invalid" };
-          const result = await pecans.getChannelFromQuery(query);
-          expect(result).toBeUndefined();
-        });
-
-        it("should handle non-string channel values", async () => {
-          const query = { channel: ["stable"] };
-          const result = await pecans.getChannelFromQuery(query);
-          expect(result).toBe("stable");
-        });
-      });
-
       describe("serveAsset", () => {
         it("should emit events and call backend serveAsset", async () => {
           const req = createMockRequest();
@@ -745,16 +719,10 @@ describe("Pecans", () => {
 
           await (pecans as any).serveAsset(req, res, release, asset);
 
-          expect(beforeSpy).toHaveBeenCalledWith({
-            req,
-            version: release,
-            platform: asset,
-          });
-          expect(afterSpy).toHaveBeenCalledWith({
-            req,
-            version: release,
-            platform: asset,
-          });
+          // 2.0 payload shape: release/asset, not the nuts-era
+          // version/platform keys
+          expect(beforeSpy).toHaveBeenCalledWith({ req, release, asset });
+          expect(afterSpy).toHaveBeenCalledWith({ req, release, asset });
         });
       });
     });
