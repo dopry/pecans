@@ -164,6 +164,49 @@ describe("/download/:platform?", () => {
     await expectRedirectTo(app, "/download/osx", "app-2.8.0-beta.2-univ.dmg");
   });
 
+  // regression: the fallback above applies only to the DEFAULTED channel;
+  // an explicit ?channel= must be strict (#15)
+  it("404s on ?channel=stable when no stable release exists", async () => {
+    const beta = ["2.8.0-beta.2", "2.8.0-beta.1"].map((version) =>
+      buildRelease({
+        owner: OWNER,
+        repo: REPO,
+        version,
+        prerelease: true,
+        assets: buildFullPlatformAssets(OWNER, REPO, version),
+      }),
+    );
+    const { app } = configureTestAppWithReleases(beta);
+    await supertest(app).get("/download/osx?channel=stable").expect(404);
+  });
+
+  // an empty ?channel= (e.g. an unpopulated template variable) names no
+  // channel: it behaves like the bare route, keeping the defaulted-channel
+  // fallback rather than 404ing as an explicit empty channel
+  it("treats an empty ?channel= as absent, keeping the fallback", async () => {
+    const beta = ["2.8.0-beta.2", "2.8.0-beta.1"].map((version) =>
+      buildRelease({
+        owner: OWNER,
+        repo: REPO,
+        version,
+        prerelease: true,
+        assets: buildFullPlatformAssets(OWNER, REPO, version),
+      }),
+    );
+    const { app, backend } = configureTestAppWithReleases(beta);
+    const asset = await findAsset(
+      backend,
+      "2.8.0-beta.2",
+      "app-2.8.0-beta.2-univ.dmg",
+    );
+    nockGithubReleasesAssetRedirect(nock, OWNER, REPO, asset);
+    await expectRedirectTo(
+      app,
+      "/download/osx?channel=",
+      "app-2.8.0-beta.2-univ.dmg",
+    );
+  });
+
   // "latest" is not a platform; the route shape is /download/:platform only
   it("400s on /download/latest (unsupported route shape)", async () => {
     const { app } = configureTestAppWithReleases(
@@ -235,6 +278,29 @@ describe("/download/channel/:channel/:platform?", () => {
       "/download/channel/beta/osx",
       "app-2.8.0-beta.2-univ.dmg",
     );
+  });
+
+  // regression: an explicitly requested channel with no releases is a 404,
+  // not a silent fallback serving prereleases to stable users (#15)
+  it("404s on /download/channel/stable/osx when only prereleases exist", async () => {
+    const beta = ["2.8.0-beta.2", "2.8.0-beta.1"].map((version) =>
+      buildRelease({
+        owner: OWNER,
+        repo: REPO,
+        version,
+        prerelease: true,
+        assets: buildFullPlatformAssets(OWNER, REPO, version),
+      }),
+    );
+    const { app } = configureTestAppWithReleases(beta);
+    await supertest(app).get("/download/channel/stable/osx").expect(404);
+  });
+
+  it("404s on an unknown explicit channel", async () => {
+    const { app } = configureTestAppWithReleases(
+      buildMixedChannelReleaseSet(OWNER, REPO),
+    );
+    await supertest(app).get("/download/channel/nightly/osx").expect(404);
   });
 });
 

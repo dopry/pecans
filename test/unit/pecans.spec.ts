@@ -1194,7 +1194,48 @@ describe("Pecans", () => {
           expect((pecans as any).serveAsset).toHaveBeenCalled();
         });
 
-        it("should handle channel parameter", async () => {
+        it("serves an explicitly requested channel that has releases", async () => {
+          const req = createMockRequest({
+            params: { platform: "osx_64" },
+            query: { channel: "stable" },
+          });
+          const res = createMockResponse();
+          const next = createMockNext();
+
+          vi.spyOn(pecans as any, "serveAsset").mockResolvedValue(undefined);
+
+          await (pecans as any).handleDownload(req, res, next);
+
+          expect((pecans as any).serveAsset).toHaveBeenCalled();
+        });
+
+        // only NotFoundError triggers the defaulted-channel fallback;
+        // operational failures must propagate instead of being masked by
+        // the channel "*" retry
+        it("propagates non-NotFound errors without retrying on channel '*'", async () => {
+          const req = createMockRequest({
+            params: { platform: "osx_64" },
+            query: {},
+          });
+          const res = createMockResponse();
+          const next = createMockNext();
+
+          const backendFailure = new Error("backend down");
+          const resolveSpy = vi
+            .spyOn((pecans as any).service, "resolveRelease")
+            .mockRejectedValue(backendFailure);
+          vi.spyOn(pecans as any, "serveAsset").mockResolvedValue(undefined);
+
+          await (pecans as any).handleDownload(req, res, next);
+
+          expect(resolveSpy).toHaveBeenCalledTimes(1);
+          expect((pecans as any).serveAsset).not.toHaveBeenCalled();
+          expect(next).toHaveBeenCalledWith(backendFailure);
+        });
+
+        // an explicit channel must not fall back to other channels (#15);
+        // the mock backend only has stable releases
+        it("errors on an explicitly requested channel with no releases", async () => {
           const req = createMockRequest({
             params: { platform: "osx_64" },
             query: { channel: "beta" },
@@ -1206,7 +1247,8 @@ describe("Pecans", () => {
 
           await (pecans as any).handleDownload(req, res, next);
 
-          expect((pecans as any).serveAsset).toHaveBeenCalled();
+          expect((pecans as any).serveAsset).not.toHaveBeenCalled();
+          expect(next).toHaveBeenCalledWith(expect.any(NotFoundError));
         });
 
         it("should handle tag parameter", async () => {
@@ -1303,7 +1345,9 @@ describe("Pecans", () => {
 
               console.log(`resolve call ${callCount}:`, opts);
               if (callCount === 1) {
-                throw new Error("First resolve failed");
+                // only NotFoundError triggers the fallback; other errors
+                // propagate (see "propagates non-NotFound errors" test)
+                throw new NotFoundError("First resolve found nothing");
               }
               return new PecansRelease({
                 version: "1.0.0",

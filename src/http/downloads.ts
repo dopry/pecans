@@ -31,9 +31,17 @@ import {
 export function createDownloadHandler(ctx: PecansHttpContext) {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
-      let channel = validateReqQueryChannel(
-        getStringParam(req, "channel") || req.query.channel || "stable",
-      );
+      // an explicitly requested channel (path segment or ?channel=) is
+      // honored strictly: no matching release means 404, never a silent
+      // fallback that hands prerelease builds to stable users (#15). Only
+      // the defaulted channel on bare /download/:platform links keeps the
+      // legacy any-channel fallback. An empty ?channel= (typically an
+      // unpopulated template variable) names no channel, so || is
+      // deliberate: it is treated as absent, not as an explicit request.
+      const requestedChannel =
+        getStringParam(req, "channel") || req.query.channel || undefined;
+      const channelExplicit = requestedChannel !== undefined;
+      let channel = validateReqQueryChannel(requestedChannel ?? "stable");
       const tag = validateReqQueryTag(
         getStringParam(req, "tag") ?? req.query.tag,
       );
@@ -77,10 +85,18 @@ export function createDownloadHandler(ctx: PecansHttpContext) {
           version: tag ?? "latest",
         });
       } catch (err) {
-        // don't fall back to any channel if we already searched them all;
-        // a specific tag widened channel to "*" above, so this covers both
-        // "unrestricted" and "specific version requested"
-        if (channel == "*") throw err;
+        // only a missing release triggers the fallback - operational
+        // failures must propagate, not be masked by the retry. And don't
+        // fall back at all if we already searched every channel (a specific
+        // tag widened channel to "*" above) or if the caller explicitly
+        // requested this channel (#15)
+        if (
+          channel == "*" ||
+          channelExplicit ||
+          !(err instanceof NotFoundError)
+        ) {
+          throw err;
+        }
       }
 
       // we weren't able to find a release with the specified channel
