@@ -1,3 +1,7 @@
+> **This changelog is no longer maintained.**
+> Release notes for versions after v2.0.0-next.18 are published on
+> [GitHub Releases](https://github.com/dopry/pecans/releases).
+
 # [2.0.0-next.18](https://github.com/dopry/pecans/compare/v2.0.0-next.17...v2.0.0-next.18) (2026-07-21)
 
 
