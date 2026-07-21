@@ -258,13 +258,7 @@ const tests: FilenameResolveTestTuple[] = [
   // misclassified (1.32.0 read as 32-bit) or dropped ("Charmap" read as
   // arm, for which no linux platform exists)
   ["MyApp-1.32.0-linux.tar.gz", "linux", "64", undefined, platforms.LINUX_64],
-  [
-    "Charmap-1.0.0-linux.tar.gz",
-    "linux",
-    "64",
-    undefined,
-    platforms.LINUX_64,
-  ],
+  ["Charmap-1.0.0-linux.tar.gz", "linux", "64", undefined, platforms.LINUX_64],
   ["app-x86_64.rpm", "linux", "64", "rpm", platforms.LINUX_RPM_64],
   // electron-packager convention: win32 is the platform id, x64 the arch
   [

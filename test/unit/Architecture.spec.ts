@@ -112,9 +112,9 @@ describe("Architecture", () => {
         expect(filenameToArchitecture("MyApp-1.32.0-mac.dmg", "osx")).toBe(
           "64",
         );
-        expect(
-          filenameToArchitecture("app-0.64.0-linux.tar.gz", "linux"),
-        ).toBe("64");
+        expect(filenameToArchitecture("app-0.64.0-linux.tar.gz", "linux")).toBe(
+          "64",
+        );
       });
 
       it("reads x86_64 as 64-bit, not x86", () => {
