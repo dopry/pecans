@@ -259,7 +259,6 @@ describe("Backend Caching", () => {
       expect(backend.getCache()).toBe(originalReleases);
 
       // Wait for the background refresh promise to fail and be cleared
-      // We need to catch the background promise to prevent unhandled rejection
       const refreshPromise = backend.getCacheRefreshPromise();
       if (refreshPromise) {
         try {
@@ -269,6 +268,49 @@ describe("Backend Caching", () => {
         }
       }
       expect(backend.getCacheRefreshPromise()).toBeUndefined();
+    });
+
+    it("does not leak an unhandled rejection when a background refresh fails (#14)", async () => {
+      // Populate initial cache, then expire it and make the refresh fail
+      const originalReleases = await backend.releases();
+      advanceTime(7200000 + 1000);
+      backend.shouldFailFetch = true;
+
+      const onUnhandled = vi.fn();
+      process.on("unhandledRejection", onUnhandled);
+      try {
+        // Serves stale data; the failing refresh runs in the background
+        const releases = await backend.releases();
+        expect(releases).toBe(originalReleases);
+
+        // Let the rejected refresh promise settle; an unhandled rejection
+        // is only reported after the rejection's turn completes
+        await new Promise((resolve) => setImmediate(resolve));
+        await new Promise((resolve) => setImmediate(resolve));
+
+        expect(onUnhandled).not.toHaveBeenCalled();
+      } finally {
+        process.off("unhandledRejection", onUnhandled);
+      }
+    });
+
+    it("does not leak an unhandled rejection when a fire-and-forget refresh fails", async () => {
+      // the GitHub webhook's release handler calls refreshCache() without
+      // awaiting it; a failure there must not kill the process either (#14)
+      backend.shouldFailFetch = true;
+
+      const onUnhandled = vi.fn();
+      process.on("unhandledRejection", onUnhandled);
+      try {
+        void backend.refreshCache();
+
+        await new Promise((resolve) => setImmediate(resolve));
+        await new Promise((resolve) => setImmediate(resolve));
+
+        expect(onUnhandled).not.toHaveBeenCalled();
+      } finally {
+        process.off("unhandledRejection", onUnhandled);
+      }
     });
 
     it("should allow retry after failed refresh", async () => {
@@ -284,7 +326,6 @@ describe("Backend Caching", () => {
       expect(staleReleases).toBeInstanceOf(PecansReleases);
 
       // Wait for the failed refresh promise to clear
-      // We need to catch the background promise to prevent unhandled rejection
       const refreshPromise = backend.getCacheRefreshPromise();
       if (refreshPromise) {
         try {

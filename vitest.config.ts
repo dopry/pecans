@@ -34,9 +34,6 @@ export default defineConfig({
 
     // Global test timeout
     testTimeout: 10000,
-
-    // Setup files for global test configuration
-    setupFiles: ["./test/setup.ts"],
   },
 
   // Resolve configuration for TypeScript
