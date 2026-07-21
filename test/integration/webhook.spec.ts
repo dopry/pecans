@@ -210,6 +210,13 @@ describe("PECANS_REFRESH_SECRET env wiring (configure())", () => {
       .set("X-Hub-Signature-256", signature)
       .send(payload)
       .expect(200);
+
+    // the release handler fires refreshCache without awaiting it; wait for
+    // the mocked list-releases call to be consumed so this validates the
+    // end-to-end wiring (and cannot race afterEach's nock.cleanAll)
+    await vi.waitFor(() => {
+      expect(nock.isDone()).toBe(true);
+    });
   });
 
   it("keeps the webhook disabled when the env var is unset", async () => {
