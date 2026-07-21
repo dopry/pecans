@@ -1,13 +1,16 @@
-import { NextFunction, Request, Response } from "express";
+import type { NextFunction, Request, Response } from "express";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   Backend,
-  BackendOpts,
+  type BackendOpts,
   BackendSettings,
-} from "../../src/backends/backend";
-import { ForbiddenError } from "../../src/errors";
-import { PecansAsset, PecansAssetDTO } from "../../src/models/PecansAsset";
-import { PecansReleases } from "../../src/models/PecansReleases";
+} from "../../src/backends/backend.js";
+import { ForbiddenError } from "../../src/errors.js";
+import {
+  PecansAsset,
+  type PecansAssetDTO,
+} from "../../src/models/PecansAsset.js";
+import { PecansReleases } from "../../src/models/PecansReleases.js";
 
 // Test implementation of Backend to test abstract methods and middleware
 class TestBackend extends Backend {

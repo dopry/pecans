@@ -1,16 +1,16 @@
-import { NextFunction, Request, Response } from "express";
+import type { NextFunction, Request, Response } from "express";
 import { valid } from "semver";
-import { BadRequestError, NotFoundError } from "../errors";
-import { mergeReleaseNotes } from "../utils/mergeReleaseNotes";
-import { filetypeToPackageFormat } from "../utils/PackageFormat";
-import { mapLegacyPlatform, platformToQuery } from "../utils/platforms";
-import { generateRELEASES, parseRELEASES } from "../utils/win-releases";
-import { PecansHttpContext } from "./context";
+import { BadRequestError, NotFoundError } from "../errors.js";
+import { mergeReleaseNotes } from "../utils/mergeReleaseNotes.js";
+import { filetypeToPackageFormat } from "../utils/PackageFormat.js";
+import { mapLegacyPlatform, platformToQuery } from "../utils/platforms.js";
+import { generateRELEASES, parseRELEASES } from "../utils/win-releases.js";
+import type { PecansHttpContext } from "./context.js";
 import {
   getStringParam,
   getStringValueFromRequestQuery,
   validateReqQueryPlatform,
-} from "./query";
+} from "./query.js";
 
 /** GET /update - @deprecated redirect to /update/:platform/:version. */
 export function createUpdateRedirectHandler(ctx: PecansHttpContext) {

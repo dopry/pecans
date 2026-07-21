@@ -1,11 +1,15 @@
 import express from "express";
 import nock from "nock";
-import { GithubRelease } from "../src";
-import { Pecans, PecansGitHubBackend, PecansOptions } from "../src";
-import { Backend } from "../src/backends/backend";
-import { PecansGitHubBackendOpts } from "../src/backends/github";
-import { PecansAsset } from "../src/models";
-import { nockGithubListReleases } from "./nock/nockGithubListReleases";
+import type { GithubRelease } from "../src/index.js";
+import {
+  Pecans,
+  PecansGitHubBackend,
+  type PecansOptions,
+} from "../src/index.js";
+import { Backend } from "../src/backends/backend.js";
+import type { PecansGitHubBackendOpts } from "../src/backends/github.js";
+import { PecansAsset } from "../src/models/index.js";
+import { nockGithubListReleases } from "./nock/nockGithubListReleases.js";
 
 /**
  * Shared integration-test harness. Backends are constructed from the

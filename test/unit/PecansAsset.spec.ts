@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { PecansAsset, PecansAssetDTO } from "../../src/models/PecansAsset.js";
-import { PecansAssetQuery } from "../../src/models/PecansAssetQuery.js";
+import {
+  PecansAsset,
+  type PecansAssetDTO,
+} from "../../src/models/PecansAsset.js";
+import type { PecansAssetQuery } from "../../src/models/PecansAssetQuery.js";
 
 describe("PecansAsset", () => {
   const createMockAssetDTO = (

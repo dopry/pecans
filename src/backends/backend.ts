@@ -1,11 +1,11 @@
 import { Buffer } from "buffer";
 import { createHash, timingSafeEqual } from "crypto";
-import { NextFunction, Request, Response } from "express";
+import type { NextFunction, Request, Response } from "express";
 import { pipeline, Writable } from "stream";
 import { promisify } from "util";
-import { ForbiddenError } from "../errors";
-import { PecansReleases } from "../models";
-import { PecansAssetDTO } from "../models/PecansAsset";
+import { ForbiddenError } from "../errors.js";
+import type { PecansReleases } from "../models/index.js";
+import type { PecansAssetDTO } from "../models/PecansAsset.js";
 
 const DEFAULT_CACHE_MAX_AGE = 60 * 60 * 2; // 2 hours in seconds
 

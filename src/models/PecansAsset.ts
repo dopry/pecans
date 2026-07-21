@@ -1,17 +1,23 @@
 // keep the module graph cycle-free: import specific util modules rather
 // than the ../utils barrel
-import { Architecture, filenameToArchitecture } from "../utils/Architecture";
+import {
+  type Architecture,
+  filenameToArchitecture,
+} from "../utils/Architecture.js";
 import {
   filenameToOperatingSystem,
-  OperatingSystem,
-} from "../utils/OperatingSystem";
-import { filenameToPackageFormat, PackageFormat } from "../utils/PackageFormat";
-import { Platform } from "../utils/platforms";
+  type OperatingSystem,
+} from "../utils/OperatingSystem.js";
+import {
+  filenameToPackageFormat,
+  type PackageFormat,
+} from "../utils/PackageFormat.js";
+import type { Platform } from "../utils/platforms.js";
 import {
   getSupportedExt,
-  SupportedFileExtension,
-} from "../utils/SupportedFileExtension";
-import { PecansAssetQuery } from "./PecansAssetQuery";
+  type SupportedFileExtension,
+} from "../utils/SupportedFileExtension.js";
+import type { PecansAssetQuery } from "./PecansAssetQuery.js";
 
 export interface PecansAssetDTO<TRaw = unknown> {
   content_type: string;

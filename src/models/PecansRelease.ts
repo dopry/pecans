@@ -1,10 +1,10 @@
 import { satisfies, validRange } from "semver";
 // keep the module graph cycle-free: import specific util modules rather
 // than the ../utils barrel
-import { channelFromVersion } from "../utils/channelFromVersion";
-import { PecansAssetQuery } from "./PecansAssetQuery";
-import { PecansAsset, PecansAssetDTO } from "./PecansAsset";
-import { PecansReleaseQuery } from "./PecansReleaseQuery";
+import { channelFromVersion } from "../utils/channelFromVersion.js";
+import type { PecansAssetQuery } from "./PecansAssetQuery.js";
+import { PecansAsset, type PecansAssetDTO } from "./PecansAsset.js";
+import type { PecansReleaseQuery } from "./PecansReleaseQuery.js";
 
 export interface PecansReleaseDTO {
   // version

@@ -2,9 +2,9 @@ import { describe, it, expect } from "vitest";
 import { PecansReleases } from "../../src/models/PecansReleases.js";
 import {
   PecansRelease,
-  PecansReleaseDTO,
+  type PecansReleaseDTO,
 } from "../../src/models/PecansRelease.js";
-import { PecansAssetDTO } from "../../src/models/PecansAsset.js";
+import type { PecansAssetDTO } from "../../src/models/PecansAsset.js";
 import { channelFromVersion } from "../../src/utils/channelFromVersion.js";
 
 describe("PecansReleases", () => {

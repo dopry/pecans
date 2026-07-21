@@ -1,7 +1,7 @@
 import express from "express";
 import { Server } from "http";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { main } from "../../src/index";
+import { main } from "../../src/index.js";
 
 // Create mocks that will be populated in beforeEach
 let mockListen: any;
@@ -220,21 +220,21 @@ describe("Server Startup Integration", () => {
     });
   });
 
-  describe("require.main check", () => {
+  describe("run-directly check", () => {
     it("should call main() when module is run directly", () => {
-      // This test verifies the require.main === module check at the bottom of index.ts
+      // This test verifies the entry-point check at the bottom of index.ts
       // Since the module is already loaded, we can't easily test this dynamically,
       // but we can verify the logic exists and would work
 
-      // The actual check is: if (require.main === module) { main(); }
-      // This ensures main() is only called when the file is run directly, not imported
+      // The actual check compares import.meta.url against process.argv[1], so
+      // main() is only called when the file is run directly, not imported
 
       // We can verify this by checking if main is exported (which we already confirmed)
       // and that the file structure supports both import and direct execution
       expect(typeof main).toBe("function");
 
-      // In a real scenario, when index.ts is run with `node index.ts`,
-      // require.main would equal module and main() would be called automatically
+      // In a real scenario, when dist/index.js is run with `node dist/index.js`,
+      // the URLs match and main() would be called automatically
     });
   });
 });

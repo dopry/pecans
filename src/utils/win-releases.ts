@@ -1,5 +1,5 @@
 import { SemVer } from "semver";
-import { stripBom } from "./stripBOM";
+import { stripBom } from "./stripBOM.js";
 
 // Ordered list of supported channels
 // there is an implicit assumptions that windows build numbers map to

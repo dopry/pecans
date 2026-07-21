@@ -1,4 +1,4 @@
-import { Nock } from "./Nock";
+import type { Nock } from "./Nock.js";
 
 export default function (nock: Nock) {
   nock("https://api.github.com:443", { encodedQueryParams: true })

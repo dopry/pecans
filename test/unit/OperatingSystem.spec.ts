@@ -5,7 +5,7 @@ import {
   filenameToOperatingSystem,
   getOsFromQuery,
   isOperatingSystem,
-} from "../../src/utils/OperatingSystem";
+} from "../../src/utils/OperatingSystem.js";
 
 describe("OperatingSystem", () => {
   describe("OPERATING_SYSTEMS constant", () => {

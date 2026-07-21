@@ -1,5 +1,5 @@
-import { NextFunction, Request, Response } from "express";
-import { PLATFORMS } from "./utils/platforms";
+import type { NextFunction, Request, Response } from "express";
+import { PLATFORMS } from "./utils/platforms.js";
 
 /**
  * Error hierarchy for pecans' HTTP surface. Errors carry the status code

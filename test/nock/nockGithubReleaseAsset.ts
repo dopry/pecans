@@ -1,5 +1,5 @@
-import { PecansAsset } from "../../src/models";
-import { Nock } from "./Nock";
+import { PecansAsset } from "../../src/models/index.js";
+import type { Nock } from "./Nock.js";
 
 export function nockGithubReleasesAssetRedirect(
   nock: Nock,

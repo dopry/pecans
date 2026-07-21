@@ -1,6 +1,6 @@
 import { extname } from "path";
-import { OperatingSystem } from "./OperatingSystem";
-import { PackageFormat } from "./PackageFormat";
+import type { OperatingSystem } from "./OperatingSystem.js";
+import type { PackageFormat } from "./PackageFormat.js";
 
 export const SUPPORTED_FILE_EXTENSIONS = [
   ".exe",

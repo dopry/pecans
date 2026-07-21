@@ -7,10 +7,10 @@ import {
   buildRelease,
   buildStableReleaseSet,
   publishedAtForVersion,
-} from "../fixtures/builders";
-import { configureTestAppWithReleases, findAsset } from "../harness";
-import { expectSquirrelMacResponse } from "../helpers/contracts";
-import { nockGithubReleasesAssetRedirect } from "../nock/nockGithubReleaseAsset";
+} from "../fixtures/builders.js";
+import { configureTestAppWithReleases, findAsset } from "../harness.js";
+import { expectSquirrelMacResponse } from "../helpers/contracts.js";
+import { nockGithubReleasesAssetRedirect } from "../nock/nockGithubReleaseAsset.js";
 
 nock.disableNetConnect();
 nock.enableNetConnect(/(localhost|127\.0\.0\.1)/);

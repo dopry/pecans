@@ -1,14 +1,19 @@
-import express, { NextFunction, Request, Response } from "express";
-import { errorHandler } from "./errors";
-import { PecansGitHubBackend } from "./backends";
-import { Pecans, PecansOptions } from "./pecans";
+import { pathToFileURL } from "node:url";
+import express, {
+  type NextFunction,
+  type Request,
+  type Response,
+} from "express";
+import { errorHandler } from "./errors.js";
+import { PecansGitHubBackend } from "./backends/index.js";
+import { Pecans, type PecansOptions } from "./pecans.js";
 
-export * from "./backends";
-export * from "./errors";
-export * from "./models";
-export * from "./pecans";
-export * from "./service";
-export * from "./utils/";
+export * from "./backends/index.js";
+export * from "./errors.js";
+export * from "./models/index.js";
+export * from "./pecans.js";
+export * from "./service.js";
+export * from "./utils/index.js";
 
 export function configure() {
   const PECANS_BACKEND = process.env.PECANS_BACKEND || "PecansGithubBackend";
@@ -64,8 +69,10 @@ export function main() {
   });
 }
 
-// run the server when executed directly (node dist/index.js); the typeof
-// guard keeps the ESM build importable, where `require` does not exist
-if (typeof require !== "undefined" && require.main === module) {
+// run the server when executed directly (node dist/index.js), not when imported
+if (
+  process.argv[1] &&
+  import.meta.url === pathToFileURL(process.argv[1]).href
+) {
   main();
 }

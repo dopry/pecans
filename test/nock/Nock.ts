@@ -1,2 +1,2 @@
-import nock from "nock/types";
+import type nock from "nock";
 export type Nock = typeof nock;

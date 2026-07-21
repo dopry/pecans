@@ -1,4 +1,4 @@
-import { OperatingSystem } from "./OperatingSystem";
+import type { OperatingSystem } from "./OperatingSystem.js";
 
 /**
  * Architecture string identifiers

@@ -1,17 +1,17 @@
-import { Request } from "express";
-import { ParsedQs } from "qs";
+import type { Request } from "express";
+import type { ParsedQs } from "qs";
 import { validRange } from "semver";
 import {
   BadRequestError,
   UnsupportedChannelError,
   UnsupportedPlatformError,
   UnsupportedTagError,
-} from "../errors";
-import { isPlatform, Platform } from "../utils/platforms";
+} from "../errors.js";
+import { isPlatform, type Platform } from "../utils/platforms.js";
 import {
-  SupportedFileExtension,
+  type SupportedFileExtension,
   isSupportedFileExtension,
-} from "../utils/SupportedFileExtension";
+} from "../utils/SupportedFileExtension.js";
 
 export type ReqQueryValue =
   string | ParsedQs | (string | ParsedQs)[] | string[] | ParsedQs[] | undefined;

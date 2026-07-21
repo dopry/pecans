@@ -1,11 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { Backend, BackendOpts } from "../../src/backends/backend";
-import { PecansAssetDTO } from "../../src/models/PecansAsset";
+import { Backend, type BackendOpts } from "../../src/backends/backend.js";
+import type { PecansAssetDTO } from "../../src/models/PecansAsset.js";
 import {
   PecansRelease,
-  PecansReleaseDTO,
-} from "../../src/models/PecansRelease";
-import { PecansReleases } from "../../src/models/PecansReleases";
+  type PecansReleaseDTO,
+} from "../../src/models/PecansRelease.js";
+import { PecansReleases } from "../../src/models/PecansReleases.js";
 
 // Test implementation of Backend with controllable behavior
 class TestBackend extends Backend {

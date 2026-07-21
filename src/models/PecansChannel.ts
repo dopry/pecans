@@ -1,4 +1,4 @@
-import { PecansRelease } from "./PecansRelease";
+import type { PecansRelease } from "./PecansRelease.js";
 
 export interface PecansChannel {
   name: string;

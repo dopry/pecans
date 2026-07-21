@@ -1,4 +1,4 @@
-import { PecansAssetQuery } from "./PecansAssetQuery";
+import type { PecansAssetQuery } from "./PecansAssetQuery.js";
 
 export interface PecansReleaseQuery extends PecansAssetQuery {
   channel?: string;

@@ -1,18 +1,18 @@
 import {
-  Architecture,
+  type Architecture,
   filenameToArchitecture,
   isArchitecture,
-} from "./Architecture";
+} from "./Architecture.js";
 import {
   filenameToOperatingSystem,
   isOperatingSystem,
-  OperatingSystem,
-} from "./OperatingSystem";
+  type OperatingSystem,
+} from "./OperatingSystem.js";
 import {
   filenameToPackageFormat,
   isPackageFormat,
-  PackageFormat,
-} from "./PackageFormat";
+  type PackageFormat,
+} from "./PackageFormat.js";
 
 // platform identifier
 // {{os}}_{{packaging system}}_{{arch}}

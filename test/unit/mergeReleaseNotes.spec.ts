@@ -2,8 +2,8 @@ import { describe, it, expect } from "vitest";
 import {
   mergeReleaseNotes,
   formatReleaseNote,
-} from "../../src/utils/mergeReleaseNotes";
-import { PecansRelease } from "../../src/models/PecansRelease";
+} from "../../src/utils/mergeReleaseNotes.js";
+import { PecansRelease } from "../../src/models/PecansRelease.js";
 
 describe("mergeReleaseNotes", () => {
   const createMockRelease = (version: string, notes?: string) => {

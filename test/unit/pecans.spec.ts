@@ -1,5 +1,5 @@
-import { NextFunction, Request, Response } from "express";
-import { ParsedQs } from "qs";
+import type { NextFunction, Request, Response } from "express";
+import type { ParsedQs } from "qs";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   getFilenameFromQuery,
@@ -8,22 +8,22 @@ import {
   getStringValueFromRequestQuery,
   getVersionFromQuery,
   Pecans,
-  PecansOptions,
+  type PecansOptions,
   validateReqQueryChannel,
   validateReqQueryPlatform,
   validateReqQueryTag,
-} from "../../src/pecans";
+} from "../../src/pecans.js";
 import {
   BadRequestError,
   NotFoundError,
   UnsupportedChannelError,
   UnsupportedPlatformError,
   UnsupportedTagError,
-} from "../../src/errors";
+} from "../../src/errors.js";
 
 // Import types and dependencies
-import { Backend } from "../../src/backends/backend";
-import { PecansRelease, PecansReleases } from "../../src/models";
+import { Backend } from "../../src/backends/backend.js";
+import { PecansRelease, PecansReleases } from "../../src/models/index.js";
 
 // Mock all external dependencies
 vi.mock("debug", () => ({
@@ -1645,7 +1645,7 @@ describe("Pecans", () => {
           const next = createMockNext();
 
           // Import the module to mock isPlatform
-          const platformsModule = await import("../../src/utils/platforms");
+          const platformsModule = await import("../../src/utils/platforms.js");
           const isPlatformSpy = vi
             .spyOn(platformsModule, "isPlatform")
             .mockReturnValueOnce(false);

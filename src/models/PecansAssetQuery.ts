@@ -1,9 +1,9 @@
 // keep the module graph cycle-free: import specific util modules rather
 // than the ../utils barrel
-import { Architecture } from "../utils/Architecture";
-import { OperatingSystem } from "../utils/OperatingSystem";
-import { PackageFormat } from "../utils/PackageFormat";
-import { SupportedFileExtension } from "../utils/SupportedFileExtension";
+import type { Architecture } from "../utils/Architecture.js";
+import type { OperatingSystem } from "../utils/OperatingSystem.js";
+import type { PackageFormat } from "../utils/PackageFormat.js";
+import type { SupportedFileExtension } from "../utils/SupportedFileExtension.js";
 
 export interface PecansAssetQuery {
   os?: OperatingSystem;

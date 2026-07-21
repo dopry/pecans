@@ -5,8 +5,8 @@ import {
   filenameToPackageFormat,
   filetypeToPackageFormat,
   getPkgFromQuery,
-} from "../../src/utils/PackageFormat";
-import { ParsedQs } from "qs";
+} from "../../src/utils/PackageFormat.js";
+import type { ParsedQs } from "qs";
 
 describe("PackageFormat", () => {
   describe("PACKAGE_FORMATS constant", () => {

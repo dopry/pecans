@@ -9,7 +9,6 @@
     "dist/"
   ],
   "main": "./dist/index.js",
-  "module": "./dist/index.mjs",
   "homepage": "https://github.com/dopry/pecans",
   "license": "Apache-2.0",
   "dependencies": {
@@ -108,17 +107,11 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "import": {
-        "types": "./dist/index.d.mts",
-        "default": "./dist/index.mjs"
-      },
-      "require": {
-        "types": "./dist/index.d.ts",
-        "default": "./dist/index.js"
-      }
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
     },
     "./package.json": "./package.json"
   },
-  "type": "commonjs",
+  "type": "module",
   "sideEffects": false
 }

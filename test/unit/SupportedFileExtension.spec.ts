@@ -4,9 +4,9 @@ import {
   isSupportedFileExtension,
   getSupportedExt,
   getDownloadExtensionsByOs,
-} from "../../src/utils/SupportedFileExtension";
-import { OperatingSystem } from "../../src/utils/OperatingSystem";
-import { PackageFormat } from "../../src/utils/PackageFormat";
+} from "../../src/utils/SupportedFileExtension.js";
+import type { OperatingSystem } from "../../src/utils/OperatingSystem.js";
+import type { PackageFormat } from "../../src/utils/PackageFormat.js";
 
 describe("SupportedFileExtension", () => {
   describe("SUPPORTED_FILE_EXTENSIONS constant", () => {

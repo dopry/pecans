@@ -1,9 +1,12 @@
-import { Request, Response } from "express";
-import { PecansAssetDTO } from "../models/PecansAsset";
-import { PecansRelease, PecansReleaseDTO } from "../models/PecansRelease";
-import { PecansReleaseQuery } from "../models/PecansReleaseQuery";
-import { PecansReleases } from "../models/PecansReleases";
-import { ReleaseService } from "../service";
+import type { Request, Response } from "express";
+import type { PecansAssetDTO } from "../models/PecansAsset.js";
+import type {
+  PecansRelease,
+  PecansReleaseDTO,
+} from "../models/PecansRelease.js";
+import type { PecansReleaseQuery } from "../models/PecansReleaseQuery.js";
+import type { PecansReleases } from "../models/PecansReleases.js";
+import type { ReleaseService } from "../service.js";
 
 /**
  * The capabilities route handlers need from the composition root. Pecans
