@@ -52,16 +52,29 @@ export function configure() {
 /**
  * Parse the TRUST_PROXY env var into a value for express's "trust proxy"
  * setting. JSON values parse to their natural types ("true" -> true, "2" ->
- * 2, '["loopback","10.0.0.0/8"]' -> array); anything that isn't JSON is
+ * 2, '["loopback","10.0.0.0/8"]' -> array); anything that isn't JSON - or
+ * parses to a type express doesn't support, like an object or null - is
  * passed through verbatim ("loopback", "10.0.0.0/8, loopback", ...), which
  * express accepts as a comma-separated list.
  */
-export function parseTrustProxy(value: string): unknown {
+export function parseTrustProxy(
+  value: string,
+): boolean | number | string | string[] {
   try {
-    return JSON.parse(value);
+    const parsed: unknown = JSON.parse(value);
+    if (
+      typeof parsed === "boolean" ||
+      typeof parsed === "number" ||
+      typeof parsed === "string" ||
+      (Array.isArray(parsed) &&
+        parsed.every((entry) => typeof entry === "string"))
+    ) {
+      return parsed as boolean | number | string | string[];
+    }
   } catch {
-    return value;
+    // not JSON; fall through to the verbatim string
   }
+  return value;
 }
 
 export function main() {

@@ -123,6 +123,13 @@ describe("Index", () => {
         "10.0.0.0/8, loopback",
       );
     });
+
+    it("falls back to the verbatim string for unsupported JSON types", () => {
+      // express's trust proxy accepts boolean/number/string/string[] only
+      expect(parseTrustProxy('{"a":1}')).toBe('{"a":1}');
+      expect(parseTrustProxy("null")).toBe("null");
+      expect(parseTrustProxy("[1,2]")).toBe("[1,2]");
+    });
   });
 
   describe("main function execution coverage", () => {
