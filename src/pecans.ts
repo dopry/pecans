@@ -6,7 +6,6 @@ import {
   Router,
 } from "express";
 import EventEmitter from "node:events";
-import type { ParsedQs } from "qs";
 import { Backend } from "./backends/index.js";
 import { errorHandler, NotFoundError } from "./errors.js";
 import {
@@ -287,19 +286,6 @@ export class Pecans extends EventEmitter {
     }
   }
 
-  async getChannelFromQuery(query: ParsedQs): Promise<string | undefined> {
-    const releases = await this.getReleases();
-    const channels = releases.getChannelNames();
-    const channel =
-      query.channel && typeof query.channel === "string"
-        ? query.channel
-        : "stable";
-    if (channels.includes(channel)) {
-      return channel;
-    }
-    return;
-  }
-
   protected getBaseUrl(req: Request) {
     return req.protocol + "://" + req.get("host") + this.opts.basePath;
   }
@@ -319,16 +305,10 @@ export class Pecans extends EventEmitter {
     release: PecansReleaseDTO,
     asset: PecansAssetDTO,
   ) {
-    this.emit("beforeDownload", {
-      req: req,
-      version: release,
-      platform: asset,
-    });
+    // payload keys renamed in 2.0: the release was published as `version`
+    // and the asset as `platform` (nuts-era naming)
+    this.emit("beforeDownload", { req, release, asset });
     await this.backend.serveAsset(asset, res);
-    this.emit("afterDownload", {
-      req: req,
-      version: release,
-      platform: asset,
-    });
+    this.emit("afterDownload", { req, release, asset });
   }
 }
