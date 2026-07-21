@@ -1,21 +1,21 @@
 import { Octokit } from "@octokit/rest";
-import { Endpoints } from "@octokit/types";
+import type { Endpoints } from "@octokit/types";
 import { Webhooks, createNodeMiddleware } from "@octokit/webhooks";
 import { Readable } from "node:stream";
-import { NextFunction, Request, Response } from "express";
-import { Backend, BackendOpts, BackendSettings } from "./backend";
+import type { NextFunction, Request, Response } from "express";
+import { Backend, type BackendOpts, BackendSettings } from "./backend.js";
 import {
   PecansAsset,
-  PecansAssetDTO,
+  type PecansAssetDTO,
   PecansRelease,
-  PecansReleaseDTO,
+  type PecansReleaseDTO,
   isPecansAsset,
-} from "../models";
+} from "../models/index.js";
 // keep the module graph cycle-free: import specific util modules rather
 // than the ../utils barrel
-import { channelFromVersion } from "../utils/channelFromVersion";
-import { filenameToPlatform } from "../utils/platforms";
-import { PecansReleases } from "../models/PecansReleases";
+import { channelFromVersion } from "../utils/channelFromVersion.js";
+import { filenameToPlatform } from "../utils/platforms.js";
+import { PecansReleases } from "../models/PecansReleases.js";
 import { clean } from "semver";
 
 // see: https://docs.github.com/en/rest/releases/releases

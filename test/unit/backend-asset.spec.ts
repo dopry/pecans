@@ -1,8 +1,8 @@
 import { Readable } from "stream";
 import { beforeEach, describe, expect, it } from "vitest";
-import { Backend, BackendOpts } from "../../src/backends/backend";
-import { PecansAsset } from "../../src/models/PecansAsset";
-import { PecansReleases } from "../../src/models/PecansReleases";
+import { Backend, type BackendOpts } from "../../src/backends/backend.js";
+import { PecansAsset } from "../../src/models/PecansAsset.js";
+import { PecansReleases } from "../../src/models/PecansReleases.js";
 
 // Mock stream class for testing various scenarios
 class MockReadableStream extends Readable {

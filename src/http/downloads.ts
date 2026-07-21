@@ -1,20 +1,23 @@
-import { NextFunction, Request, Response } from "express";
-import { BadRequestError, NotFoundError } from "../errors";
-import { PecansRelease } from "../models/PecansRelease";
-import { PecansReleaseQuery } from "../models/PecansReleaseQuery";
-import { OPERATING_SYSTEMS, isOperatingSystem } from "../utils/OperatingSystem";
-import { isValidArchForOS } from "../utils/Architecture";
+import type { NextFunction, Request, Response } from "express";
+import { BadRequestError, NotFoundError } from "../errors.js";
+import { PecansRelease } from "../models/PecansRelease.js";
+import type { PecansReleaseQuery } from "../models/PecansReleaseQuery.js";
+import {
+  OPERATING_SYSTEMS,
+  isOperatingSystem,
+} from "../utils/OperatingSystem.js";
+import { isValidArchForOS } from "../utils/Architecture.js";
 import {
   filetypeToPackageFormat,
   getPkgFromQuery,
-} from "../utils/PackageFormat";
+} from "../utils/PackageFormat.js";
 import {
   filenameToPlatform,
   mapLegacyPlatform,
   platformToQuery,
-} from "../utils/platforms";
-import { getDownloadExtensionsByOs } from "../utils/SupportedFileExtension";
-import { PecansHttpContext } from "./context";
+} from "../utils/platforms.js";
+import { getDownloadExtensionsByOs } from "../utils/SupportedFileExtension.js";
+import type { PecansHttpContext } from "./context.js";
 import {
   getFiletypeFromQuery,
   getStringParam,
@@ -22,7 +25,7 @@ import {
   validateReqQueryChannel,
   validateReqQueryPlatform,
   validateReqQueryTag,
-} from "./query";
+} from "./query.js";
 
 /** GET /download/** - legacy composite-platform download routes. */
 export function createDownloadHandler(ctx: PecansHttpContext) {

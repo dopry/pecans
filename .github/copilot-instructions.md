@@ -61,7 +61,7 @@ The server provides several endpoint patterns:
 
 ### Build & Release
 
-- Dual build system: CommonJS (`dist/cjs/`) and ESM (`dist/mjs/`)
+- ESM-only build (`dist/index.js`) via tsup
 - Use `npm run build` to compile TypeScript
 - Semantic release handles versioning automatically
 - Follow conventional commit format for releases
@@ -127,7 +127,7 @@ pecans.on("beforeDownload", (download) => {
 - TypeScript files use `.ts` extension
 - Test files mirror source structure in `/test/`
 - Configuration files are in root directory
-- Built output goes to `/dist/cjs/` and `/dist/mjs/`
+- Built output goes to `/dist/` (ESM only)
 
 ## Dependencies Management
 

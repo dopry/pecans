@@ -1,18 +1,18 @@
 import { describe, expect, it } from "vitest";
-import { Backend } from "../../src/backends/backend";
-import { NotFoundError } from "../../src/errors";
-import { PecansRelease } from "../../src/models/PecansRelease";
-import { PecansReleases } from "../../src/models/PecansReleases";
+import { Backend } from "../../src/backends/backend.js";
+import { NotFoundError } from "../../src/errors.js";
+import { PecansRelease } from "../../src/models/PecansRelease.js";
+import { PecansReleases } from "../../src/models/PecansReleases.js";
 import {
   assetMatchesPlatform,
   ReleaseService,
   resolveAssetForRelease,
-} from "../../src/service";
+} from "../../src/service.js";
 import {
   parsePlatform,
-  Platform,
+  type Platform,
   platformToQuery,
-} from "../../src/utils/platforms";
+} from "../../src/utils/platforms.js";
 
 function asset(filename: string, type: Platform) {
   return {

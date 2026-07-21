@@ -1,24 +1,27 @@
-import { Backend } from "./backends/";
-import { NotFoundError } from "./errors";
-import { PecansAssetDTO } from "./models/PecansAsset";
-import { PecansRelease, PecansReleaseDTO } from "./models/PecansRelease";
-import { PecansReleaseQuery } from "./models/PecansReleaseQuery";
-import { PecansReleases } from "./models/PecansReleases";
+import { Backend } from "./backends/index.js";
+import { NotFoundError } from "./errors.js";
+import type { PecansAssetDTO } from "./models/PecansAsset.js";
+import {
+  PecansRelease,
+  type PecansReleaseDTO,
+} from "./models/PecansRelease.js";
+import type { PecansReleaseQuery } from "./models/PecansReleaseQuery.js";
+import { PecansReleases } from "./models/PecansReleases.js";
 // keep the module graph cycle-free: import specific util modules rather
 // than the ./utils barrel (the models above follow the same rule)
-import { Architecture } from "./utils/Architecture";
-import { OperatingSystem } from "./utils/OperatingSystem";
+import type { Architecture } from "./utils/Architecture.js";
+import type { OperatingSystem } from "./utils/OperatingSystem.js";
 import {
-  PackageFormatFilter,
+  type PackageFormatFilter,
   parsePlatform,
-  Platform,
-} from "./utils/platforms";
+  type Platform,
+} from "./utils/platforms.js";
 import {
   getSupportedExt,
   SUPPORTED_FILE_EXTENSIONS,
-  SupportedFileExtension,
-} from "./utils/SupportedFileExtension";
-import { sortReleaseBySemVerDescending } from "./utils/sortReleaseBySemVerDescending";
+  type SupportedFileExtension,
+} from "./utils/SupportedFileExtension.js";
+import { sortReleaseBySemVerDescending } from "./utils/sortReleaseBySemVerDescending.js";
 
 /**
  * Discrete criteria for resolving a downloadable release. Unlike the strict

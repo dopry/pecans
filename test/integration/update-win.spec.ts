@@ -10,11 +10,11 @@ import {
   fakeSha1,
   SQUIRREL_DELTA_SIZE,
   SQUIRREL_NUPKG_SIZE,
-} from "../fixtures/builders";
-import { configureTestAppWithReleases, findAsset } from "../harness";
-import { expectRELEASESFormat } from "../helpers/contracts";
-import { nockGithubAssetContent } from "../nock/nockGithubAssetContent";
-import { nockGithubReleasesAssetRedirect } from "../nock/nockGithubReleaseAsset";
+} from "../fixtures/builders.js";
+import { configureTestAppWithReleases, findAsset } from "../harness.js";
+import { expectRELEASESFormat } from "../helpers/contracts.js";
+import { nockGithubAssetContent } from "../nock/nockGithubAssetContent.js";
+import { nockGithubReleasesAssetRedirect } from "../nock/nockGithubReleaseAsset.js";
 
 nock.disableNetConnect();
 nock.enableNetConnect(/(localhost|127\.0\.0\.1)/);

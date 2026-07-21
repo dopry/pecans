@@ -5,12 +5,12 @@ import {
   mockTypicalReleases,
   nockGithubListReleases,
   nockGithubListReleasesPaginated,
-} from "../nock/nockGithubListReleases";
-import { nockGithubReleasesAssetRedirect } from "../nock/nockGithubReleaseAsset";
+} from "../nock/nockGithubListReleases.js";
+import { nockGithubReleasesAssetRedirect } from "../nock/nockGithubReleaseAsset.js";
 import {
   configurePecansGitHubBackend,
   configurePecansTestApp,
-} from "../harness";
+} from "../harness.js";
 
 // nock.recorder.rec();
 nock.disableNetConnect();

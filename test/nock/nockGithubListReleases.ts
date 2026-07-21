@@ -1,6 +1,6 @@
 import { customAlphabet } from "nanoid";
-import { GithubRelease, GithubReleaseAsset } from "../../src";
-import { Nock } from "./Nock";
+import type { GithubRelease, GithubReleaseAsset } from "../../src/index.js";
+import type { Nock } from "./Nock.js";
 const numericId = customAlphabet("1234567890", 8);
 
 export function get_mock_content_type(filename: string) {

@@ -1,14 +1,14 @@
 import { Octokit } from "@octokit/rest";
 import { Webhooks, createNodeMiddleware } from "@octokit/webhooks";
-import { Response } from "express";
+import type { Response } from "express";
 import { Readable } from "node:stream";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
-  GithubReleaseAsset,
+  type GithubReleaseAsset,
   GitHubBackend,
   PecansGitHubBackend,
   PecansGitHubBackendSettings,
-} from "../../src/backends/github";
+} from "../../src/backends/github.js";
 
 // Mock dependencies
 vi.mock("@octokit/rest", () => ({

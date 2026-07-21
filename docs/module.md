@@ -13,8 +13,8 @@ $ npm install pecans-serve
 #### Usage
 
 ```js
-const express = require("express");
-const Pecans = require("@dopry/pecans").Pecans;
+import express from "express";
+import { Pecans } from "@dopry/pecans";
 
 const app = express();
 

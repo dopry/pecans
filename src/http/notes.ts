@@ -1,9 +1,9 @@
-import { NextFunction, Request, Response } from "express";
+import type { NextFunction, Request, Response } from "express";
 import { validRange } from "semver";
-import { BadRequestError, NotFoundError } from "../errors";
-import { formatReleaseNote } from "../utils/mergeReleaseNotes";
-import { PecansHttpContext } from "./context";
-import { getStringParam, getVersionFromQuery } from "./query";
+import { BadRequestError, NotFoundError } from "../errors.js";
+import { formatReleaseNote } from "../utils/mergeReleaseNotes.js";
+import type { PecansHttpContext } from "./context.js";
+import { getStringParam, getVersionFromQuery } from "./query.js";
 
 /** GET /notes{/:version} - release notes as JSON or plain text. */
 export function createNotesHandler(ctx: PecansHttpContext) {

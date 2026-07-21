@@ -2,18 +2,18 @@ import { Webhooks } from "@octokit/webhooks";
 import nock from "nock";
 import supertest from "supertest";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { Backend, BackendOpts } from "../../src/backends/backend";
-import { PecansReleases } from "../../src/models/PecansReleases";
+import { Backend, type BackendOpts } from "../../src/backends/backend.js";
+import { PecansReleases } from "../../src/models/PecansReleases.js";
 import {
   buildStableReleaseSet,
   buildRelease,
   buildFullPlatformAssets,
-} from "../fixtures/builders";
+} from "../fixtures/builders.js";
 import {
   configurePecansTestApp,
   configureTestAppWithReleases,
-} from "../harness";
-import { nockGithubListReleases } from "../nock/nockGithubListReleases";
+} from "../harness.js";
+import { nockGithubListReleases } from "../nock/nockGithubListReleases.js";
 
 nock.disableNetConnect();
 nock.enableNetConnect(/(localhost|127\.0\.0\.1)/);

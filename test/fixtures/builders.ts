@@ -1,10 +1,10 @@
 import { createHash } from "node:crypto";
-import { GithubRelease, GithubReleaseAsset } from "../../src";
+import type { GithubRelease, GithubReleaseAsset } from "../../src/index.js";
 import {
   mock_github_asset,
   mock_github_release,
-  MockGithubAssetOpts,
-} from "../nock/nockGithubListReleases";
+  type MockGithubAssetOpts,
+} from "../nock/nockGithubListReleases.js";
 
 /**
  * Composable fixture builders on top of the low-level test/nock mocks.

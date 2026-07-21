@@ -1,11 +1,11 @@
-import { NextFunction, Request, Response } from "express";
-import { platformToQuery } from "../utils/platforms";
-import { PecansHttpContext } from "./context";
+import type { NextFunction, Request, Response } from "express";
+import { platformToQuery } from "../utils/platforms.js";
+import type { PecansHttpContext } from "./context.js";
 import {
   getPlatformFromQuery,
   getVersionFromQuery,
   validateReqQueryChannel,
-} from "./query";
+} from "./query.js";
 
 /** GET /api/channels - release channels with their latest versions. */
 export function createApiChannelsHandler(ctx: PecansHttpContext) {

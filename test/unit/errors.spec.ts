@@ -8,7 +8,7 @@ import {
   UnsupportedChannelError,
   UnsupportedPlatformError,
   UnsupportedTagError,
-} from "../../src/errors";
+} from "../../src/errors.js";
 
 describe("error hierarchy", () => {
   it("carries status codes", () => {

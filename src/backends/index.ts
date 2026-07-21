@@ -1,2 +1,2 @@
-export * from "./backend";
-export * from "./github";
+export * from "./backend.js";
+export * from "./github.js";

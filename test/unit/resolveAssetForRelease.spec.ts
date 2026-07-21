@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { PecansAssetDTO, PecansReleaseDTO } from "../../src/models";
-import { resolveAssetForRelease } from "../../src/service";
-import { Platform, platformToQuery } from "../../src/utils/platforms";
-import { SupportedFileExtension } from "../../src/utils/SupportedFileExtension";
+import type {
+  PecansAssetDTO,
+  PecansReleaseDTO,
+} from "../../src/models/index.js";
+import { resolveAssetForRelease } from "../../src/service.js";
+import { type Platform, platformToQuery } from "../../src/utils/platforms.js";
+import type { SupportedFileExtension } from "../../src/utils/SupportedFileExtension.js";
 
 // the composite-id signature of the removed resolveReleaseAssetForVersion
 // adapter, kept as a local shim so these pins keep guarding the ranking

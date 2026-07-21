@@ -1,38 +1,43 @@
 import Debug from "debug";
-import { NextFunction, Request, Response, Router } from "express";
+import {
+  type NextFunction,
+  type Request,
+  type Response,
+  Router,
+} from "express";
 import EventEmitter from "node:events";
-import { ParsedQs } from "qs";
-import { Backend } from "./backends/";
-import { errorHandler, NotFoundError } from "./errors";
+import type { ParsedQs } from "qs";
+import { Backend } from "./backends/index.js";
+import { errorHandler, NotFoundError } from "./errors.js";
 import {
   createApiChannelsHandler,
   createApiStatusHandler,
   createApiVersionsHandler,
-} from "./http/api";
-import { PecansHttpContext } from "./http/context";
+} from "./http/api.js";
+import type { PecansHttpContext } from "./http/context.js";
 import {
   createDlFilenameHandler,
   createDlHandler,
   createDownloadHandler,
-} from "./http/downloads";
-import { createNotesHandler } from "./http/notes";
+} from "./http/downloads.js";
+import { createNotesHandler } from "./http/notes.js";
 import {
   createUpdateOSXHandler,
   createUpdateRedirectHandler,
   createUpdateWinHandler,
-} from "./http/updates";
+} from "./http/updates.js";
 import {
-  PecansAssetDTO,
+  type PecansAssetDTO,
   PecansRelease,
-  PecansReleaseDTO,
-  PecansReleaseQuery,
+  type PecansReleaseDTO,
+  type PecansReleaseQuery,
   PecansReleases,
-} from "./models/index";
-import { ReleaseService } from "./service";
+} from "./models/index.js";
+import { ReleaseService } from "./service.js";
 
 // the query helpers moved to src/http/query.ts with the route handlers;
 // re-exported here so the package root keeps the same names
-export * from "./http/query";
+export * from "./http/query.js";
 
 const logger = Debug("pecans");
 

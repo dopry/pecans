@@ -4,9 +4,9 @@ import { afterEach, describe, expect, it } from "vitest";
 import {
   buildMixedChannelReleaseSet,
   buildStableReleaseSet,
-} from "../fixtures/builders";
-import { configureTestAppWithReleases, findAsset } from "../harness";
-import { nockGithubReleasesAssetRedirect } from "../nock/nockGithubReleaseAsset";
+} from "../fixtures/builders.js";
+import { configureTestAppWithReleases, findAsset } from "../harness.js";
+import { nockGithubReleasesAssetRedirect } from "../nock/nockGithubReleaseAsset.js";
 
 nock.disableNetConnect();
 nock.enableNetConnect(/(localhost|127\.0\.0\.1)/);

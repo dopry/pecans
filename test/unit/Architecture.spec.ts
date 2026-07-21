@@ -5,8 +5,8 @@ import {
   filenameToArchitecture,
   getSupportedArchByOs,
   isValidArchForOS,
-} from "../../src/utils/Architecture";
-import { OperatingSystem } from "../../src/utils/OperatingSystem";
+} from "../../src/utils/Architecture.js";
+import type { OperatingSystem } from "../../src/utils/OperatingSystem.js";
 
 describe("Architecture", () => {
   describe("ARCHITECTURES constant", () => {

@@ -1,11 +1,14 @@
 import { describe, it, expect, vi } from "vitest";
 import {
   PecansRelease,
-  PecansReleaseDTO,
+  type PecansReleaseDTO,
   isPecansAsset,
 } from "../../src/models/PecansRelease.js";
-import { PecansAsset, PecansAssetDTO } from "../../src/models/PecansAsset.js";
-import { PecansReleaseQuery } from "../../src/models/PecansReleaseQuery.js";
+import {
+  PecansAsset,
+  type PecansAssetDTO,
+} from "../../src/models/PecansAsset.js";
+import type { PecansReleaseQuery } from "../../src/models/PecansReleaseQuery.js";
 import { channelFromVersion } from "../../src/utils/channelFromVersion.js";
 
 describe("PecansRelease", () => {

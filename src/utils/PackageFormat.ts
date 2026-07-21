@@ -1,4 +1,4 @@
-import { ParsedQs } from "qs";
+import type { ParsedQs } from "qs";
 // TODO: more consistent use of explicit package name instead of assuming based on context
 export const PACKAGE_FORMATS = [
   "deb",

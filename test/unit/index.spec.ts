@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { PecansGitHubBackend } from "../../src/backends";
-import { configure } from "../../src/index";
+import { PecansGitHubBackend } from "../../src/backends/index.js";
+import { configure } from "../../src/index.js";
 
 describe("Index", () => {
   let originalEnv: NodeJS.ProcessEnv;

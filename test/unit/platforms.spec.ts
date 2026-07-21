@@ -1,22 +1,22 @@
 import { describe, it, expect } from "vitest";
-import { PecansReleaseDTO } from "../../src/models";
-import { filenameToOperatingSystem } from "../../src/utils/OperatingSystem";
+import type { PecansReleaseDTO } from "../../src/models/index.js";
+import { filenameToOperatingSystem } from "../../src/utils/OperatingSystem.js";
 import {
-  Architecture,
+  type Architecture,
   filenameToPlatform,
-  OperatingSystem,
-  PackageFormat,
-  Platform,
+  type OperatingSystem,
+  type PackageFormat,
+  type Platform,
   platforms,
   platformToType,
   mapLegacyPlatform,
   isPlatform,
-} from "../../src/utils";
-import { resolveAssetForRelease } from "../../src/service";
-import { platformToQuery } from "../../src/utils/platforms";
-import { filenameToPackageFormat } from "../../src/utils/PackageFormat";
-import { filenameToArchitecture } from "../../src/utils/Architecture";
-import { SupportedFileExtension } from "../../src/utils/SupportedFileExtension";
+} from "../../src/utils/index.js";
+import { resolveAssetForRelease } from "../../src/service.js";
+import { platformToQuery } from "../../src/utils/platforms.js";
+import { filenameToPackageFormat } from "../../src/utils/PackageFormat.js";
+import { filenameToArchitecture } from "../../src/utils/Architecture.js";
+import type { SupportedFileExtension } from "../../src/utils/SupportedFileExtension.js";
 
 // exercise the resolution pipeline through the composite-id signature the
 // removed resolveReleaseAssetForVersion adapter used, so the table-driven
