@@ -35,6 +35,10 @@ export const PLATFORMS = [
   "windows",
   "windows_32",
   "windows_64",
+  "windows_msix",
+  "windows_msix_32",
+  "windows_msix_64",
+  "windows_msix_universal",
 ] as const;
 
 export type Platform = (typeof PLATFORMS)[number];
@@ -58,6 +62,13 @@ export const platforms: Record<string, Platform> = {
   WINDOWS: "windows",
   WINDOWS_32: "windows_32",
   WINDOWS_64: "windows_64",
+  WINDOWS_MSIX: "windows_msix",
+  WINDOWS_MSIX_32: "windows_msix_32",
+  WINDOWS_MSIX_64: "windows_msix_64",
+  // .msixbundle is a multi-architecture bundle by definition, so it ingests
+  // as universal; there is no arm64 windows platform, so single-arch arm64
+  // .msix assets are dropped at ingestion like any other arm64 windows asset
+  WINDOWS_MSIX_UNIVERSAL: "windows_msix_universal",
 };
 
 // legacy arch suffixes,
@@ -176,7 +187,8 @@ export function filenameToPlatform(filename: string): Platform {
   const os = filenameToOperatingSystem(name);
   parts.push(os);
   const pkg = filenameToPackageFormat(name);
-  // pkg is optional and typically only with linux.
+  // pkg is optional; alternate package formats exist for linux (deb/rpm)
+  // and windows (msix)
   if (pkg) parts.push(pkg);
   const arch = filenameToArchitecture(name, os);
   parts.push(arch);

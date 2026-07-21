@@ -56,6 +56,29 @@ describe("Architecture", () => {
           "universal",
         );
       });
+
+      it("should treat .msixbundle as universal even without the keyword", () => {
+        // .msixbundle is a multi-arch bundle by definition (no arch in name)
+        expect(
+          filenameToArchitecture("Visibox-5.0.13.msixbundle", "windows"),
+        ).toBe("universal");
+        expect(filenameToArchitecture("APP.MSIXBUNDLE", "windows")).toBe(
+          "universal",
+        );
+      });
+
+      it("should still detect arch from .msix filename suffix", () => {
+        // Single-arch .msix encodes arch in the filename (e.g. _x64, _arm64)
+        expect(
+          filenameToArchitecture("Visibox_5.0.13.0_x64.msix", "windows"),
+        ).toBe("64");
+        expect(
+          filenameToArchitecture("Visibox_5.0.13.0_arm64.msix", "windows"),
+        ).toBe("arm64");
+        expect(
+          filenameToArchitecture("Visibox_5.0.13.0_x86.msix", "windows"),
+        ).toBe("32");
+      });
     });
 
     describe("arm64 detection", () => {

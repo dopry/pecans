@@ -17,7 +17,9 @@ export function filenameToOperatingSystem(filename: string): OperatingSystem {
     name.includes("win32") ||
     name.includes("win64") ||
     name.endsWith(".exe") ||
-    name.endsWith(".nupkg")
+    name.endsWith(".nupkg") ||
+    name.endsWith(".msix") ||
+    name.endsWith(".msixbundle")
   )
     return "windows";
   if (

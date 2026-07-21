@@ -74,11 +74,14 @@ export function assetMatchesPlatform(
   if (filter.arch && asset.arch !== filter.arch) {
     // widening requires the FILTER to target osx - an arch-only filter must
     // not be satisfied by universal osx builds (the asset os is already
-    // known to equal filter.os from the check above)
+    // known to equal filter.os from the check above). A universal msix
+    // asset (.msixbundle, multi-arch by definition) satisfies any windows
+    // arch, but only when msix is explicitly requested - default windows
+    // flows (pkg: "default") must keep resolving arch-specific installers.
     const universalSatisfies =
-      filter.preferUniversal &&
-      filter.os === "osx" &&
-      asset.arch === "universal";
+      asset.arch === "universal" &&
+      ((filter.preferUniversal && filter.os === "osx") ||
+        (filter.os === "windows" && filter.pkg === "msix"));
     if (!universalSatisfies) return false;
   }
   return true;

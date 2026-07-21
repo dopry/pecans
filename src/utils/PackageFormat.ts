@@ -2,7 +2,8 @@ import { ParsedQs } from "qs";
 // TODO: more consistent use of explicit package name instead of assuming based on context
 export const PACKAGE_FORMATS = [
   "deb",
-  "rpm" /*"zip", "dmg", "tar", "nupkg"*/,
+  "rpm",
+  "msix" /*"zip", "dmg", "tar", "nupkg"*/,
 ] as const;
 export type PackageFormat = (typeof PACKAGE_FORMATS)[number];
 // check if a string is an Package type identifier
@@ -18,6 +19,25 @@ export function filenameToPackageFormat(
   const name = filename.toLowerCase();
   if (name.endsWith(".deb")) return "deb";
   if (name.endsWith(".rpm")) return "rpm";
+  if (name.endsWith(".msix") || name.endsWith(".msixbundle")) return "msix";
+}
+
+/**
+ * On the legacy HTTP surface, msix downloads are requested via
+ * ?filetype=msix|msixbundle rather than a composite platform id: deployed
+ * clients send ids like windows_64, so the internal windows_msix* ids
+ * (introduced for ingestion) aren't part of the request vocabulary. Those
+ * filetypes therefore imply the msix package format on the resolution
+ * filters. Other filetypes never imply a pkg: legacy requests like
+ * ?filetype=deb keep their platform-default resolution semantics.
+ */
+export function filetypeToPackageFormat(
+  filetype?: string,
+): PackageFormat | undefined {
+  if (!filetype) return undefined;
+  const ext = filetype.toLowerCase().replace(/^\./, "");
+  if (ext === "msix" || ext === "msixbundle") return "msix";
+  return undefined;
 }
 
 export function getPkgFromQuery(query: ParsedQs): PackageFormat | undefined {

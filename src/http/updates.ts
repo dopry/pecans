@@ -2,6 +2,7 @@ import { NextFunction, Request, Response } from "express";
 import { valid } from "semver";
 import { BadRequestError, NotFoundError } from "../errors";
 import { mergeReleaseNotes } from "../utils/mergeReleaseNotes";
+import { filetypeToPackageFormat } from "../utils/PackageFormat";
 import { mapLegacyPlatform, platformToQuery } from "../utils/platforms";
 import { generateRELEASES, parseRELEASES } from "../utils/win-releases";
 import { PecansHttpContext } from "./context";
@@ -61,12 +62,21 @@ export function createUpdateOSXHandler(ctx: PecansHttpContext) {
 
       const channel = getStringParam(req, "channel") || "stable";
       // non-string filetype values (repeated params) fall back to the default
-      // rather than being interpolated into the feed url
-      const filetype =
-        getStringValueFromRequestQuery(req.query, "filetype") || "zip";
+      // rather than being interpolated into the feed url. Canonicalize to
+      // lowercase: the download route's filetype validation is
+      // case-sensitive, so embedding the caller's casing (e.g. "MSIX")
+      // would produce a feed url the download route rejects.
+      const filetype = (
+        getStringValueFromRequestQuery(req.query, "filetype") || "zip"
+      ).toLowerCase();
+      // an msix filetype implies the msix package format: Electron's MSIX
+      // updater consumes this same Squirrel.Mac-shaped feed with
+      // ?filetype=msix, and its assets never match the platform default
+      const pkg = filetypeToPackageFormat(filetype);
 
       const versions = await ctx.service.filterReleases({
         ...platformToQuery(platform),
+        ...(pkg ? { pkg } : {}),
         version: ">=" + tag,
         channel,
         // legacy behavior: the update surface always widened osx queries to

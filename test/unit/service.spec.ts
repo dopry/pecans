@@ -77,6 +77,16 @@ describe("parsePlatform / platformToQuery", () => {
       arch: undefined,
       pkg: undefined,
     });
+    expect(parsePlatform("windows_msix_universal")).toEqual({
+      os: "windows",
+      arch: "universal",
+      pkg: "msix",
+    });
+    expect(parsePlatform("windows_msix")).toEqual({
+      os: "windows",
+      arch: undefined,
+      pkg: "msix",
+    });
   });
 
   it("a bare os id queries any arch and any package format", () => {
@@ -149,6 +159,48 @@ describe("assetMatchesPlatform", () => {
       }),
     ).toBe(false);
   });
+
+  describe("msix", () => {
+    it("matches single-arch msix assets on the msix pkg", () => {
+      const filter = { os: "windows" as const, arch: "64" as const };
+      expect(
+        assetMatchesPlatform("windows_msix_64", { ...filter, pkg: "msix" }),
+      ).toBe(true);
+      // msix is an alternate package format, never the platform default
+      expect(
+        assetMatchesPlatform("windows_msix_64", { ...filter, pkg: "default" }),
+      ).toBe(false);
+    });
+
+    it("a universal msix asset satisfies any windows arch when msix is requested", () => {
+      // .msixbundle is multi-arch by definition - no preferUniversal needed
+      expect(
+        assetMatchesPlatform("windows_msix_universal", {
+          os: "windows",
+          arch: "64",
+          pkg: "msix",
+        }),
+      ).toBe(true);
+      expect(
+        assetMatchesPlatform("windows_msix_universal", {
+          os: "windows",
+          arch: "32",
+          pkg: "msix",
+        }),
+      ).toBe(true);
+    });
+
+    it("never widens default windows queries to universal msix assets", () => {
+      expect(
+        assetMatchesPlatform("windows_msix_universal", {
+          os: "windows",
+          arch: "64",
+          pkg: "default",
+          preferUniversal: true,
+        }),
+      ).toBe(false);
+    });
+  });
 });
 
 describe("resolveAssetForRelease", () => {
@@ -191,6 +243,62 @@ describe("resolveAssetForRelease", () => {
     expect(
       resolveAssetForRelease(winOnly, { os: "windows", arch: "64" }),
     ).toBeUndefined();
+  });
+
+  describe("msix resolution", () => {
+    const msixAssets = [
+      asset("Visibox-Setup-5.0.13.exe", "windows_64"),
+      asset("Visibox_5.0.13.0_x64.msix", "windows_msix_64"),
+      asset("Visibox-5.0.13.msixbundle", "windows_msix_universal"),
+    ];
+
+    it("resolves a single-arch .msix when pkg msix is requested", () => {
+      const rel = release("1.0.0", msixAssets.slice(0, 2));
+      const resolved = resolveAssetForRelease(rel, {
+        os: "windows",
+        arch: "64",
+        pkg: "msix",
+        wanted: ".msix",
+      });
+      expect(resolved?.filename).toBe("Visibox_5.0.13.0_x64.msix");
+    });
+
+    it("resolves the .msixbundle for arch-specific windows requests", () => {
+      const rel = release("1.0.0", [msixAssets[0], msixAssets[2]]);
+      for (const wanted of [".msix", ".msixbundle"] as const) {
+        const resolved = resolveAssetForRelease(rel, {
+          os: "windows",
+          arch: "64",
+          pkg: "msix",
+          wanted,
+        });
+        expect(resolved?.filename).toBe("Visibox-5.0.13.msixbundle");
+      }
+    });
+
+    it("prefers the .msixbundle over a single-arch .msix", () => {
+      const rel = release("1.0.0", msixAssets);
+      const resolved = resolveAssetForRelease(rel, {
+        os: "windows",
+        arch: "64",
+        pkg: "msix",
+        wanted: ".msix",
+      });
+      expect(resolved?.filename).toBe("Visibox-5.0.13.msixbundle");
+    });
+
+    it("keeps resolving the .exe for default windows requests when msix assets exist", () => {
+      // no msix requested: existing Squirrel.Windows clients must keep
+      // getting the .exe even when msix assets are published alongside it
+      const rel = release("1.0.0", msixAssets);
+      const resolved = resolveAssetForRelease(rel, {
+        os: "windows",
+        arch: "64",
+        pkg: "default",
+        preferUniversal: true,
+      });
+      expect(resolved?.filename).toBe("Visibox-Setup-5.0.13.exe");
+    });
   });
 });
 
@@ -334,5 +442,30 @@ describe("ReleaseService", () => {
       pkg: "default",
     });
     expect(unpackaged).toHaveLength(1);
+  });
+
+  it("a .msixbundle-only release counts toward arch-specific msix availability", async () => {
+    const bundleOnly = [
+      release("3.0.0", [
+        asset("app-3.0.0.msixbundle", "windows_msix_universal"),
+      ]),
+    ];
+    const service = makeService(bundleOnly);
+    const msix = await service.filterReleases({
+      channel: "*",
+      os: "windows",
+      arch: "64",
+      pkg: "msix",
+    });
+    expect(msix.map((r) => r.version)).toEqual(["3.0.0"]);
+    // but never toward default windows availability - a Squirrel client
+    // can't apply an msix package
+    const dflt = await service.filterReleases({
+      channel: "*",
+      os: "windows",
+      arch: "64",
+      pkg: "default",
+    });
+    expect(dflt).toEqual([]);
   });
 });
