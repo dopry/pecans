@@ -6,6 +6,7 @@ import { main } from "../../src/index.js";
 // Create mocks that will be populated in beforeEach
 let mockListen: any;
 let mockUse: any;
+let mockSet: any;
 let mockAddress: any;
 let mockClose: any;
 let mockServer: any;
@@ -51,6 +52,7 @@ describe("Server Startup Integration", () => {
     // Set up mock functions
     mockListen = vi.fn();
     mockUse = vi.fn();
+    mockSet = vi.fn();
     mockAddress = vi.fn();
     mockClose = vi.fn();
 
@@ -63,6 +65,7 @@ describe("Server Startup Integration", () => {
     mockApp = {
       use: mockUse,
       listen: mockListen,
+      set: mockSet,
     } as unknown as express.Express;
 
     // Set up express mock to return our mock app
@@ -139,6 +142,27 @@ describe("Server Startup Integration", () => {
       expect(consoleLogSpy).toHaveBeenCalledWith(
         "Listening at unix:/tmp/server.sock",
       );
+    });
+
+    it("applies TRUST_PROXY to express's trust proxy setting", () => {
+      process.env.TRUST_PROXY = "true";
+      main();
+      expect(mockSet).toHaveBeenCalledWith("trust proxy", true);
+    });
+
+    it("passes non-JSON TRUST_PROXY values through verbatim", () => {
+      process.env.TRUST_PROXY = "loopback, 10.0.0.0/8";
+      main();
+      expect(mockSet).toHaveBeenCalledWith(
+        "trust proxy",
+        "loopback, 10.0.0.0/8",
+      );
+    });
+
+    it("leaves trust proxy unset without TRUST_PROXY", () => {
+      delete process.env.TRUST_PROXY;
+      main();
+      expect(mockSet).not.toHaveBeenCalled();
     });
 
     it("should set up error handling middleware", () => {

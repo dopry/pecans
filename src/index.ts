@@ -49,11 +49,46 @@ export function configure() {
   }
 }
 
+/**
+ * Parse the TRUST_PROXY env var into a value for express's "trust proxy"
+ * setting. JSON values parse to their natural types ("true" -> true, "2" ->
+ * 2, '["loopback","10.0.0.0/8"]' -> array); anything that isn't JSON - or
+ * parses to a type express doesn't support, like an object or null - is
+ * passed through verbatim ("loopback", "10.0.0.0/8, loopback", ...), which
+ * express accepts as a comma-separated list.
+ */
+export function parseTrustProxy(
+  value: string,
+): boolean | number | string | string[] {
+  try {
+    const parsed: unknown = JSON.parse(value);
+    if (
+      typeof parsed === "boolean" ||
+      typeof parsed === "number" ||
+      typeof parsed === "string" ||
+      (Array.isArray(parsed) &&
+        parsed.every((entry) => typeof entry === "string"))
+    ) {
+      return parsed as boolean | number | string | string[];
+    }
+  } catch {
+    // not JSON; fall through to the verbatim string
+  }
+  return value;
+}
+
 export function main() {
   const { pecans } = configure();
   const port = process.env.PORT || 5000;
 
   const app = express();
+  // behind a TLS-terminating proxy (the normal production topology),
+  // req.protocol is "http" unless express trusts X-Forwarded-*; without
+  // this the Squirrel.Mac feed would emit http:// download urls
+  const trustProxy = process.env.TRUST_PROXY;
+  if (trustProxy !== undefined) {
+    app.set("trust proxy", parseTrustProxy(trustProxy));
+  }
   app.use(pecans.router);
   app.use((req: Request, res: Response, next: NextFunction): void => {
     res.status(404).send("Page not found");
