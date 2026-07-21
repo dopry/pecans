@@ -182,8 +182,15 @@ describe("/webhook/refresh (generic backend secret middleware)", () => {
 });
 
 describe("PECANS_REFRESH_SECRET env wiring (configure())", () => {
+  // restore rather than delete, in case the developer's environment set it
+  const originalRefreshSecret = process.env.PECANS_REFRESH_SECRET;
+
   afterEach(() => {
-    delete process.env.PECANS_REFRESH_SECRET;
+    if (originalRefreshSecret === undefined) {
+      delete process.env.PECANS_REFRESH_SECRET;
+    } else {
+      process.env.PECANS_REFRESH_SECRET = originalRefreshSecret;
+    }
     nock.cleanAll();
   });
 
