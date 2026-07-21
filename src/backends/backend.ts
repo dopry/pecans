@@ -39,7 +39,10 @@ export abstract class Backend<TRaw = unknown> {
     }
   }
 
-  public async refreshCache(): Promise<PecansReleases> {
+  // deliberately NOT async: an async wrapper would hand callers a fresh
+  // promise that adopts the rejection but lacks the no-op catch below,
+  // resurfacing the unhandled rejection this method suppresses
+  public refreshCache(): Promise<PecansReleases> {
     // reset the caches, so next call to releases() will fetch new data.
     // but do not delete the existing cache, so we still serve stale data
     // until new data is fetched.
@@ -56,6 +59,12 @@ export abstract class Backend<TRaw = unknown> {
         this.cacheRefreshPromise = undefined;
         throw error;
       });
+    // Refreshes are often fire-and-forget (the stale-cache path in
+    // releases(), the GitHub webhook's release handler), so mark the
+    // rejection handled here - once, at creation - or a failed refresh
+    // (already logged above) becomes an unhandled rejection that kills the
+    // process (#14). Callers that await still observe the rejection.
+    promise.catch(() => {});
     this.cacheRefreshPromise = promise;
     return promise;
   }
