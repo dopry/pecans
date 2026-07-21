@@ -85,10 +85,18 @@ export function createDownloadHandler(ctx: PecansHttpContext) {
           version: tag ?? "latest",
         });
       } catch (err) {
-        // don't fall back to any channel if we already searched them all
-        // (a specific tag widened channel to "*" above) or if the caller
-        // explicitly requested this channel (#15)
-        if (channel == "*" || channelExplicit) throw err;
+        // only a missing release triggers the fallback - operational
+        // failures must propagate, not be masked by the retry. And don't
+        // fall back at all if we already searched every channel (a specific
+        // tag widened channel to "*" above) or if the caller explicitly
+        // requested this channel (#15)
+        if (
+          channel == "*" ||
+          channelExplicit ||
+          !(err instanceof NotFoundError)
+        ) {
+          throw err;
+        }
       }
 
       // we weren't able to find a release with the specified channel
