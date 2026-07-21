@@ -155,7 +155,8 @@ describe("/webhook/refresh (generic backend secret middleware)", () => {
   it("responds 403 for a wrong secret without refreshing", async () => {
     const { backend, app } = buildGenericApp({ refreshSecret: SECRET });
     const res = await supertest(app)
-      .post("/webhook/refresh?secret=wrong")
+      .post("/webhook/refresh")
+      .set("X-Pecans-Secret", "wrong")
       .expect(403);
     expect(res.text).toContain("Invalid refresh secret");
     expect(backend.fetchCount).toBe(0);
@@ -233,6 +234,8 @@ describe("PECANS_REFRESH_SECRET env wiring (configure())", () => {
   });
 
   it("keeps the webhook disabled when the env var is unset", async () => {
+    // don't rely on the developer's environment; afterEach restores it
+    delete process.env.PECANS_REFRESH_SECRET;
     const { pecans } = configure();
     const app = express();
     app.use(pecans.router);

@@ -103,7 +103,9 @@ describe("Backend Complete Coverage", () => {
     it("should call next() for non-POST methods on the watched path", () => {
       backend = new TestBackend({ refreshSecret: "test-secret" });
       mockReq.method = "GET";
-      mockReq.query = { secret: "test-secret" };
+      mockReq.get.mockImplementation((name: string) =>
+        name.toLowerCase() === "x-pecans-secret" ? "test-secret" : undefined,
+      );
       const middleware = backend.getRefreshWebhookMiddleware("/api/refresh");
 
       middleware(mockReq as unknown as Request, mockRes as Response, mockNext);
@@ -114,7 +116,9 @@ describe("Backend Complete Coverage", () => {
 
     it("should 403 when the secret does not match", () => {
       backend = new TestBackend({ refreshSecret: "test-secret" });
-      mockReq.query = { secret: "wrong-secret" };
+      mockReq.get.mockImplementation((name: string) =>
+        name.toLowerCase() === "x-pecans-secret" ? "wrong-secret" : undefined,
+      );
       const middleware = backend.getRefreshWebhookMiddleware("/api/refresh");
 
       middleware(mockReq as unknown as Request, mockRes as Response, mockNext);
