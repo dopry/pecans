@@ -1,12 +1,12 @@
 import { Backend } from "./backends/index.js";
 import { NotFoundError } from "./errors.js";
 import type { PecansAssetDTO } from "./models/PecansAsset.js";
-import {
+import type {
   PecansRelease,
-  type PecansReleaseDTO,
+  PecansReleaseDTO,
 } from "./models/PecansRelease.js";
 import type { PecansReleaseQuery } from "./models/PecansReleaseQuery.js";
-import { PecansReleases } from "./models/PecansReleases.js";
+import type { PecansReleases } from "./models/PecansReleases.js";
 // keep the module graph cycle-free: import specific util modules rather
 // than the ./utils barrel (the models above follow the same rule)
 import type { Architecture } from "./utils/Architecture.js";

@@ -1,12 +1,12 @@
 import type { Request, Response } from "express";
 import type { PecansAssetDTO } from "../models/PecansAsset.js";
-import {
+import type {
   PecansRelease,
-  type PecansReleaseDTO,
+  PecansReleaseDTO,
 } from "../models/PecansRelease.js";
 import type { PecansReleaseQuery } from "../models/PecansReleaseQuery.js";
-import { PecansReleases } from "../models/PecansReleases.js";
-import { ReleaseService } from "../service.js";
+import type { PecansReleases } from "../models/PecansReleases.js";
+import type { ReleaseService } from "../service.js";
 
 /**
  * The capabilities route handlers need from the composition root. Pecans

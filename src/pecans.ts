@@ -26,11 +26,11 @@ import {
   createUpdateRedirectHandler,
   createUpdateWinHandler,
 } from "./http/updates.js";
-import {
-  type PecansAssetDTO,
+import type {
+  PecansAssetDTO,
   PecansRelease,
-  type PecansReleaseDTO,
-  type PecansReleaseQuery,
+  PecansReleaseDTO,
+  PecansReleaseQuery,
   PecansReleases,
 } from "./models/index.js";
 import { ReleaseService } from "./service.js";

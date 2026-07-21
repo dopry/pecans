@@ -1,6 +1,6 @@
 import type { NextFunction, Request, Response } from "express";
 import { BadRequestError, NotFoundError } from "../errors.js";
-import { PecansRelease } from "../models/PecansRelease.js";
+import type { PecansRelease } from "../models/PecansRelease.js";
 import type { PecansReleaseQuery } from "../models/PecansReleaseQuery.js";
 import {
   OPERATING_SYSTEMS,

@@ -1,4 +1,4 @@
-import { PecansRelease } from "../models/index.js";
+import type { PecansRelease } from "../models/index.js";
 
 // Merge release notes for a list of versions
 export function mergeReleaseNotes(

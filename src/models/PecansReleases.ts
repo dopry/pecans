@@ -2,7 +2,7 @@
 // than the ../utils barrel
 import { sortReleaseBySemVerDescending } from "../utils/sortReleaseBySemVerDescending.js";
 import type { PecansChannel } from "./PecansChannel.js";
-import { PecansRelease } from "./PecansRelease.js";
+import type { PecansRelease } from "./PecansRelease.js";
 import type { PecansReleaseQuery } from "./PecansReleaseQuery.js";
 
 export class PecansReleases {
