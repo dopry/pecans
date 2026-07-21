@@ -32,6 +32,10 @@ jobs:
 
   release:
     name: Release
+
+    permissions:
+      contents: read
+      id-token: write
     # release only from pushes to release branches, after all checks pass;
     # semantic-release's own branches config decides the version/channel
     if: github.event_name == 'push'
