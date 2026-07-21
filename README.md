@@ -42,16 +42,20 @@ This server provides an endpoint for [Squirrel auto-updater](https://github.com/
 
 Release lists are cached (2 hours by default). `POST /webhook/refresh` busts
 the cache without waiting for expiry; it is enabled by configuring a
-`refreshSecret` on the backend and disabled otherwise.
+`refreshSecret` on the backend and disabled otherwise. For the standalone
+server (`npm start`, Docker, Heroku), set the `PECANS_REFRESH_SECRET`
+environment variable — `configure()` passes it to the backend as the
+`refreshSecret`.
 
 - **GitHub backend**: point a GitHub _release_ webhook at
   `/webhook/refresh` with the secret set to your `refreshSecret`; the
   payload signature is verified with
   [@octokit/webhooks](https://github.com/octokit/webhooks.js).
 - **Other backends** (base `Backend` middleware): send the `refreshSecret`
-  in an `X-Pecans-Secret` header or a `?secret=` query parameter. A valid
+  in an `X-Pecans-Secret` header (the `?secret=` query parameter was removed
+  in 2.0 — query strings leak secrets into proxy and access logs). A valid
   request responds `200 {"refreshed": true}`; a missing or wrong secret
-  responds `403`.
+  responds `403`. Use a high-entropy secret, e.g. `openssl rand -hex 32`.
 
 ## Documentation
 

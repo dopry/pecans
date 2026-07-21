@@ -21,6 +21,9 @@ export function configure() {
   const cacheMaxAge = process.env.PECANS_CACHE_MAX_AGE
     ? parseInt(process.env.PECANS_CACHE_MAX_AGE)
     : 60 * 60 * 2; // Default 2 hours
+  // enables POST /webhook/refresh (see README); without it the cache-bust
+  // endpoint stays disabled
+  const refreshSecret = process.env.PECANS_REFRESH_SECRET;
 
   const pecansOpts: PecansOptions = {
     // base path to inject between host and relative path. use for D.O. app service where
@@ -32,8 +35,10 @@ export function configure() {
   switch (PECANS_BACKEND) {
     case "PecansGithubBackend": {
       const backendEnv = PecansGitHubBackend.getEnvironment();
-      // Pass cacheMaxAge to the backend
-      const backend = PecansGitHubBackend.FromEnv(backendEnv, { cacheMaxAge });
+      const backend = PecansGitHubBackend.FromEnv(backendEnv, {
+        cacheMaxAge,
+        refreshSecret,
+      });
       const pecans = new Pecans(backend, pecansOpts);
       return { env: backendEnv, backend, pecans };
     }

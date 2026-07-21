@@ -1,4 +1,5 @@
 import { Webhooks } from "@octokit/webhooks";
+import express from "express";
 import nock from "nock";
 import supertest from "supertest";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -9,6 +10,7 @@ import {
   buildRelease,
   buildFullPlatformAssets,
 } from "../fixtures/builders.js";
+import { configure } from "../../src/index.js";
 import {
   configurePecansTestApp,
   configureTestAppWithReleases,
@@ -113,7 +115,8 @@ describe("/webhook/refresh (GitHub release webhook)", () => {
 
 describe("/webhook/refresh (generic backend secret middleware)", () => {
   // non-GitHub backends inherit the base Backend middleware, which
-  // authenticates via an X-Pecans-Secret header or ?secret= query parameter
+  // authenticates via the X-Pecans-Secret header only (a ?secret= query
+  // parameter would leak the secret into proxy/access logs; removed in 2.0)
   class RefreshCountingBackend extends Backend {
     public fetchCount = 0;
     constructor(opts?: BackendOpts) {
@@ -131,28 +134,29 @@ describe("/webhook/refresh (generic backend secret middleware)", () => {
     return { backend, app };
   }
 
-  it("refreshes and responds 200 given the secret as a query parameter", async () => {
+  it("refreshes and responds 200 given the X-Pecans-Secret header", async () => {
     const { backend, app } = buildGenericApp({ refreshSecret: SECRET });
     const res = await supertest(app)
-      .post(`/webhook/refresh?secret=${SECRET}`)
+      .post("/webhook/refresh")
+      .set("X-Pecans-Secret", SECRET)
       .expect(200);
     expect(res.body).toEqual({ refreshed: true });
     expect(backend.fetchCount).toBe(1);
   });
 
-  it("refreshes and responds 200 given the X-Pecans-Secret header", async () => {
+  // the 1.x-era ?secret= transport is gone: query strings land in proxy
+  // and access logs, so a valid secret sent that way must not authenticate
+  it("rejects a valid secret sent as a query parameter", async () => {
     const { backend, app } = buildGenericApp({ refreshSecret: SECRET });
-    await supertest(app)
-      .post("/webhook/refresh")
-      .set("X-Pecans-Secret", SECRET)
-      .expect(200);
-    expect(backend.fetchCount).toBe(1);
+    await supertest(app).post(`/webhook/refresh?secret=${SECRET}`).expect(403);
+    expect(backend.fetchCount).toBe(0);
   });
 
   it("responds 403 for a wrong secret without refreshing", async () => {
     const { backend, app } = buildGenericApp({ refreshSecret: SECRET });
     const res = await supertest(app)
-      .post("/webhook/refresh?secret=wrong")
+      .post("/webhook/refresh")
+      .set("X-Pecans-Secret", "wrong")
       .expect(403);
     expect(res.text).toContain("Invalid refresh secret");
     expect(backend.fetchCount).toBe(0);
@@ -164,17 +168,89 @@ describe("/webhook/refresh (generic backend secret middleware)", () => {
     expect(backend.fetchCount).toBe(0);
   });
 
-  // POST-only contract: a GET with a valid secret (e.g. a crawler following
-  // a shared ?secret= link) must fall through without refreshing
+  // POST-only contract: other methods fall through without refreshing
   it("ignores non-POST requests even with a valid secret", async () => {
     const { backend, app } = buildGenericApp({ refreshSecret: SECRET });
-    await supertest(app).get(`/webhook/refresh?secret=${SECRET}`).expect(404);
+    await supertest(app)
+      .get("/webhook/refresh")
+      .set("X-Pecans-Secret", SECRET)
+      .expect(404);
     expect(backend.fetchCount).toBe(0);
   });
 
   it("is a no-op 404 when no refreshSecret is configured", async () => {
     const { backend, app } = buildGenericApp();
-    await supertest(app).post(`/webhook/refresh?secret=${SECRET}`).expect(404);
+    await supertest(app)
+      .post("/webhook/refresh")
+      .set("X-Pecans-Secret", SECRET)
+      .expect(404);
     expect(backend.fetchCount).toBe(0);
+  });
+});
+
+describe("PECANS_REFRESH_SECRET env wiring (configure())", () => {
+  // restore rather than delete, in case the developer's environment set it
+  const originalRefreshSecret = process.env.PECANS_REFRESH_SECRET;
+
+  afterEach(() => {
+    if (originalRefreshSecret === undefined) {
+      delete process.env.PECANS_REFRESH_SECRET;
+    } else {
+      process.env.PECANS_REFRESH_SECRET = originalRefreshSecret;
+    }
+    nock.cleanAll();
+  });
+
+  it("enables the refresh webhook on the standalone server", async () => {
+    process.env.PECANS_REFRESH_SECRET = SECRET;
+    const { pecans } = configure();
+    const app = express();
+    app.use(pecans.router);
+
+    // the refresh triggered by the webhook fetches the release list
+    nockGithubListReleases(
+      nock,
+      OWNER,
+      REPO,
+      buildStableReleaseSet(OWNER, REPO),
+    );
+
+    const { payload, signature } = await signedReleaseEvent(SECRET);
+    await supertest(app)
+      .post("/webhook/refresh")
+      .set("Content-Type", "application/json")
+      .set("X-GitHub-Event", "release")
+      .set("X-GitHub-Delivery", "env-wiring-delivery")
+      .set("X-Hub-Signature-256", signature)
+      .send(payload)
+      .expect(200);
+
+    // the release handler fires refreshCache without awaiting it; wait for
+    // the mocked list-releases call to be consumed so this validates the
+    // end-to-end wiring (and cannot race afterEach's nock.cleanAll)
+    await vi.waitFor(() => {
+      expect(nock.isDone()).toBe(true);
+    });
+  });
+
+  it("keeps the webhook disabled when the env var is unset", async () => {
+    // don't rely on the developer's environment; afterEach restores it
+    delete process.env.PECANS_REFRESH_SECRET;
+    const { pecans } = configure();
+    const app = express();
+    app.use(pecans.router);
+    app.use((req, res) => {
+      res.status(404).send("Page not found");
+    });
+
+    const { payload, signature } = await signedReleaseEvent(SECRET);
+    await supertest(app)
+      .post("/webhook/refresh")
+      .set("Content-Type", "application/json")
+      .set("X-GitHub-Event", "release")
+      .set("X-GitHub-Delivery", "env-wiring-delivery-2")
+      .set("X-Hub-Signature-256", signature)
+      .send(payload)
+      .expect(404);
   });
 });

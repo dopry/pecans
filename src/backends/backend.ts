@@ -93,11 +93,12 @@ export abstract class Backend<TRaw = unknown> {
   // overrides this with signed-payload verification via @octokit/webhooks).
   //
   // The caller authenticates by sending the configured refreshSecret in an
-  // `X-Pecans-Secret` header or `?secret=` query parameter; a request on the
-  // watched path with a missing or wrong secret gets a 403. When no
-  // refreshSecret is configured the middleware is a pass-through and the
-  // endpoint stays disabled — the secret requirement prevents DOS attacks
-  // against update infrastructure.
+  // `X-Pecans-Secret` header; a request on the watched path with a missing
+  // or wrong secret gets a 403. The header is the only accepted transport -
+  // a ?secret= query parameter would leak the secret into proxy and access
+  // logs. When no refreshSecret is configured the middleware is a
+  // pass-through and the endpoint stays disabled — the secret requirement
+  // prevents DOS attacks against update infrastructure.
   // ex) `app.use(backend.getRefreshWebhookMiddleware('/api/backend/refresh'))`
   getRefreshWebhookMiddleware(
     // path that the middleware will watch.
@@ -114,19 +115,15 @@ export abstract class Backend<TRaw = unknown> {
         return;
       }
       // the refresh contract is POST-only (matching the GitHub backend's
-      // webhook middleware); other methods fall through so crawlers hitting
-      // a shared ?secret= link can't trigger refreshes and preflights
-      // aren't answered with 403
+      // webhook middleware); other methods fall through so crawlers can't
+      // trigger refreshes and preflights aren't answered with 403
       if (req.method !== "POST") {
         next();
         return;
       }
-      // the middleware is mounted with use(), so req.params is never
-      // populated here - the secret arrives as a header or query parameter
-      const query = req.query.secret;
-      const provided =
-        req.get("x-pecans-secret") ??
-        (typeof query === "string" ? query : undefined);
+      // header only: a ?secret= query parameter would leak the secret into
+      // proxy and access logs (removed in 2.0)
+      const provided = req.get("x-pecans-secret");
       if (!provided || !this.verifyRefreshSecret(provided)) {
         next(new ForbiddenError("Invalid refresh secret"));
         return;
