@@ -75,6 +75,13 @@ secret, e.g. `openssl rand -hex 32`.
   classify as 64-bit (1.x read them as 32-bit), and letters inside words
   (`Charmap`) no longer classify as arm builds. Feeds over existing releases
   may resolve different assets after upgrade.
+- **Windows filename detection is stricter.** Only `win32`/`win64` markers
+  and the `.exe`/`.nupkg`/`.msix`/`.msixbundle` extensions classify an asset
+  as Windows. Portable archives named with a bare `win`/`windows` token
+  (e.g. `MyApp-1.0.0-win.zip`, `MyApp-windows-x64.zip`), which 1.x ingested,
+  are no longer recognized and are skipped at ingestion — include an
+  explicit `win32`/`win64` marker in the artifact name
+  (e.g. `MyApp-1.0.0-win64.zip`).
 - **arm64 is first-class.** `windows_arm64`, `linux_arm64` (and deb/rpm/msix
   variants) now ingest instead of being dropped. On bare-os requests
   (`/download/windows`) arm64 ranks last: it is only served when it is the
