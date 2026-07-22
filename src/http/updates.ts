@@ -66,16 +66,13 @@ export function createUpdateOSXHandler(
       const tag = versionParam;
 
       const channel = getStringParam(req, "channel") || "stable";
-      // non-string filetype values (repeated params) fall back to the default
-      // rather than being interpolated into the feed url. Canonicalize to
-      // lowercase: the download route's filetype validation is
-      // case-sensitive, so embedding the caller's casing (e.g. "MSIX")
-      // would produce a feed url the download route rejects.
-      const filetype = (
-        opts.forcedFiletype ||
-        getStringValueFromRequestQuery(req.query, "filetype") ||
-        "zip"
-      ).toLowerCase();
+      // the nuts-era ?filetype query on /update was removed in 2.0 in favor
+      // of the update.electronjs.org format segment
+      // (/update/:platform/:format/:version); the feed serves the squirrel
+      // zip contract unless a format route forces another filetype.
+      // Lowercase because the download route's filetype validation is
+      // case-sensitive and the feed url embeds this value.
+      const filetype = (opts.forcedFiletype || "zip").toLowerCase();
       // an msix filetype implies the msix package format: Electron's MSIX
       // updater consumes this same Squirrel.Mac-shaped feed with
       // ?filetype=msix, and its assets never match the platform default

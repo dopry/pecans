@@ -28,8 +28,10 @@ Pecans is an Electron Release Server.
       Squirrel.Windows), e.g. `/update/darwin-arm64/squirrel/1.2.3`
     - `/update/:platform/msix/:version` — Squirrel.Mac-shaped JSON feed
       for Electron's built-in MSIX updater (39.5+/40.2+/41+), e.g.
-      `/update/win32-x64/msix/1.2.3`; also reachable as `?filetype=msix`
-      on the standard route
+      `/update/win32-x64/msix/1.2.3`. The format segment is the only way
+      to select the msix feed: the nuts-era `?filetype` query on `/update`
+      was removed in 2.0 (`?filetype` remains on `/download`, where the
+      feed-minted urls use it)
 - API
   - `/api/channels` — release channels with their latest versions
   - `/api/versions` — releases, filterable with `?channel`, `?platform`, `?version`

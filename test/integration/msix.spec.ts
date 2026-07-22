@@ -54,9 +54,11 @@ function buildBundleOnlyReleaseSet(owner: string, repo: string) {
 }
 
 // Electron 41+'s autoUpdater for MSIX consumes the same Squirrel.Mac-shaped
-// JSON feed ({url, name, notes, pub_date}); the client requests it with
-// ?filetype=msix on the existing /update/:platform/:version route.
-describe("/update/:platform/:version?filetype=msix (Electron MSIX)", () => {
+// JSON feed ({url, name, notes, pub_date}); following update.electronjs.org
+// semantics, the client requests it via the msix format segment
+// (/update/:platform/msix/:version). The nuts-era ?filetype query on
+// /update was removed in 2.0.
+describe("/update/:platform/msix/:version (Electron MSIX)", () => {
   afterEach(() => nock.cleanAll());
 
   it("200s with a Squirrel.Mac-shaped descriptor when behind", async () => {
@@ -64,7 +66,7 @@ describe("/update/:platform/:version?filetype=msix (Electron MSIX)", () => {
       buildMsixReleaseSet(OWNER, REPO),
     );
     const res = await supertest(app)
-      .get("/update/win32-x64/2.5.0?filetype=msix")
+      .get("/update/win32-x64/msix/2.5.0")
       .expect(200);
     expectSquirrelMacResponse(res.body);
     expect(res.body.name).toBe("2.7.0");
@@ -78,9 +80,7 @@ describe("/update/:platform/:version?filetype=msix (Electron MSIX)", () => {
     const { app } = configureTestAppWithReleases(
       buildMsixReleaseSet(OWNER, REPO),
     );
-    await supertest(app)
-      .get("/update/win32-x64/2.7.0?filetype=msix")
-      .expect(204);
+    await supertest(app).get("/update/win32-x64/msix/2.7.0").expect(204);
   });
 
   it("204s when no msix assets are published", async () => {
@@ -88,9 +88,7 @@ describe("/update/:platform/:version?filetype=msix (Electron MSIX)", () => {
     const { app } = configureTestAppWithReleases(
       buildStableReleaseSet(OWNER, REPO),
     );
-    await supertest(app)
-      .get("/update/win32-x64/2.5.0?filetype=msix")
-      .expect(204);
+    await supertest(app).get("/update/win32-x64/msix/2.5.0").expect(204);
   });
 
   it("the update url resolves to the .msixbundle download", async () => {
@@ -98,7 +96,7 @@ describe("/update/:platform/:version?filetype=msix (Electron MSIX)", () => {
       buildMsixReleaseSet(OWNER, REPO),
     );
     const res = await supertest(app)
-      .get("/update/win32-x64/2.5.0?filetype=msix")
+      .get("/update/win32-x64/msix/2.5.0")
       .expect(200);
     expectSquirrelMacResponse(res.body);
     const path = new URL(res.body.url).pathname + new URL(res.body.url).search;
@@ -109,28 +107,14 @@ describe("/update/:platform/:version?filetype=msix (Electron MSIX)", () => {
     expect(download.headers.location).toContain(".msixbundle");
   });
 
-  it("supports filetype=msixbundle as well", async () => {
+  it("accepts the format segment case-insensitively", async () => {
+    // the feed url must embed the lowercased filetype or the follow-up
+    // download 400s (the download route's validation is case-sensitive)
     const { app } = configureTestAppWithReleases(
       buildMsixReleaseSet(OWNER, REPO),
     );
     const res = await supertest(app)
-      .get("/update/win32-x64/2.5.0?filetype=msixbundle")
-      .expect(200);
-    expectSquirrelMacResponse(res.body);
-    expect(res.body.url).toMatch(
-      /\/download\/version\/2\.7\.0\/windows_64\?filetype=msixbundle$/,
-    );
-  });
-
-  it("canonicalizes the filetype casing in the feed url", async () => {
-    // filetypeToPackageFormat accepts "MSIX" case-insensitively, and the
-    // download route's filetype validation is case-sensitive - the feed url
-    // must embed the lowercased filetype or the follow-up download 400s
-    const { app } = configureTestAppWithReleases(
-      buildMsixReleaseSet(OWNER, REPO),
-    );
-    const res = await supertest(app)
-      .get("/update/win32-x64/2.5.0?filetype=MSIX")
+      .get("/update/win32-x64/MSIX/2.5.0")
       .expect(200);
     expectSquirrelMacResponse(res.body);
     expect(res.body.url).toMatch(
@@ -144,19 +128,35 @@ describe("/update/:platform/:version?filetype=msix (Electron MSIX)", () => {
       buildBundleOnlyReleaseSet(OWNER, REPO),
     );
     const res = await supertest(app)
-      .get("/update/win32-x64/2.5.0?filetype=msix")
+      .get("/update/win32-x64/msix/2.5.0")
       .expect(200);
     expectSquirrelMacResponse(res.body);
     expect(res.body.name).toBe("2.7.0");
   });
 
   it("default windows updates keep resolving the platform default", async () => {
-    // no ?filetype: existing clients keep the zip-filetype feed url even
-    // when msix assets are published alongside the exe
+    // existing squirrel clients keep the zip-filetype feed url even when
+    // msix assets are published alongside the exe
     const { app } = configureTestAppWithReleases(
       buildMsixReleaseSet(OWNER, REPO),
     );
     const res = await supertest(app).get("/update/win32-x64/2.5.0").expect(200);
+    expectSquirrelMacResponse(res.body);
+    expect(res.body.url).toMatch(
+      /\/download\/version\/2\.7\.0\/windows_64\?filetype=zip$/,
+    );
+  });
+
+  it("ignores the removed ?filetype query on /update", async () => {
+    // 1.x-era semantics: ?filetype=msix selected the msix feed. 2.0 follows
+    // update.electronjs.org and only the format segment selects it; the
+    // query is ignored and the standard squirrel feed is served
+    const { app } = configureTestAppWithReleases(
+      buildMsixReleaseSet(OWNER, REPO),
+    );
+    const res = await supertest(app)
+      .get("/update/win32-x64/2.5.0?filetype=msix")
+      .expect(200);
     expectSquirrelMacResponse(res.body);
     expect(res.body.url).toMatch(
       /\/download\/version\/2\.7\.0\/windows_64\?filetype=zip$/,
