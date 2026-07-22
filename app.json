@@ -5,17 +5,31 @@
   "website": "https://github.com/dopry/pecans",
   "keywords": ["releases", "download", "github", "squirrel", "desktop"],
   "env": {
+    "GITHUB_OWNER": {
+      "description": "Owner (user or organization) of the releases repository"
+    },
     "GITHUB_REPO": {
-      "description": "Repository for the application's releases"
+      "description": "Name of the releases repository"
     },
     "GITHUB_TOKEN": {
-      "description": "Access token for GitHub API"
+      "description": "Access token with read access to the repository (optional for public repositories)",
+      "required": false
     },
-    "API_USERNAME": {
-      "description": "Username for private API access"
+    "PECANS_REFRESH_SECRET": {
+      "description": "Enables the GitHub-signed POST /webhook/refresh cache-bust endpoint (generate with: openssl rand -hex 32)",
+      "required": false
     },
-    "API_PASSWORD": {
-      "description": "Password for private API access"
+    "TRUST_PROXY": {
+      "description": "Express trust proxy setting for TLS-terminating proxies (e.g. true or loopback)",
+      "required": false
+    },
+    "PECANS_BASE_PATH": {
+      "description": "Path prefix when a proxy rewrites the path without telling express",
+      "required": false
+    },
+    "PECANS_CACHE_MAX_AGE": {
+      "description": "Release cache lifetime in seconds (default 7200)",
+      "required": false
     }
   }
 }

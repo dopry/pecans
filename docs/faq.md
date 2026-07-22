@@ -2,34 +2,49 @@
 
 ### Can I use a private repository?
 
-Pecans is designed to shares release assets from a private repository to the public.
+Yes — that's pecans' main job: it makes release assets from a private GitHub
+repository publicly downloadable (and updatable) without exposing a token to
+clients. Set `GITHUB_TOKEN` with read access to the repository.
 
-### Can I use a GitHub Enterprise / GitLab repository?
+### Can I use a GitHub Enterprise repository?
 
-Pecans can works with [other backends](https://github.com/dopry/pecans/tree/master/lib/backends) than GitHub. Feel free to post a Pull-Request to implement such backends!
+Yes — pass `baseUrl` to `PecansGitHubBackend` (see
+[module usage](module.md)). Other backends can be implemented by extending
+the exported `Backend` class; pull requests welcome.
 
-### Can I deploy it to Heroku?
+### Can I deploy it to Heroku / Docker?
 
-[Yes you can](deploy.md)!
+[Yes you can](deploy.md).
 
 ### Can I use it in my Node.js application?
 
-[Yes you can](module.md)!
+[Yes you can](module.md).
 
-### What file should I upload to the GitHub release?
+### What files should I upload to the GitHub release?
 
-Pecans can detect the type of file from its filename, there is no strict policy on file naming. Pecans tries to respect the filename/extension conventions for the different platforms. request:)
+Pecans detects os, architecture, and package format from filenames — there
+is no strict naming policy, but include the platform and arch in each name:
 
-- Windows: `.exe`, `.nupkg` etc
-- Linux: `.deb`, `.tar.gz`, etc
-- OS X: `.dmg`, etc
+- Windows: `MyApp-1.0.0-win32-x64-setup.exe`, `RELEASES` + `*.nupkg`
+  (Squirrel.Windows), `*.msix` / `*.msixbundle` (MSIX)
+- macOS: `MyApp-1.0.0-darwin-x64.zip` (Squirrel.Mac updates),
+  `MyApp-1.0.0-universal.dmg` (human downloads)
+- Linux: `MyApp-1.0.0-linux-x64.tar.gz`, `*.deb`, `*.rpm`
 
-By default releases are tagged as 32-bits (except for OSX), but 64-bits will also be detected from filenames.
+Unmarked architectures default to 64-bit; `arm64`, `ia32`/`i386`/`x86`, and
+`universal`/`univ` markers are recognized as delimited tokens.
 
 ### How should I tag my releases?
 
-Pecans requires applications to follow [SemVer](http://semver.org). And even if you're not using Pecans, you should follow it!
+Pecans requires [SemVer](https://semver.org) tags (a leading `v` is fine).
+The prerelease identifier is the release channel: `2.0.0-beta.3` lands on
+the `beta` channel, `2.0.0` on `stable`.
 
 ### Does pecans provide an Atom feed of versions?
 
-Yes, [See Feed URLS](./urls.md).
+No — the 1.x Atom feeds were removed in 2.0. Poll
+[`/api/versions`](api.md) instead.
+
+### I'm upgrading from 1.x — what changed?
+
+See the [migration guide](migrating-2.0.md).

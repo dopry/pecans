@@ -1,40 +1,49 @@
 # Upload assets for releases
 
-Pecans uses GitHub Releases and assets to serve the right file to the right user.
+Pecans serves assets straight from GitHub Releases. See GitHub's guides:
+[About Releases](https://docs.github.com/en/repositories/releasing-projects-on-github/about-releases).
 
-See GitHub guides: [About Releases](https://help.github.com/articles/about-releases/) & [Creating Releases](https://help.github.com/articles/creating-releases/).
+## Naming
 
-### Naming
+Pecans detects os, package format, and architecture from each asset's
+filename. There is no strict policy, but every marker must appear as a
+delimited token (`-x64`, `_arm64`) — letters inside words don't count.
 
-Pecans uses some filename/extension conventions to serve the correct asset to a specific request:
+**Operating system** — `win32`/`win64`/`.exe`/`.nupkg`/`.msix` → windows;
+`linux`/`ubuntu`/`.deb`/`.rpm`/`.tgz`/`.tar.gz` → linux;
+`mac`/`osx`/`darwin`/`.dmg` → osx. `RELEASES` is the Squirrel.Windows
+manifest.
 
-The platform/OS will be detected from the filename:
+**Architecture** — `x64`/`x86_64`/`amd64`/`64` → 64-bit;
+`ia32`/`i386`/`x86`/`32` → 32-bit; `universal`/`univ` → mac universal.
+Any `arm*` token (`arm64`, `arm`, `armv7l`) classifies as **arm64** —
+pecans does not model 32-bit ARM, so don't publish armv7 assets expecting
+them to be served separately from arm64 builds. Unmarked filenames default to 64-bit;
+`.msixbundle` is always multi-arch. electron-packager's `win32-x64` naming
+reads correctly (`win32` is the platform id, `x64` the arch).
 
-- Windows: filename should contain `win`
-- Mac/OS X: filename should contain `mac` or `osx`
-- Linux: filename should contain `linux`
+**Package format** — `.deb`, `.rpm`, `.msix`/`.msixbundle`. An asset with
+none of these is the platform's default package.
 
-By default releases are tagged as 32-bits (except for OSX), but 64-bits will also be detected from filenames.
+**Download priority by platform** (first match wins):
 
-Filetype and usage will be detected from the extension:
+| Platform | Extensions (by priority) |
+| -------- | ------------------------ |
+| Windows | `.exe` (default), `.msixbundle`/`.msix` (`?pkg=msix`) |
+| macOS | `.dmg` (downloads), `.zip` (Squirrel.Mac updates) |
+| Linux | `.tgz`/`.tar.gz` (default), `.deb` (`?pkg=deb`), `.rpm` (`?pkg=rpm`) |
 
-| Platform | Extensions (sorted by priority) |
-| -------- | ---------- |
-| Windows | `.exe`, `.nupkg`, `.zip` |
-| OS X | `.dmg`, `.zip` |
-| Linux | `.deb`, `.rpm`, `.zip` |
-
-
-### Example
-
-Here is a list of files in one of the latest release of our [GitBook Editor](https://www.gitbook.com/editor):
+## Example
 
 ```
-gitbook-editor-5.0.0-beta.10-linux-ia32.deb
-gitbook-editor-5.0.0-beta.10-linux-x64.deb
-gitbook-editor-5.0.0-beta.10-osx-x64.dmg
-gitbook-editor-5.0.0-beta.10-osx-x64.zip
-GitBook.Editor.Setup.exe
-GitBook_Editor-5.0.0.2010-full.nupkg
+myapp-2.4.0-darwin-x64.zip
+myapp-2.4.0-darwin-arm64.zip
+myapp-2.4.0-universal.dmg
+myapp-2.4.0-win32-x64-setup.exe
+myapp-2.4.0-win32-arm64-setup.exe
+MyApp_2.4.0_x64.msix
+myapp-2.4.0-linux-x64.tar.gz
+myapp-2.4.0-linux-arm64.deb
+myapp-2.4.0-full.nupkg
 RELEASES
 ```

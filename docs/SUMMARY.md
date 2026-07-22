@@ -2,6 +2,7 @@
 
 - [F.A.Q](faq.md)
 - [URL Routing](urls.md)
+- [Migrating from 1.x to 2.x](migrating-2.0.md)
 
 ---
 
@@ -13,6 +14,5 @@
 
 ---
 
-- [Debug API](api.md)
-- [Node.js Middleware](module.md)
-
+- [API](api.md)
+- [Node.js Module](module.md)

@@ -5,17 +5,16 @@ Pecans is an Electron Release Server.
 ## Features
 
 - Download URLs (the client chooses the platform; user-agent autodetection was removed in 2.0)
-  - `/download/:platform` — latest build for a platform (`osx_64`, `windows_64`, `windows_arm64`, `linux_arm64`, … legacy and update.electronjs.org-style aliases like `darwin`, `win32`, `mac-arm64`, `win32-arm64`, `linux-arm64` are accepted; bare-os requests such as `/download/windows` never default to an arm64 build)
+  - `/download/:platform` — latest build for a platform (`osx_64`, `windows_64`, `windows_arm64`, `linux_arm64`, … legacy and update.electronjs.org-style aliases like `darwin`, `win32`, `mac-arm64`, `win32-arm64`, `linux-arm64` are accepted; on bare-os requests such as `/download/windows`, arm64 ranks last and is only served when it is the sole matching build)
   - `/download/channel/:channel/:platform` — latest build on a release channel
   - `/download/version/:tag/:platform` — a specific version
   - `/download/:tag/:filename` — a specific release asset by filename
-  - `/dl/:os/:arch` — resolve by discrete OS (`osx`, `windows`, `linux`) and arch (`32`, `64`, `arm64`, `universal`; arm64 is supported for all three OSes since 2.0); supports `?channel`, `?version`, and `?pkg` (`deb`/`rpm`) queries
+  - `/dl/:os/:arch` — resolve by discrete OS (`osx`, `windows`, `linux`) and arch (`32`, `64`, `arm64` for all three OSes since 2.0, plus `universal` for `osx` and `windows`); supports `?channel`, `?version`, and `?pkg` (`deb`/`rpm`/`msix`) queries
   - `/dl/:filename` — a release asset by filename
 - Auto-updates with [Squirrel](https://github.com/Squirrel)
   - For Mac using Squirrel.Mac
     - `/update/:platform/:version`
     - `/update/channel/:channel/:platform/:version`
-    - `/update?version=<x.x.x>&platform=osx` (deprecated; redirects to `/update/:platform/:version`)
   - For Windows using Squirrel.Windows and NuGet packages
     - `/update/:platform/:version/RELEASES`
     - `/update/channel/:channel/:platform/:version/RELEASES`
@@ -72,6 +71,12 @@ environment variable — `configure()` passes it to the backend as the
   in 2.0 — query strings leak secrets into proxy and access logs). A valid
   request responds `200 {"refreshed": true}`; a missing or wrong secret
   responds `403`. Use a high-entropy secret, e.g. `openssl rand -hex 32`.
+
+## Migrating from 1.x
+
+2.0 is a major release: ESM-only, hardened routes, and
+update.electronjs.org semantics. Every breaking change and its replacement
+is listed in the [migration guide](docs/migrating-2.0.md).
 
 ## Documentation
 
