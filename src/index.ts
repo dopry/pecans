@@ -15,12 +15,23 @@ export * from "./pecans.js";
 export * from "./service.js";
 export * from "./utils/index.js";
 
+const DEFAULT_CACHE_MAX_AGE = 60 * 60 * 2; // 2 hours in seconds
+
+/**
+ * Parse the PECANS_CACHE_MAX_AGE env var (seconds). A missing or
+ * non-numeric value falls back to the default: a NaN would flow into the
+ * backend's cache-age comparison, where every check comes out false and
+ * the cache is never refreshed after the initial fetch.
+ */
+export function parseCacheMaxAge(value: string | undefined): number {
+  const parsed = Number.parseInt(value ?? "", 10);
+  return Number.isNaN(parsed) ? DEFAULT_CACHE_MAX_AGE : parsed;
+}
+
 export function configure() {
   const PECANS_BACKEND = process.env.PECANS_BACKEND || "PecansGithubBackend";
   const basePath = process.env.PECANS_BASE_PATH || "";
-  const cacheMaxAge = process.env.PECANS_CACHE_MAX_AGE
-    ? parseInt(process.env.PECANS_CACHE_MAX_AGE)
-    : 60 * 60 * 2; // Default 2 hours
+  const cacheMaxAge = parseCacheMaxAge(process.env.PECANS_CACHE_MAX_AGE);
   // enables POST /webhook/refresh (see README); without it the cache-bust
   // endpoint stays disabled
   const refreshSecret = process.env.PECANS_REFRESH_SECRET;

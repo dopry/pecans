@@ -1,6 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { PecansGitHubBackend } from "../../src/backends/index.js";
-import { configure, parseTrustProxy } from "../../src/index.js";
+import {
+  configure,
+  parseCacheMaxAge,
+  parseTrustProxy,
+} from "../../src/index.js";
 
 describe("Index", () => {
   let originalEnv: NodeJS.ProcessEnv;
@@ -103,6 +107,24 @@ describe("Index", () => {
 
       // Clean up
       delete process.env.PECANS_BACKEND;
+    });
+  });
+
+  describe("parseCacheMaxAge", () => {
+    it("parses numeric values as seconds", () => {
+      expect(parseCacheMaxAge("3600")).toBe(3600);
+      expect(parseCacheMaxAge("0")).toBe(0);
+    });
+
+    it("falls back to the 2 hour default when unset", () => {
+      expect(parseCacheMaxAge(undefined)).toBe(7200);
+      expect(parseCacheMaxAge("")).toBe(7200);
+    });
+
+    it("falls back to the 2 hour default for non-numeric values", () => {
+      // NaN would disable cache refreshes entirely: the backend's
+      // cacheAge > cacheMaxAgeMs check is always false against NaN
+      expect(parseCacheMaxAge("garbage")).toBe(7200);
     });
   });
 
