@@ -59,7 +59,6 @@ class MockBackend extends Backend {
       // Create mock releases with proper structure
       const mockRelease = new PecansRelease({
         version: "1.0.0",
-        channel: "stable",
         notes: "Test release notes",
         published_at: new Date("2023-01-01"),
         assets: [
@@ -440,7 +439,6 @@ describe("Pecans", () => {
 
       it("should merge custom options with defaults", () => {
         const customOpts: PecansOptions = {
-          timeout: 30000,
           basePath: "/api",
           cacheMaxAge: 1800,
           preferUniversal: false,
@@ -457,7 +455,6 @@ describe("Pecans", () => {
 
       it("should set default values for missing required options", () => {
         const opts = {
-          timeout: 0,
           cacheMaxAge: 0,
           basePath: "",
         } as PecansOptions;
@@ -466,7 +463,6 @@ describe("Pecans", () => {
       });
 
       it("should have correct default values", () => {
-        expect(Pecans.defaults.timeout).toBe(60 * 60 * 1000);
         expect(Pecans.defaults.cacheMaxAge).toBe(60 * 60 * 2);
         expect(Pecans.defaults.basePath).toBe("");
         expect(Pecans.defaults.preferUniversal).toBe(true);
@@ -767,7 +763,6 @@ describe("Pecans", () => {
           // Create release with no matching assets
           const mockReleaseWithNoAssets = new PecansRelease({
             version: "2.0.0",
-            channel: "stable",
             notes: "Test",
             published_at: new Date(),
             assets: [],
@@ -794,7 +789,6 @@ describe("Pecans", () => {
           // Create release with assets that don't match the requested filename
           const mockReleaseWithDifferentAssets = new PecansRelease({
             version: "1.0.0",
-            channel: "stable",
             notes: "Test",
             published_at: new Date(),
             assets: [
@@ -852,7 +846,6 @@ describe("Pecans", () => {
           // Create a release that matches filename query but has assets that don't match
           const mockRelease = new PecansRelease({
             version: "1.0.0",
-            channel: "stable",
             notes: "Test",
             published_at: new Date(),
             assets: [
@@ -942,7 +935,6 @@ describe("Pecans", () => {
           // Create releases that exist but won't match the query due to different OS
           const mockReleaseWithDifferentOS = new PecansRelease({
             version: "1.0.0",
-            channel: "stable",
             notes: "Test",
             published_at: new Date(),
             assets: [
@@ -979,7 +971,6 @@ describe("Pecans", () => {
           // Mock release with no matching assets for the platform
           const mockReleaseWithDifferentAssets = new PecansRelease({
             version: "1.0.0",
-            channel: "stable",
             notes: "Test",
             published_at: new Date(),
             assets: [
@@ -1016,7 +1007,6 @@ describe("Pecans", () => {
           // Create release with Linux asset that has unsupported extension for the requested pkg format
           const mockReleaseWithWrongExtension = new PecansRelease({
             version: "1.0.0",
-            channel: "stable",
             notes: "Test",
             published_at: new Date(),
             assets: [
@@ -1071,7 +1061,6 @@ describe("Pecans", () => {
           // Create release with Linux deb assets
           const mockReleaseWithLinuxAssets = new PecansRelease({
             version: "1.0.0",
-            channel: "stable",
             notes: "Test",
             published_at: new Date(),
             assets: [
@@ -1319,7 +1308,6 @@ describe("Pecans", () => {
               }
               return new PecansRelease({
                 version: "1.0.0",
-                channel: "stable",
                 notes: "Test release notes",
                 published_at: new Date(),
                 assets: [
@@ -1379,47 +1367,6 @@ describe("Pecans", () => {
     describe("Update endpoints", () => {
       beforeEach(() => {
         pecans = new Pecans(mockBackend);
-      });
-
-      describe("handleUpdateRedirect", () => {
-        it("should redirect with platform and version parameters", () => {
-          const req = createMockRequest({
-            query: { platform: "osx_64", version: "1.0.0" },
-          });
-          const res = createMockResponse();
-          const next = createMockNext();
-
-          (pecans as any).handleUpdateRedirect(req, res, next);
-
-          expect(res.redirect).toHaveBeenCalledWith("/update/osx_64/1.0.0");
-          expect(next).not.toHaveBeenCalled();
-        });
-
-        it("should call next with error when version is missing", () => {
-          const req = createMockRequest({
-            query: { platform: "osx_64" },
-          });
-          const res = createMockResponse();
-          const next = createMockNext();
-
-          (pecans as any).handleUpdateRedirect(req, res, next);
-
-          expect(next).toHaveBeenCalledWith(expect.any(Error));
-          expect(res.redirect).not.toHaveBeenCalled();
-        });
-
-        it("should call next with error when platform is missing", () => {
-          const req = createMockRequest({
-            query: { version: "1.0.0" },
-          });
-          const res = createMockResponse();
-          const next = createMockNext();
-
-          (pecans as any).handleUpdateRedirect(req, res, next);
-
-          expect(next).toHaveBeenCalledWith(expect.any(Error));
-          expect(res.redirect).not.toHaveBeenCalled();
-        });
       });
 
       describe("handleUpdateOSX", () => {

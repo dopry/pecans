@@ -38,7 +38,6 @@ describe("resolveAssetForRelease", () => {
     // Helper function to create test release
     const createRelease = (assets: PecansAssetDTO[]): PecansReleaseDTO => ({
       assets,
-      channel: "stable",
       notes: "Release notes",
       published_at: new Date(),
       version: "1.0.0",

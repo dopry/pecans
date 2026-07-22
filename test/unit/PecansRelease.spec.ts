@@ -9,7 +9,6 @@ import {
   type PecansAssetDTO,
 } from "../../src/models/PecansAsset.js";
 import type { PecansReleaseQuery } from "../../src/models/PecansReleaseQuery.js";
-import { channelFromVersion } from "../../src/utils/channelFromVersion.js";
 
 describe("PecansRelease", () => {
   const createMockAssetDTO = (
@@ -32,7 +31,6 @@ describe("PecansRelease", () => {
       assets: [createMockAssetDTO()],
       // keep the fixture internally consistent: an explicit channel override
       // wins, otherwise derive it from the effective version
-      channel: channelFromVersion(version),
       notes: "Release notes",
       published_at: new Date("2023-01-01"),
       version,
@@ -67,7 +65,6 @@ describe("PecansRelease", () => {
       const release = new PecansRelease(
         createMockReleaseDTO({
           version: "1.0.0-beta.1",
-          channel: "nightly",
         }),
       );
       expect(release.channel).toBe("beta");

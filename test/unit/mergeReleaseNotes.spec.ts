@@ -9,7 +9,6 @@ describe("mergeReleaseNotes", () => {
   const createMockRelease = (version: string, notes?: string) => {
     return new PecansRelease({
       version,
-      channel: "stable",
       published_at: new Date("2025-01-01T00:00:00Z"),
       notes: notes || `Release notes for ${version}`,
       assets: [],
@@ -35,7 +34,6 @@ describe("mergeReleaseNotes", () => {
       const releases = [
         new PecansRelease({
           version: "v1.0.0",
-          channel: "stable",
           published_at: new Date("2025-01-01T00:00:00Z"),
           notes: "", // Empty string is falsy
           assets: [],
@@ -85,7 +83,6 @@ describe("mergeReleaseNotes", () => {
     it("should handle releases with empty notes", () => {
       const release = new PecansRelease({
         version: "v1.0.0",
-        channel: "stable",
         published_at: new Date("2025-01-01T00:00:00Z"),
         notes: "", // Empty notes should use fallback
         assets: [],
@@ -99,7 +96,6 @@ describe("mergeReleaseNotes", () => {
     it("should handle releases with null notes", () => {
       const release = new PecansRelease({
         version: "v1.0.0",
-        channel: "stable",
         published_at: new Date("2025-01-01T00:00:00Z"),
         notes: "",
         assets: [],

@@ -13,7 +13,6 @@ import {
 } from "../models/index.js";
 // keep the module graph cycle-free: import specific util modules rather
 // than the ../utils barrel
-import { channelFromVersion } from "../utils/channelFromVersion.js";
 import { filenameToPlatform } from "../utils/platforms.js";
 import { PecansReleases } from "../models/PecansReleases.js";
 import { clean } from "semver";
@@ -248,7 +247,6 @@ export class PecansGitHubBackend extends Backend<GithubReleaseAsset> {
   normalizeRelease(release: GithubRelease): PecansRelease {
     const version =
       clean(release.tag_name, { loose: true }) || release.tag_name;
-    const channel = channelFromVersion(version);
     const notes = release.body || "";
     const published_at = release.published_at
       ? new Date(release.published_at)
@@ -274,7 +272,6 @@ export class PecansGitHubBackend extends Backend<GithubReleaseAsset> {
       .filter(isPecansAsset<GithubReleaseAsset>);
     const dto: PecansReleaseDTO = {
       version,
-      channel,
       notes,
       published_at,
       assets,
@@ -298,29 +295,5 @@ export class PecansGitHubBackend extends Backend<GithubReleaseAsset> {
       raw,
     };
     return new PecansAsset(dto);
-  }
-}
-
-// @deprecated
-export class GitHubBackend extends PecansGitHubBackend {
-  constructor(
-    protected token: string,
-    protected owner: string,
-    protected repo: string,
-    opts: PecansGitHubBackendOpts = {},
-  ) {
-    console.warn(
-      "GitHubBackend has been deprecated in favor of the namespaced PecansGithubBackend",
-    );
-    if (!token) {
-      throw new Error("Github Token Required");
-    }
-    if (!owner) {
-      throw new Error("Github Owner Required");
-    }
-    if (!repo) {
-      throw new Error("Github Repo Required");
-    }
-    super(owner, repo, token, opts);
   }
 }

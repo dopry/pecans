@@ -24,7 +24,6 @@ import {
   createUpdateFormatHandler,
   createUpdateFormatWinHandler,
   createUpdateOSXHandler,
-  createUpdateRedirectHandler,
   createUpdateWinHandler,
 } from "./http/updates.js";
 import type {
@@ -43,8 +42,6 @@ export * from "./http/query.js";
 const logger = Debug("pecans");
 
 export interface PecansSettings {
-  /** @deprecated accepted but unused (defaulted, no functional effect); will be removed in 3.0 */
-  timeout: number;
   /** Base path for all routes */
   basePath: string;
   /** Max age for releases cache (seconds) */
@@ -67,7 +64,6 @@ export class Pecans extends EventEmitter {
   protected opts: PecansSettings;
 
   static defaults: PecansSettings = {
-    timeout: 60 * 60 * 1000,
     cacheMaxAge: 60 * 60 * 2,
     basePath: "",
     preferUniversal: true,
@@ -90,7 +86,6 @@ export class Pecans extends EventEmitter {
     apiChannels: ReturnType<typeof createApiChannelsHandler>;
     apiStatus: ReturnType<typeof createApiStatusHandler>;
     apiVersions: ReturnType<typeof createApiVersionsHandler>;
-    updateRedirect: ReturnType<typeof createUpdateRedirectHandler>;
     updateOSX: ReturnType<typeof createUpdateOSXHandler>;
     updateWin: ReturnType<typeof createUpdateWinHandler>;
     updateFormat: ReturnType<typeof createUpdateFormatHandler>;
@@ -105,7 +100,6 @@ export class Pecans extends EventEmitter {
     super();
     this.opts = Object.assign({}, Pecans.defaults, opts);
     if (!this.opts.cacheMaxAge) this.opts.cacheMaxAge = 60 * 60 * 2;
-    if (!this.opts.timeout) this.opts.timeout = 60 * 60 * 1000;
     if (!this.opts.basePath) this.opts.basePath = "";
 
     this.service = new ReleaseService(this.backend, {
@@ -133,7 +127,6 @@ export class Pecans extends EventEmitter {
       apiChannels: createApiChannelsHandler(this.ctx),
       apiStatus: createApiStatusHandler(this.ctx),
       apiVersions: createApiVersionsHandler(this.ctx),
-      updateRedirect: createUpdateRedirectHandler(this.ctx),
       updateOSX: createUpdateOSXHandler(this.ctx),
       updateWin: createUpdateWinHandler(this.ctx),
       updateFormat: createUpdateFormatHandler(this.ctx),
@@ -181,8 +174,6 @@ export class Pecans extends EventEmitter {
     this.router.get("/api/versions", this.handleApiVersions.bind(this));
 
     this.router.get("/notes{/:version}", this.handleServeNotes.bind(this));
-    // @deprecated - the /update endpoint is deprecated, please use /update/:platform/:version
-    this.router.get("/update", this.handleUpdateRedirect.bind(this));
     this.router.get(
       "/update/:platform/:version",
       this.handleUpdateOSX.bind(this),
@@ -268,14 +259,6 @@ export class Pecans extends EventEmitter {
     next: NextFunction,
   ) {
     return this.handlers.apiVersions(req, res, next);
-  }
-
-  protected handleUpdateRedirect(
-    req: Request,
-    res: Response,
-    next: NextFunction,
-  ) {
-    return this.handlers.updateRedirect(req, res, next);
   }
 
   protected async handleUpdateOSX(
