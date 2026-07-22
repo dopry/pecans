@@ -28,7 +28,6 @@ function asset(filename: string, type: Platform) {
 function release(version: string, assets: ReturnType<typeof asset>[]) {
   return new PecansRelease({
     version,
-    channel: "ignored",
     notes: `notes ${version}`,
     published_at: new Date(`2024-01-0${1 + (version.charCodeAt(2) % 8)}`),
     assets,

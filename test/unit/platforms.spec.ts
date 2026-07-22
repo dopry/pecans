@@ -46,7 +46,6 @@ type FilenameResolveTestTuple = [
 
 const release: PecansReleaseDTO = {
   version: "v3.3.1",
-  channel: "stable",
   published_at: new Date(),
   notes: "",
   assets: [

@@ -177,48 +177,15 @@ describe("/update/channel/:channel/:platform/:version (Squirrel.Mac)", () => {
   });
 });
 
-describe("/update (deprecated redirect)", () => {
+describe("/update (redirect removed in 2.0)", () => {
   afterEach(() => nock.cleanAll());
 
-  it("redirects to /update/:platform/:version", async () => {
+  // the nuts-era /update?platform=&version= redirect was removed with the
+  // rest of the 1.x deprecations; clients use /update/:platform/:version
+  it("404s the removed query-style endpoint", async () => {
     const { app } = configureTestAppWithReleases(
       buildStableReleaseSet(OWNER, REPO),
     );
-    const res = await supertest(app)
-      .get("/update?platform=osx&version=2.5.0")
-      .expect(302);
-    expect(res.headers.location).toBe("/update/osx/2.5.0");
-  });
-
-  it("400s when version or platform is missing", async () => {
-    const { app } = configureTestAppWithReleases(
-      buildStableReleaseSet(OWNER, REPO),
-    );
-    await supertest(app).get("/update?platform=osx").expect(400);
-    await supertest(app).get("/update?version=2.5.0").expect(400);
-  });
-
-  // regression: repeated params parse as arrays and must 400 rather than
-  // producing a malformed redirect path like /update/osx,win/1.0.0
-  it("400s on repeated query params", async () => {
-    const { app } = configureTestAppWithReleases(
-      buildStableReleaseSet(OWNER, REPO),
-    );
-    await supertest(app)
-      .get("/update?platform=osx&platform=win&version=2.5.0")
-      .expect(400);
-    await supertest(app)
-      .get("/update?platform=osx&version=2.5.0&version=2.6.0")
-      .expect(400);
-  });
-
-  it("encodes the platform and version into the redirect path", async () => {
-    const { app } = configureTestAppWithReleases(
-      buildStableReleaseSet(OWNER, REPO),
-    );
-    const res = await supertest(app)
-      .get("/update?platform=osx%2F..&version=2.5.0")
-      .expect(302);
-    expect(res.headers.location).toBe("/update/osx%2F../2.5.0");
+    await supertest(app).get("/update?platform=osx&version=2.5.0").expect(404);
   });
 });

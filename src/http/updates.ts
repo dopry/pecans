@@ -6,33 +6,7 @@ import { filetypeToPackageFormat } from "../utils/PackageFormat.js";
 import { mapLegacyPlatform, platformToQuery } from "../utils/platforms.js";
 import { generateRELEASES, parseRELEASES } from "../utils/win-releases.js";
 import type { PecansHttpContext } from "./context.js";
-import {
-  getStringParam,
-  getStringValueFromRequestQuery,
-  validateReqQueryPlatform,
-} from "./query.js";
-
-/** GET /update - @deprecated redirect to /update/:platform/:version. */
-export function createUpdateRedirectHandler(ctx: PecansHttpContext) {
-  return (req: Request, res: Response, next: NextFunction) => {
-    try {
-      // repeated params parse as arrays; only single strings form a valid
-      // redirect path, and they are encoded before being embedded in it
-      const version = getStringValueFromRequestQuery(req.query, "version");
-      if (!version) throw new BadRequestError('Requires "version" parameter');
-      const platform = getStringValueFromRequestQuery(req.query, "platform");
-      if (!platform) throw new BadRequestError('Requires "platform" parameter');
-      return res.redirect(
-        "/update/" +
-          encodeURIComponent(platform) +
-          "/" +
-          encodeURIComponent(version),
-      );
-    } catch (err) {
-      next(err);
-    }
-  };
-}
+import { getStringParam, validateReqQueryPlatform } from "./query.js";
 
 /**
  * GET /update/:platform/:version (+ channel variant) - Squirrel.Mac update

@@ -8,7 +8,6 @@ describe("sortReleaseBySemVerDescending", () => {
     return new PecansRelease({
       version,
       assets: [],
-      channel: "stable",
       notes: "Test release",
       published_at: new Date("2023-01-01"),
     });

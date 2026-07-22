@@ -9,7 +9,6 @@ import {
   type PecansAssetDTO,
 } from "../../src/models/PecansAsset.js";
 import type { PecansReleaseQuery } from "../../src/models/PecansReleaseQuery.js";
-import { channelFromVersion } from "../../src/utils/channelFromVersion.js";
 
 describe("PecansRelease", () => {
   const createMockAssetDTO = (
@@ -30,9 +29,6 @@ describe("PecansRelease", () => {
     const version = overrides.version ?? "1.0.0";
     return {
       assets: [createMockAssetDTO()],
-      // keep the fixture internally consistent: an explicit channel override
-      // wins, otherwise derive it from the effective version
-      channel: channelFromVersion(version),
       notes: "Release notes",
       published_at: new Date("2023-01-01"),
       version,
@@ -61,16 +57,13 @@ describe("PecansRelease", () => {
       expect(release.channel).toBe("beta");
     });
 
-    it("should ignore dto.channel - the version string is the source of truth", () => {
-      // PecansReleaseDTO.channel is deprecated and deliberately ignored so
-      // channel and version can never disagree
-      const release = new PecansRelease(
-        createMockReleaseDTO({
-          version: "1.0.0-beta.1",
-          channel: "nightly",
-        }),
-      );
-      expect(release.channel).toBe("beta");
+    it("derives the stable channel for release versions", () => {
+      // no prerelease identifier means the stable channel; numeric-only
+      // prerelease ids (1.0.0-2) also fall back to stable
+      expect(new PecansRelease(createMockReleaseDTO()).channel).toBe("stable");
+      expect(
+        new PecansRelease(createMockReleaseDTO({ version: "1.0.0-2" })).channel,
+      ).toBe("stable");
     });
 
     it("should filter out assets that fail to parse", () => {

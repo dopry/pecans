@@ -5,7 +5,6 @@ import { Readable } from "node:stream";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   type GithubReleaseAsset,
-  GitHubBackend,
   PecansGitHubBackend,
   PecansGitHubBackendSettings,
 } from "../../src/backends/github.js";
@@ -802,41 +801,5 @@ describe("PecansGitHubBackend", () => {
       // raw carries the full GitHub asset for this backend's later use
       expect(result.raw).toBe(githubAsset);
     });
-  });
-});
-
-describe("GitHubBackend (deprecated)", () => {
-  let consoleWarnSpy: ReturnType<typeof vi.spyOn>;
-
-  beforeEach(() => {
-    consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
-  });
-
-  it("should create backend and show deprecation warning", () => {
-    const backend = new GitHubBackend("token", "owner", "repo");
-
-    expect(backend).toBeInstanceOf(GitHubBackend);
-    expect(backend).toBeInstanceOf(PecansGitHubBackend);
-    expect(consoleWarnSpy).toHaveBeenCalledWith(
-      "GitHubBackend has been deprecated in favor of the namespaced PecansGithubBackend",
-    );
-  });
-
-  it("should throw error if token is missing", () => {
-    expect(() => new GitHubBackend("", "owner", "repo")).toThrow(
-      "Github Token Required",
-    );
-  });
-
-  it("should throw error if owner is missing", () => {
-    expect(() => new GitHubBackend("token", "", "repo")).toThrow(
-      "Github Owner Required",
-    );
-  });
-
-  it("should throw error if repo is missing", () => {
-    expect(() => new GitHubBackend("token", "owner", "")).toThrow(
-      "Github Repo Required",
-    );
   });
 });

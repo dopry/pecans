@@ -9,12 +9,6 @@ import type { PecansReleaseQuery } from "./PecansReleaseQuery.js";
 export interface PecansReleaseDTO {
   // version
   assets: PecansAssetDTO[];
-  /**
-   * @deprecated ignored - the channel is always derived from the version's
-   * prerelease identifier (channelFromVersion), so channel and version can
-   * never disagree. Will be removed in 3.0.
-   */
-  channel: string;
   notes: string;
   // missing published_at indicates a draft that hasn't been published.
   published_at: Date;
@@ -31,14 +25,15 @@ export function isPecansAsset<TRaw = unknown>(
 
 export class PecansRelease implements PecansReleaseDTO {
   assets: PecansAsset[];
+  /** always derived from the version's prerelease identifier; a release's
+   * channel and version can never disagree (the 1.x DTO channel field was
+   * removed in 2.0) */
   channel: string;
   notes: string;
   published_at: Date;
   version: string;
 
   constructor(dto: PecansReleaseDTO) {
-    // the version string is the single source of truth for the channel;
-    // dto.channel is deliberately ignored (see PecansReleaseDTO.channel)
     this.channel = channelFromVersion(dto.version);
     this.assets = dto.assets
       .map((assetDTO) => {

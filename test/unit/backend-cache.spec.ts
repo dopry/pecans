@@ -28,7 +28,6 @@ class TestBackend extends Backend {
 
     const mockReleaseDTO: PecansReleaseDTO = {
       version: "v1.0.0",
-      channel: "stable",
       published_at: new Date("2025-01-01T00:00:00Z"),
       notes: "Test release",
       assets: [mockAssetDTO],

@@ -5,7 +5,6 @@ import {
   type PecansReleaseDTO,
 } from "../../src/models/PecansRelease.js";
 import type { PecansAssetDTO } from "../../src/models/PecansAsset.js";
-import { channelFromVersion } from "../../src/utils/channelFromVersion.js";
 
 describe("PecansReleases", () => {
   const createMockAssetDTO = (filename: string): PecansAssetDTO => ({
@@ -27,7 +26,6 @@ describe("PecansReleases", () => {
     const effectiveVersion = overrides.version ?? version;
     return {
       assets: [createMockAssetDTO(`${effectiveVersion}-app.dmg`)],
-      channel: channelFromVersion(effectiveVersion),
       notes: `Release notes for ${effectiveVersion}`,
       published_at: publishedAt,
       version: effectiveVersion,
