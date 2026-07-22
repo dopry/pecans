@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import {
   buildAsset,
   buildFullPlatformAssets,
+  buildMixedChannelReleaseSet,
   buildRelease,
   buildRELEASESContentForVersion,
   buildStableReleaseSet,
@@ -143,6 +144,103 @@ describe("/update/:platform/:format/:version/RELEASES", () => {
       .get("/update/win32-x64/msix/2.5.0/RELEASES")
       .expect(404);
     expect(res.text).toContain("Unsupported update format");
+  });
+});
+
+// channel variants are a pecans extension (uejs has no channel concept);
+// channel-in-path survives Squirrel.Windows appending /RELEASES to the
+// feed url, unlike a ?channel= query would
+describe("/update/channel/:channel/:platform/:format/:version", () => {
+  afterEach(() => nock.cleanAll());
+
+  /** beta releases carrying msix assets alongside the full matrix */
+  function buildBetaMsixReleaseSet(owner: string, repo: string) {
+    return ["2.8.0-beta.2", "2.8.0-beta.1"].map((version) =>
+      buildRelease({
+        owner,
+        repo,
+        version,
+        prerelease: true,
+        assets: [
+          ...buildFullPlatformAssets(owner, repo, version),
+          buildAsset(owner, repo, `app_${version}_x64.msix`),
+        ],
+      }),
+    );
+  }
+
+  it("squirrel serves the channel's feed", async () => {
+    const { app } = configureTestAppWithReleases(
+      buildMixedChannelReleaseSet(OWNER, REPO),
+    );
+    const res = await supertest(app)
+      .get("/update/channel/beta/darwin-arm64/squirrel/2.8.0-beta.1")
+      .expect(200);
+    expectSquirrelMacResponse(res.body);
+    expect(res.body.name).toBe("2.8.0-beta.2");
+  });
+
+  it("msix serves the channel's msix feed", async () => {
+    const { app } = configureTestAppWithReleases(
+      buildBetaMsixReleaseSet(OWNER, REPO),
+    );
+    const res = await supertest(app)
+      .get("/update/channel/beta/win32-x64/msix/2.8.0-beta.1")
+      .expect(200);
+    expectSquirrelMacResponse(res.body);
+    expect(res.body.name).toBe("2.8.0-beta.2");
+    expect(res.body.url).toMatch(/windows_64\?filetype=msix$/);
+  });
+
+  it("404s an unknown format on the channel route", async () => {
+    const { app } = configureTestAppWithReleases(
+      buildMixedChannelReleaseSet(OWNER, REPO),
+    );
+    const res = await supertest(app)
+      .get("/update/channel/beta/darwin-x64/appx/2.8.0-beta.1")
+      .expect(404);
+    expect(res.text).toContain("Unsupported update format");
+  });
+
+  it("squirrel serves the channel RELEASES manifest", async () => {
+    // Squirrel.Windows appends /RELEASES to the configured feed url
+    const { app, backend } = configureTestAppWithReleases(
+      buildMixedChannelReleaseSet(OWNER, REPO),
+    );
+    const releasesAsset = await findAsset(backend, "2.8.0-beta.2", "RELEASES");
+    nockGithubAssetContent(
+      nock,
+      OWNER,
+      REPO,
+      releasesAsset,
+      buildRELEASESContentForVersion("2.8.0-beta.2"),
+    );
+    const res = await supertest(app)
+      .get("/update/channel/beta/win32-x64/squirrel/2.8.0-beta.1/RELEASES")
+      .expect(200);
+    const body = Buffer.isBuffer(res.body)
+      ? res.body.toString("utf-8")
+      : (res.text ?? "");
+    expect(body).toContain("/dl/");
+  });
+
+  it("keeps the literal RELEASES tail on the legacy channel route", async () => {
+    // /update/channel/:channel/:platform/:version/RELEASES must not be
+    // captured by the channel format route (version read as :format)
+    const { app, backend } = configureTestAppWithReleases(
+      buildMixedChannelReleaseSet(OWNER, REPO),
+    );
+    const releasesAsset = await findAsset(backend, "2.8.0-beta.2", "RELEASES");
+    nockGithubAssetContent(
+      nock,
+      OWNER,
+      REPO,
+      releasesAsset,
+      buildRELEASESContentForVersion("2.8.0-beta.2"),
+    );
+    await supertest(app)
+      .get("/update/channel/beta/win32-x64/2.8.0-beta.1/RELEASES")
+      .expect(200);
   });
 });
 

@@ -200,14 +200,25 @@ export class Pecans extends EventEmitter {
       this.handleUpdateWin.bind(this),
     );
     // update.electronjs.org-compatible format segment (squirrel | msix).
-    // Registered after /update/:platform/:version/RELEASES so a literal
-    // RELEASES tail keeps hitting the Squirrel.Windows manifest route.
+    // Registered after the literal-RELEASES routes so a RELEASES tail keeps
+    // hitting the Squirrel.Windows manifest routes. The channel variants
+    // are a pecans extension (uejs has no channel concept), mirroring the
+    // existing channel routes: channel-in-path survives Squirrel.Windows
+    // appending /RELEASES to the feed url and keeps one channel idiom.
     this.router.get(
       "/update/:platform/:format/:version",
       this.handleUpdateFormat.bind(this),
     );
     this.router.get(
       "/update/:platform/:format/:version/RELEASES",
+      this.handleUpdateFormatWin.bind(this),
+    );
+    this.router.get(
+      "/update/channel/:channel/:platform/:format/:version",
+      this.handleUpdateFormat.bind(this),
+    );
+    this.router.get(
+      "/update/channel/:channel/:platform/:format/:version/RELEASES",
       this.handleUpdateFormatWin.bind(this),
     );
 

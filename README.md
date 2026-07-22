@@ -32,6 +32,9 @@ Pecans is an Electron Release Server.
       to select the msix feed: the nuts-era `?filetype` query on `/update`
       was removed in 2.0 (`?filetype` remains on `/download`, where the
       feed-minted urls use it)
+    - channel variants (a pecans extension; uejs has no channel concept):
+      `/update/channel/:channel/:platform/:format/:version` (+ `/RELEASES`),
+      e.g. `/update/channel/beta/win32-x64/msix/1.2.3`
 - API
   - `/api/channels` — release channels with their latest versions
   - `/api/versions` — releases, filterable with `?channel`, `?platform`, `?version`
