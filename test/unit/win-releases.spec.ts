@@ -44,16 +44,33 @@ describe("Windows RELEASES", function () {
       expect(releases.length).toBe(5);
     });
 
-    it("should parse a multi-line file with CRLF line endings", async function () {
+    it("should normalize every CRLF, not just the first one", async function () {
+      // the line regex tolerates a trailing \r ([\r]*$), so parsed output
+      // alone can't distinguish full normalization from first-only
+      // String#replace; capture the lines actually handed to the regex and
+      // assert none still carries a \r
+      const seenLines: string[] = [];
+      const originalExec = RegExp.prototype.exec;
+      const spy = vi
+        .spyOn(RegExp.prototype, "exec")
+        .mockImplementation(function (this: RegExp, str: string) {
+          seenLines.push(str);
+          return originalExec.call(this, str);
+        });
       const crlfReleases = await parseRELEASES(
         "62E8BF432F29E8E08240910B85EDBF2D1A41EDF2 atom-0.178.0-full.nupkg 81272434\r\n" +
           "5D754139E89802E88984185D2276B54DB730CD5E atom-0.178.1-delta.nupkg 8938535\r\n" +
           "DD48D16EE177DD278F0A82CDDB72EBD043C767D2 atom-0.178.1-full.nupkg 81293415",
       );
+      spy.mockRestore();
+
       expect(crlfReleases.length).toBe(3);
-      // every CRLF is normalized, not just the first one
       expect(crlfReleases[2].filename).toBe("atom-0.178.1-full.nupkg");
       expect(crlfReleases[2].size).toBe(81293415);
+      // with first-only replacement the second and third lines would still
+      // end in \r when they reach the regex
+      expect(seenLines.length).toBeGreaterThan(0);
+      expect(seenLines.some((line) => line.includes("\r"))).toBe(false);
     });
 
     it("should parse a one-line file (with utf-8 BOM)", async function () {
