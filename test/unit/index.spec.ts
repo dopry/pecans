@@ -126,6 +126,14 @@ describe("Index", () => {
       // cacheAge > cacheMaxAgeMs check is always false against NaN
       expect(parseCacheMaxAge("garbage")).toBe(7200);
     });
+
+    it("falls back for partially-numeric and negative values", () => {
+      // parseInt would read "3600ms" as 3600 and "-1" as -1; a negative
+      // age makes the cache look expired on every request
+      expect(parseCacheMaxAge("3600ms")).toBe(7200);
+      expect(parseCacheMaxAge("-1")).toBe(7200);
+      expect(parseCacheMaxAge("1.5")).toBe(7200);
+    });
   });
 
   describe("parseTrustProxy", () => {

@@ -5,7 +5,10 @@ import express, {
   type Response,
 } from "express";
 import { errorHandler } from "./errors.js";
-import { PecansGitHubBackend } from "./backends/index.js";
+import {
+  DEFAULT_CACHE_MAX_AGE,
+  PecansGitHubBackend,
+} from "./backends/index.js";
 import { Pecans, type PecansOptions } from "./pecans.js";
 
 export * from "./backends/index.js";
@@ -15,17 +18,17 @@ export * from "./pecans.js";
 export * from "./service.js";
 export * from "./utils/index.js";
 
-const DEFAULT_CACHE_MAX_AGE = 60 * 60 * 2; // 2 hours in seconds
-
 /**
- * Parse the PECANS_CACHE_MAX_AGE env var (seconds). A missing or
- * non-numeric value falls back to the default: a NaN would flow into the
- * backend's cache-age comparison, where every check comes out false and
- * the cache is never refreshed after the initial fetch.
+ * Parse the PECANS_CACHE_MAX_AGE env var (seconds). Anything but a
+ * non-negative integer falls back to the backend's default: a NaN would
+ * flow into the backend's cache-age comparison, where every check comes
+ * out false and the cache is never refreshed after the initial fetch,
+ * while parseInt-style permissive parsing would silently accept values
+ * like "3600ms" or "-1" (a negative age refreshes on every request).
  */
 export function parseCacheMaxAge(value: string | undefined): number {
-  const parsed = Number.parseInt(value ?? "", 10);
-  return Number.isNaN(parsed) ? DEFAULT_CACHE_MAX_AGE : parsed;
+  if (!value || !/^\d+$/.test(value)) return DEFAULT_CACHE_MAX_AGE;
+  return Number.parseInt(value, 10);
 }
 
 export function configure() {
