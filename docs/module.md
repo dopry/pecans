@@ -36,7 +36,6 @@ app.listen(4000);
 
 - `basePath` (string): path segment your reverse proxy strips before the app
   sees the request; embedded into generated urls (default `""`)
-- `cacheMaxAge` (number): release cache lifetime in seconds (default 7200)
 - `preferUniversal` (boolean): prefer a mac universal build over
   arch-specific builds when both exist (default `true`)
 - `includeVersionInReleaseNotes` (boolean): prefix each version's notes with
@@ -46,7 +45,9 @@ app.listen(4000);
 
 - `refreshSecret` (string): enables `POST /webhook/refresh` with GitHub
   signature verification
-- `cacheMaxAge` (number): release cache lifetime in seconds
+- `cacheMaxAge` (number): release cache lifetime in seconds (default 7200)
+  — the cache lives on the backend, so this is a backend option, not a
+  `Pecans` option
 - `baseUrl` (string): GitHub API base url (GitHub Enterprise)
 - `proxyAssets` (boolean): redirect through short-lived GitHub asset urls
   (default `true`); when `false`, redirect to the public

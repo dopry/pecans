@@ -87,7 +87,9 @@ secret, e.g. `openssl rand -hex 32`.
   variants) — update.electronjs.org-compatible format segment; see
   [URL Routing](urls.md).
 - update.electronjs.org-style platform ids (`darwin-arm64`, `win32-x64`,
-  `win32-arm64`, `linux-x64`, ...) are accepted everywhere a platform id is.
+  `win32-arm64`, `linux-x64`, ...) are accepted on the `/download` and
+  `/update` routes. The `/api/versions?platform=` filter takes canonical
+  composite ids (`osx_64`, `windows_arm64`, ...) only.
 
 ## Update clients (shipped apps)
 
