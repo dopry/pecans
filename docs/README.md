@@ -20,13 +20,14 @@ We're always happy to help out with any questions you might have. You can ask a 
 
 We've created a few guides to help you getting started:
 
+- [Migrating from 1.x to 2.x](migrating-2.0.md)
 - [Deploy Pecans](deploy.md)
 - [Upload release's assets](assets.md)
 - [Setup GitHub integration](github.md)
-- [Setup OS X Auto-Updater](update-osx.md)
+- [Setup macOS Auto-Updater](update-osx.md)
 - [Setup Windows Auto-Updater](update-windows.md)
-- [Debug API](api.md)
-- [Use it as a Node.js middleware](module.md)
+- [API](api.md)
+- [Use it as a Node.js module](module.md)
 
 ----
 

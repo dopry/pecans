@@ -1,26 +1,29 @@
-# Auto-updater on OS X
+# Auto-updater on macOS
 
-Pecans provides a backend for the [Squirrel.Mac](https://github.com/Squirrel/Squirrel.Mac) auto-updater. Squirrel.Mac is integrated by default in [Electron applications](https://github.com/atom/electron).
+Pecans serves the [Squirrel.Mac](https://github.com/Squirrel/Squirrel.Mac)
+JSON feed consumed by Electron's built-in `autoUpdater` on macOS. Ship a
+`.zip` of your signed app among the release assets (Squirrel.Mac updates
+from zips; `.dmg` assets serve human downloads).
 
-### Endpoint
-
-The endpoint for **Squirrel.Mac** is `http://download.myapp.com/update/osx/:currentVersion`.
-
-This url requires different parameters to return a correct version: `version` and `platform`.
-
-### Electron Example
-
-For example with Electron's `auto-updater` module:
+## Electron example
 
 ```js
-const app = require("app");
-const os = require("os");
-const autoUpdater = require("auto-updater");
+import { app, autoUpdater } from "electron";
 
-const platform = os.platform() + "_" + os.arch();
+const platform = `${process.platform}-${process.arch}`; // e.g. darwin-arm64
 const version = app.getVersion();
 
-autoUpdater.setFeedURL(
-  "http://download.myapp.com/update/" + platform + "/" + version
-);
+autoUpdater.setFeedURL({
+  url: `https://download.myapp.com/update/${platform}/${version}`,
+});
 ```
+
+Release channels: `https://download.myapp.com/update/channel/beta/${platform}/${version}`.
+
+The update.electronjs.org-style form
+(`/update/${platform}/squirrel/${version}`) is equivalent — see
+[URL Routing](urls.md).
+
+The feed responds `204` when the client is current, or `200` with
+`{url, name, notes, pub_date}`; macOS requires the app to be signed for
+Squirrel.Mac to apply updates.

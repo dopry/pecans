@@ -1,21 +1,23 @@
 # GitHub Integration
 
-By default Pecans fetches releases from GitHub Releases; but since Pecans is caching information, there might be a delay before the creation of the release and the release being served to users.
+Pecans fetches releases from GitHub Releases and caches the list (2 hours by
+default, configurable with `PECANS_CACHE_MAX_AGE`). Without a webhook there
+can be a delay between publishing a release and pecans serving it.
 
-To solve this issue, you can setup a webhook between Pecans and GitHub, to notify your pecans instance each time GitHub Releases are updated (created/removed/updated).
+## Release webhook
 
-### Webhook URL
+Add a [GitHub webhook](https://docs.github.com/en/webhooks) on your releases
+repository:
 
-Add a [GitHub Webhook](https://help.github.com/articles/about-webhooks/) with the url:
+- **Payload URL**: `https://download.myapp.com/webhook/refresh`
+- **Content type**: `application/json`
+- **Secret**: the value of your `PECANS_REFRESH_SECRET` environment variable
+- **Events**: Releases
 
-```
-http://download.myapp.com/refresh
-```
+Payload signatures are verified with
+[@octokit/webhooks](https://github.com/octokit/webhooks.js); the endpoint is
+disabled entirely when `PECANS_REFRESH_SECRET` is unset. Use a high-entropy
+secret, e.g. `openssl rand -hex 32`.
 
-Where download.myapp.com, is the URL of your Pecans server.
-
-It'll refresh versions cache everytime you update a release on GitHub.
-
-### Secret
-
-The GitHub Webhook secret can be configured as a environment variable on Pecans: `GITHUB_SECRET` (default value is `secret`).
+The 1.x endpoint (`/refresh` with `GITHUB_SECRET`, default `secret`) was
+replaced in 2.0 — see the [migration guide](migrating-2.0.md).
