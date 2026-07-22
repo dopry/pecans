@@ -359,6 +359,13 @@ describe("/download/:tag/:filename", () => {
       "app-2.6.0-x64.dmg",
     );
   });
+
+  it("400s on a filename that doesn't parse to a platform", async () => {
+    const { app } = configureTestAppWithReleases(
+      buildStableReleaseSet(OWNER, REPO),
+    );
+    await supertest(app).get("/download/2.7.0/notes.txt").expect(400);
+  });
 });
 
 describe("/download/version/:tag/:platform?", () => {

@@ -213,5 +213,15 @@ export function filenameToPlatform(filename: string): Platform {
   const arch = filenameToArchitecture(name, os);
   parts.push(arch);
   const platformKey = parts.join("_").toUpperCase();
-  return platforms[platformKey];
+  const platform = platforms[platformKey];
+  if (!platform) {
+    // discrete parts that don't combine into a modeled composite id, e.g.
+    // a "universal" token on a linux or non-msix windows asset; throwing
+    // (instead of returning undefined) keeps the drop visible - ingestion
+    // logs it rather than skipping the asset silently
+    throw new Error(
+      `Unrecognized platform combination (${parts.join("_")}) from filename (${filename})`,
+    );
+  }
+  return platform;
 }

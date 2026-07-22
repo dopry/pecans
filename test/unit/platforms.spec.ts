@@ -392,6 +392,18 @@ describe("Platforms", function () {
         }
       });
     });
+
+    it("throws for discrete parts with no composite id", () => {
+      // a "universal" token on linux / non-msix windows assets has no
+      // modeled composite id; the lookup used to return undefined, which
+      // made ingestion skip the asset without logging anything
+      expect(() => filenameToPlatform("myapp-universal.tar.gz")).toThrow(
+        /Unrecognized platform combination \(linux_universal\)/,
+      );
+      expect(() => filenameToPlatform("myapp-win64-universal.zip")).toThrow(
+        /Unrecognized platform combination \(windows_universal\)/,
+      );
+    });
   });
 
   describe("resolveReleaseAssetForVersion", function () {

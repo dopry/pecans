@@ -50,9 +50,20 @@ export function createDownloadHandler(ctx: PecansHttpContext) {
 
       // platform autodetection from the user agent was removed in 2.0;
       // selecting a platform is the client's responsibility
-      const _platform = filename
-        ? filenameToPlatform(filename)
-        : getStringParam(req, "platform");
+      let _platform: string | undefined;
+      if (filename) {
+        try {
+          _platform = filenameToPlatform(filename);
+        } catch (err) {
+          // a client-supplied filename that doesn't parse to a platform is
+          // a client error, not a server fault (it was a 500 before)
+          throw new BadRequestError(
+            err instanceof Error ? err.message : String(err),
+          );
+        }
+      } else {
+        _platform = getStringParam(req, "platform");
+      }
       if (!_platform) {
         throw new BadRequestError(
           "Platform is required. Specify a platform in the URL, e.g. /download/osx_64.",
