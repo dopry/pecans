@@ -7,7 +7,7 @@ import { ForbiddenError } from "../errors.js";
 import type { PecansReleases } from "../models/index.js";
 import type { PecansAssetDTO } from "../models/PecansAsset.js";
 
-const DEFAULT_CACHE_MAX_AGE = 60 * 60 * 2; // 2 hours in seconds
+export const DEFAULT_CACHE_MAX_AGE = 60 * 60 * 2; // 2 hours in seconds
 
 export interface BackendOpts {
   refreshSecret?: string;
