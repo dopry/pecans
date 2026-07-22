@@ -65,9 +65,11 @@ pecans.on("afterDownload", ({ req, release, asset }) => {
 });
 ```
 
-Events are non-blocking notifications. The 1.x `pecans.before("download",
-fn)` interceptors (which could deny a download) were removed; put auth in
-front of the router instead:
+Events are notifications only: return values are ignored, so listeners
+cannot approve or deny a download (listeners run synchronously in-process —
+keep them fast and wrap risky work in try/catch). The 1.x
+`pecans.before("download", fn)` interceptors, which could deny a download,
+were removed; put auth in front of the router instead:
 
 ```js
 app.use("/myapp", requireMyAuth, pecans.router);

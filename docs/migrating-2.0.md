@@ -111,6 +111,6 @@ secret, e.g. `openssl rand -hex 32`.
 | `Pecans.versions`, `Versions`, `resolveReleaseAssetForVersion` | `ReleaseService` / `resolveAssetForRelease` |
 | `getPlatformFromUserAgent`, `getArchFromUserAgent`, `getOsFromUserAgent` | none — detect client-side |
 | `Pecans.getChannelFromQuery` | none (unused) |
-| `pecans.before("download", fn)` / `pecans.after("download", fn)` interceptors | `beforeDownload` / `afterDownload` **events** with payload `{req, release, asset}` — non-blocking; for auth or gating, wrap `pecans.router` with express middleware |
+| `pecans.before("download", fn)` / `pecans.after("download", fn)` interceptors | `beforeDownload` / `afterDownload` **events** with payload `{req, release, asset}` — notifications only (return values ignored); for auth or gating, wrap `pecans.router` with express middleware |
 
 See [Node.js module usage](module.md) for current examples.
