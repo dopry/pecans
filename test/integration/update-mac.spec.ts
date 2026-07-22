@@ -78,30 +78,22 @@ describe("/update/:platform/:version (Squirrel.Mac)", () => {
     expect(res.body.notes).toBe("Notes for 2.7.0\nNotes for 2.6.0\n");
   });
 
-  it("honors an explicit ?filetype override in the feed url", async () => {
+  // the nuts-era ?filetype query on /update was removed in 2.0 in favor of
+  // the update.electronjs.org format segment; the query is ignored and the
+  // squirrel zip contract always applies (which also means raw req.query
+  // values can never be interpolated into the feed url)
+  it("ignores the removed ?filetype query", async () => {
     const { app } = configureTestAppWithReleases(
       buildStableReleaseSet(OWNER, REPO),
     );
-    const res = await supertest(app)
-      .get("/update/osx/2.5.0?filetype=dmg")
-      .expect(200);
-    expect(res.body.url).toMatch(
-      /\/download\/version\/2\.7\.0\/osx_64\?filetype=dmg$/,
-    );
-  });
-
-  // regression: raw req.query values must never be interpolated into the
-  // feed url - repeated params (arrays) fall back to the default filetype
-  it("falls back to filetype=zip for repeated ?filetype params", async () => {
-    const { app } = configureTestAppWithReleases(
-      buildStableReleaseSet(OWNER, REPO),
-    );
-    const res = await supertest(app)
-      .get("/update/osx/2.5.0?filetype=dmg&filetype=exe")
-      .expect(200);
-    expect(res.body.url).toMatch(
-      /\/download\/version\/2\.7\.0\/osx_64\?filetype=zip$/,
-    );
+    for (const query of ["?filetype=dmg", "?filetype=dmg&filetype=exe"]) {
+      const res = await supertest(app)
+        .get(`/update/osx/2.5.0${query}`)
+        .expect(200);
+      expect(res.body.url).toMatch(
+        /\/download\/version\/2\.7\.0\/osx_64\?filetype=zip$/,
+      );
+    }
   });
 
   it("accepts legacy platform aliases like darwin", async () => {

@@ -19,6 +19,22 @@ Pecans is an Electron Release Server.
   - For Windows using Squirrel.Windows and NuGet packages
     - `/update/:platform/:version/RELEASES`
     - `/update/channel/:channel/:platform/:version/RELEASES`
+  - update.electronjs.org-compatible format segment (drop-in for
+    [update-electron-app](https://github.com/electron/update-electron-app)-style
+    clients pointed at private repos). The platform segment is a single
+    `platform-arch` id such as `darwin-x64`, `darwin-arm64`, `win32-x64`,
+    or `win32-arm64`:
+    - `/update/:platform/squirrel/:version` (+ `/RELEASES` for
+      Squirrel.Windows), e.g. `/update/darwin-arm64/squirrel/1.2.3`
+    - `/update/:platform/msix/:version` — Squirrel.Mac-shaped JSON feed
+      for Electron's built-in MSIX updater (39.5+/40.2+/41+), e.g.
+      `/update/win32-x64/msix/1.2.3`. The format segment is the only way
+      to select the msix feed: the nuts-era `?filetype` query on `/update`
+      was removed in 2.0 (`?filetype` remains on `/download`, where the
+      feed-minted urls use it)
+    - channel variants (a pecans extension; uejs has no channel concept):
+      `/update/channel/:channel/:platform/:format/:version` (+ `/RELEASES`),
+      e.g. `/update/channel/beta/win32-x64/msix/1.2.3`
 - API
   - `/api/channels` — release channels with their latest versions
   - `/api/versions` — releases, filterable with `?channel`, `?platform`, `?version`

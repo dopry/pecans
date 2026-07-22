@@ -529,6 +529,21 @@ describe("Platforms", function () {
       expect(mapLegacyPlatform("win32-amd64")).toBe(platforms.WINDOWS_64);
     });
 
+    it("maps process.platform-process.arch ids electron apps build", () => {
+      // `${process.platform}-${process.arch}` covers the full matrix
+      expect(mapLegacyPlatform("darwin-x64")).toBe(platforms.OSX_64);
+      expect(mapLegacyPlatform("darwin-arm64")).toBe(platforms.OSX_ARM64);
+      expect(mapLegacyPlatform("darwin-universal")).toBe(
+        platforms.OSX_UNIVERSAL,
+      );
+      expect(mapLegacyPlatform("win32-x64")).toBe(platforms.WINDOWS_64);
+      expect(mapLegacyPlatform("win32-ia32")).toBe(platforms.WINDOWS_32);
+      expect(mapLegacyPlatform("win32-arm64")).toBe(platforms.WINDOWS_ARM64);
+      expect(mapLegacyPlatform("linux-x64")).toBe(platforms.LINUX_64);
+      expect(mapLegacyPlatform("linux-amd64")).toBe(platforms.LINUX_64);
+      expect(mapLegacyPlatform("linux-arm64")).toBe(platforms.LINUX_ARM64);
+    });
+
     it("should return original string for unmapped platforms", () => {
       expect(mapLegacyPlatform("unknown-platform")).toBe("unknown-platform");
       expect(mapLegacyPlatform("linux")).toBe("linux");

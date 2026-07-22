@@ -1527,7 +1527,7 @@ describe("Pecans", () => {
           );
         });
 
-        it("should handle filetype parameter", async () => {
+        it("ignores the removed ?filetype query (2.0)", async () => {
           const mockReleases = [
             {
               version: "2.0.0",
@@ -1551,7 +1551,7 @@ describe("Pecans", () => {
 
           expect(res.send).toHaveBeenCalledWith(
             expect.objectContaining({
-              url: expect.stringContaining("filetype=dmg"),
+              url: expect.stringContaining("filetype=zip"),
             }),
           );
         });
