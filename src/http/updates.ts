@@ -38,8 +38,9 @@ export function createUpdateRedirectHandler(ctx: PecansHttpContext) {
  * GET /update/:platform/:version (+ channel variant) - Squirrel.Mac update
  * feed: 204 when current, 200 {url, name, notes, pub_date} when an update
  * exists. The response shape is a frozen client contract.
- * opts.forcedFiletype pins the feed to one asset filetype regardless of
- * ?filetype (used by the /update/:platform/msix/:version format route).
+ * opts.forcedFiletype pins the feed to one asset filetype; without it the
+ * feed serves the squirrel zip contract. The /update/:platform/msix/:version
+ * format route forces "msix".
  */
 export function createUpdateOSXHandler(
   ctx: PecansHttpContext,
@@ -73,9 +74,9 @@ export function createUpdateOSXHandler(
       // Lowercase because the download route's filetype validation is
       // case-sensitive and the feed url embeds this value.
       const filetype = (opts.forcedFiletype || "zip").toLowerCase();
-      // an msix filetype implies the msix package format: Electron's MSIX
-      // updater consumes this same Squirrel.Mac-shaped feed with
-      // ?filetype=msix, and its assets never match the platform default
+      // an msix filetype implies the msix package format: the msix format
+      // route serves this same Squirrel.Mac-shaped feed pinned to msix
+      // assets, which never match the platform default
       const pkg = filetypeToPackageFormat(filetype);
 
       const versions = await ctx.service.filterReleases({

@@ -113,6 +113,10 @@ export const legacyPlatformMap: Record<string, Platform> = {
   "win32-arm64": platforms.WINDOWS_ARM64,
   "windows-arm64": platforms.WINDOWS_ARM64,
   "linux-arm64": platforms.LINUX_ARM64,
+  // process.platform-process.arch ids electron apps build directly
+  "win32-ia32": platforms.WINDOWS_32,
+  "linux-x64": platforms.LINUX_64,
+  "linux-amd64": platforms.LINUX_64,
 };
 
 export function mapLegacyPlatform(platform: string): string {
