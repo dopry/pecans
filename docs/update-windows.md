@@ -31,6 +31,11 @@ For apps packaged as MSIX, Electron's `autoUpdater` consumes a
 Squirrel.Mac-shaped JSON feed selected with the `msix` format segment:
 
 ```js
+import { app, autoUpdater } from "electron";
+
+const platform = `${process.platform}-${process.arch}`; // e.g. win32-x64
+const version = app.getVersion();
+
 autoUpdater.setFeedURL({
   url: `https://download.myapp.com/update/${platform}/msix/${version}`,
 });

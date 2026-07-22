@@ -9,7 +9,7 @@ Pecans is an Electron Release Server.
   - `/download/channel/:channel/:platform` — latest build on a release channel
   - `/download/version/:tag/:platform` — a specific version
   - `/download/:tag/:filename` — a specific release asset by filename
-  - `/dl/:os/:arch` — resolve by discrete OS (`osx`, `windows`, `linux`) and arch (`32`, `64`, `arm64`, `universal`; arm64 is supported for all three OSes since 2.0); supports `?channel`, `?version`, and `?pkg` (`deb`/`rpm`/`msix`) queries
+  - `/dl/:os/:arch` — resolve by discrete OS (`osx`, `windows`, `linux`) and arch (`32`, `64`, `arm64` for all three OSes since 2.0, plus `universal` for `osx` and `windows`); supports `?channel`, `?version`, and `?pkg` (`deb`/`rpm`/`msix`) queries
   - `/dl/:filename` — a release asset by filename
 - Auto-updates with [Squirrel](https://github.com/Squirrel)
   - For Mac using Squirrel.Mac
