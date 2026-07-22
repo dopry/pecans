@@ -48,7 +48,6 @@ describe("Models Index Exports", () => {
 
     const releaseDTO = {
       assets: [assetDTO],
-      channel: "stable",
       notes: "Test release",
       published_at: new Date(),
       version: "1.0.0",
