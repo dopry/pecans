@@ -45,6 +45,11 @@ Pecans is an Electron Release Server.
 - Release Channels (`beta`, `alpha`, ...)
 - Express App (composable)
 
+## Requirements
+
+- Node.js >= 22.12
+- `@dopry/pecans` is ESM-only — load it with `import`; `require()` is not supported
+
 ## Deploy it / Start it
 
 [Follow our guide to deploy Pecans](https://pecans.darrelopry.com/v/main/docs/deploy).
