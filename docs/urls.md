@@ -26,8 +26,9 @@ canonical `linux_32` id if you need it.)
 
 - `/download/:platform` — latest stable build for the platform. Bare-os ids
   (`/download/windows`) resolve the default population (x64, or universal on
-  mac) and never default to arm64. If the stable channel is empty the bare
-  route falls back to any channel; an explicit channel never does.
+  mac); arm64 ranks last and is only served when it is the sole matching
+  build. If the stable channel is empty the bare route falls back to any
+  channel; an explicit channel never does.
 - `/download/channel/:channel/:platform` — latest build on a channel (404
   when the channel has no matching release).
 - `/download/version/:tag/:platform` — a specific version (`:tag` is a

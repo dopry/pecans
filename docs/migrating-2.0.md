@@ -76,8 +76,9 @@ secret, e.g. `openssl rand -hex 32`.
   (`Charmap`) no longer classify as arm builds. Feeds over existing releases
   may resolve different assets after upgrade.
 - **arm64 is first-class.** `windows_arm64`, `linux_arm64` (and deb/rpm/msix
-  variants) now ingest instead of being dropped. Bare-os requests
-  (`/download/windows`) never default to an arm64 build.
+  variants) now ingest instead of being dropped. On bare-os requests
+  (`/download/windows`) arm64 ranks last: it is only served when it is the
+  sole matching build.
 
 ### New routes worth adopting
 
