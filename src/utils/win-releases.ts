@@ -73,7 +73,7 @@ export async function parseRELEASES(
 ): Promise<SquirrelRelease[]> {
   const stripped = stripBom(content);
   // String#replace with a string pattern would only replace the first
-  // CRLF; replaceAll normalizes every line ending
+  // CRLF; replaceAll normalizes every CRLF occurrence
   const normalizedEOL = stripped.replaceAll("\r\n", "\n");
   const lines = normalizedEOL.split("\n");
   const goodlines = lines.filter((line) => !!releaseRe.exec(line));
