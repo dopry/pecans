@@ -11,7 +11,7 @@ Four request concepts appear across the surface; they sit on different axes:
 | --- | --- | --- | --- |
 | **platform id** | `/download/:platform`, `/update/:platform/...` | composite ids (`osx_64`, `windows_arm64`, `linux_deb_64`, ...) and aliases (`darwin-arm64`, `win32-x64`, `linux-x64`, ...) | os + optional package + optional arch in one segment |
 | **os / arch** | `/dl/:os/:arch` | os: `osx`, `windows`, `linux`; arch: `32`, `64`, `arm64`, `universal` | discrete resolution, one axis per segment |
-| **pkg** | `/dl` `?pkg=` | `deb`, `rpm`, `msix` | package family of an asset; absent = the platform default (dmg/zip, setup.exe/nupkg, tarball) |
+| **pkg** | `/dl` `?pkg=` | `deb`, `rpm`, `msix` | package family of an asset; absent = the platform default — `/dl` then serves `.dmg` (osx), `.exe` (windows), `.tgz`/`.tar.gz` (linux) |
 | **format** | `/update/:platform/:format/:version` | `squirrel`, `msix` | update _protocol_ the client speaks |
 | **filetype** | `/download` `?filetype=` | supported extension (`zip`, `dmg`, `exe`, ...) | extension preference when picking one asset; feed-minted urls use it |
 
