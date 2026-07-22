@@ -56,8 +56,10 @@ $ docker run -p 5000:5000 \
 
 ## Heroku
 
-`app.json` declares the required environment; the deploy button prompts for
-`GITHUB_OWNER`, `GITHUB_REPO`, and `GITHUB_TOKEN`.
+`app.json` declares the environment; the deploy button prompts for
+`GITHUB_OWNER` and `GITHUB_REPO`, plus optional `GITHUB_TOKEN` (needed only
+for private repositories), `PECANS_REFRESH_SECRET`, `TRUST_PROXY`,
+`PECANS_BASE_PATH`, and `PECANS_CACHE_MAX_AGE`.
 
 Migrating a 1.x deployment? Environment variable names changed — see the
 [migration guide](migrating-2.0.md).

@@ -1,6 +1,7 @@
 # URL Routing
 
-All routes are GET. Examples assume the server at `https://download.myapp.com`.
+All routes are GET except the cache-bust webhook (`POST /webhook/refresh`).
+Examples assume the server at `https://download.myapp.com`.
 
 ## Request vocabulary
 
