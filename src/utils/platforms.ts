@@ -94,6 +94,7 @@ export const legacyPlatformMap: Record<string, Platform> = {
   "darwin-x64": platforms.OSX_64,
   "darwin-amd64": platforms.OSX_64,
   "darwin-arm64": platforms.OSX_ARM64,
+  "darwin-universal": platforms.OSX_UNIVERSAL,
   mac: platforms.OSX_64,
   "mac-amd64": platforms.OSX_64,
   "mac-x64": platforms.OSX_64,

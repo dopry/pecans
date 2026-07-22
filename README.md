@@ -19,6 +19,14 @@ Pecans is an Electron Release Server.
   - For Windows using Squirrel.Windows and NuGet packages
     - `/update/:platform/:version/RELEASES`
     - `/update/channel/:channel/:platform/:version/RELEASES`
+  - update.electronjs.org-compatible format segment (drop-in for
+    [update-electron-app](https://github.com/electron/update-electron-app)-style
+    clients pointed at private repos)
+    - `/update/:platform-:arch/squirrel/:version` (+ `/RELEASES` for
+      Squirrel.Windows)
+    - `/update/:platform-:arch/msix/:version` — Squirrel.Mac-shaped JSON feed
+      for Electron's built-in MSIX updater (39.5+/40.2+/41+); also reachable
+      as `?filetype=msix` on the standard route
 - API
   - `/api/channels` — release channels with their latest versions
   - `/api/versions` — releases, filterable with `?channel`, `?platform`, `?version`

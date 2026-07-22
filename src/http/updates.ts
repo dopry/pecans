@@ -38,8 +38,13 @@ export function createUpdateRedirectHandler(ctx: PecansHttpContext) {
  * GET /update/:platform/:version (+ channel variant) - Squirrel.Mac update
  * feed: 204 when current, 200 {url, name, notes, pub_date} when an update
  * exists. The response shape is a frozen client contract.
+ * opts.forcedFiletype pins the feed to one asset filetype regardless of
+ * ?filetype (used by the /update/:platform/msix/:version format route).
  */
-export function createUpdateOSXHandler(ctx: PecansHttpContext) {
+export function createUpdateOSXHandler(
+  ctx: PecansHttpContext,
+  opts: { forcedFiletype?: string } = {},
+) {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
       const versionParam = getStringParam(req, "version");
@@ -67,7 +72,9 @@ export function createUpdateOSXHandler(ctx: PecansHttpContext) {
       // case-sensitive, so embedding the caller's casing (e.g. "MSIX")
       // would produce a feed url the download route rejects.
       const filetype = (
-        getStringValueFromRequestQuery(req.query, "filetype") || "zip"
+        opts.forcedFiletype ||
+        getStringValueFromRequestQuery(req.query, "filetype") ||
+        "zip"
       ).toLowerCase();
       // an msix filetype implies the msix package format: Electron's MSIX
       // updater consumes this same Squirrel.Mac-shaped feed with
@@ -171,5 +178,46 @@ export function createUpdateWinHandler(ctx: PecansHttpContext) {
     } catch (err) {
       next(err);
     }
+  };
+}
+
+/**
+ * GET /update/:platform/:format/:version - update.electronjs.org-compatible
+ * format segment. "squirrel" serves the standard Squirrel.Mac-shaped feed;
+ * "msix" serves the same feed constrained to msix assets (Electron's
+ * built-in MSIX updater, 39.5+/40.2+/41+, consumes the Squirrel.Mac JSON
+ * shape). Anything else is a 404.
+ */
+export function createUpdateFormatHandler(ctx: PecansHttpContext) {
+  const squirrel = createUpdateOSXHandler(ctx);
+  const msix = createUpdateOSXHandler(ctx, { forcedFiletype: "msix" });
+  return async (req: Request, res: Response, next: NextFunction) => {
+    const format = getStringParam(req, "format")?.toLowerCase();
+    if (format === "squirrel") return squirrel(req, res, next);
+    if (format === "msix") return msix(req, res, next);
+    next(
+      new NotFoundError(
+        `Unsupported update format (${format}), expected squirrel or msix`,
+      ),
+    );
+  };
+}
+
+/**
+ * GET /update/:platform/:format/:version/RELEASES - the Squirrel.Windows
+ * manifest under the update.electronjs.org-compatible format segment.
+ * Squirrel.Windows appends /RELEASES to its feed url itself, so only the
+ * "squirrel" format exists here (MSIX has no RELEASES manifest).
+ */
+export function createUpdateFormatWinHandler(ctx: PecansHttpContext) {
+  const win = createUpdateWinHandler(ctx);
+  return async (req: Request, res: Response, next: NextFunction) => {
+    const format = getStringParam(req, "format")?.toLowerCase();
+    if (format === "squirrel") return win(req, res, next);
+    next(
+      new NotFoundError(
+        `Unsupported update format (${format}) for RELEASES, expected squirrel`,
+      ),
+    );
   };
 }

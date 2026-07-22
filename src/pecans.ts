@@ -21,6 +21,8 @@ import {
 } from "./http/downloads.js";
 import { createNotesHandler } from "./http/notes.js";
 import {
+  createUpdateFormatHandler,
+  createUpdateFormatWinHandler,
   createUpdateOSXHandler,
   createUpdateRedirectHandler,
   createUpdateWinHandler,
@@ -91,6 +93,8 @@ export class Pecans extends EventEmitter {
     updateRedirect: ReturnType<typeof createUpdateRedirectHandler>;
     updateOSX: ReturnType<typeof createUpdateOSXHandler>;
     updateWin: ReturnType<typeof createUpdateWinHandler>;
+    updateFormat: ReturnType<typeof createUpdateFormatHandler>;
+    updateFormatWin: ReturnType<typeof createUpdateFormatWinHandler>;
     notes: ReturnType<typeof createNotesHandler>;
   };
 
@@ -132,6 +136,8 @@ export class Pecans extends EventEmitter {
       updateRedirect: createUpdateRedirectHandler(this.ctx),
       updateOSX: createUpdateOSXHandler(this.ctx),
       updateWin: createUpdateWinHandler(this.ctx),
+      updateFormat: createUpdateFormatHandler(this.ctx),
+      updateFormatWin: createUpdateFormatWinHandler(this.ctx),
       notes: createNotesHandler(this.ctx),
     };
 
@@ -192,6 +198,17 @@ export class Pecans extends EventEmitter {
     this.router.get(
       "/update/channel/:channel/:platform/:version/RELEASES",
       this.handleUpdateWin.bind(this),
+    );
+    // update.electronjs.org-compatible format segment (squirrel | msix).
+    // Registered after /update/:platform/:version/RELEASES so a literal
+    // RELEASES tail keeps hitting the Squirrel.Windows manifest route.
+    this.router.get(
+      "/update/:platform/:format/:version",
+      this.handleUpdateFormat.bind(this),
+    );
+    this.router.get(
+      "/update/:platform/:format/:version/RELEASES",
+      this.handleUpdateFormatWin.bind(this),
     );
 
     // translate HttpErrors into their status codes for every route above,
@@ -264,6 +281,22 @@ export class Pecans extends EventEmitter {
     next: NextFunction,
   ) {
     return this.handlers.updateWin(req, res, next);
+  }
+
+  protected async handleUpdateFormat(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ) {
+    return this.handlers.updateFormat(req, res, next);
+  }
+
+  protected async handleUpdateFormatWin(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ) {
+    return this.handlers.updateFormatWin(req, res, next);
   }
 
   protected async handleServeNotes(
