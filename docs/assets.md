@@ -15,8 +15,10 @@ delimited token (`-x64`, `_arm64`) — letters inside words don't count.
 manifest.
 
 **Architecture** — `x64`/`x86_64`/`amd64`/`64` → 64-bit;
-`ia32`/`i386`/`x86`/`32` → 32-bit; `arm64`/`armv7l` → arm64;
-`universal`/`univ` → mac universal. Unmarked filenames default to 64-bit;
+`ia32`/`i386`/`x86`/`32` → 32-bit; `universal`/`univ` → mac universal.
+Any `arm*` token (`arm64`, `arm`, `armv7l`) classifies as **arm64** —
+pecans does not model 32-bit ARM, so don't publish armv7 assets expecting
+them to be served separately from arm64 builds. Unmarked filenames default to 64-bit;
 `.msixbundle` is always multi-arch. electron-packager's `win32-x64` naming
 reads correctly (`win32` is the platform id, `x64` the arch).
 

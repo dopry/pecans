@@ -15,10 +15,12 @@ Four request concepts appear across the surface; they sit on different axes:
 | **format** | `/update/:platform/:format/:version` | `squirrel`, `msix` | update _protocol_ the client speaks |
 | **filetype** | `/download` `?filetype=` | supported extension (`zip`, `dmg`, `exe`, ...) | extension preference when picking one asset; feed-minted urls use it |
 
-Platform aliases include the full `${process.platform}-${process.arch}`
-matrix an Electron app can produce: `darwin-x64`, `darwin-arm64`,
+Platform aliases cover the `${process.platform}-${process.arch}` matrix a
+modern Electron app can produce: `darwin-x64`, `darwin-arm64`,
 `darwin-universal`, `win32-x64`, `win32-ia32`, `win32-arm64`, `linux-x64`,
 `linux-arm64`, plus legacy names (`darwin`, `mac`, `win32`, `osx-x64`, ...).
+(`linux-ia32` is not aliased — Electron dropped 32-bit Linux in v4; use the
+canonical `linux_32` id if you need it.)
 
 ## Downloads
 
