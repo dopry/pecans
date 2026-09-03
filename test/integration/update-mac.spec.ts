@@ -2,7 +2,9 @@ import nock from "nock";
 import supertest from "supertest";
 import { afterEach, describe, expect, it } from "vitest";
 import {
+  buildFullPlatformAssets,
   buildMixedChannelReleaseSet,
+  buildRelease,
   buildStableReleaseSet,
   publishedAtForVersion,
 } from "../fixtures/builders.js";
@@ -174,6 +176,53 @@ describe("/update/channel/:channel/:platform/:version (Squirrel.Mac)", () => {
     await supertest(app)
       .get("/update/channel/beta/osx/2.8.0-beta.2")
       .expect(204);
+  });
+
+  // regression (#79): the ">=" + installed-version filter used semver's
+  // default prerelease semantics, which only match inside one
+  // major.minor.patch tuple, so a beta client never saw the next minor's
+  // beta and a stable client polling the beta feed never saw any beta
+  describe("across minor bumps", () => {
+    const withNextBeta = () => [
+      buildRelease({
+        owner: OWNER,
+        repo: REPO,
+        version: "2.9.0-beta.1",
+        prerelease: true,
+        assets: buildFullPlatformAssets(OWNER, REPO, "2.9.0-beta.1"),
+      }),
+      ...buildMixedChannelReleaseSet(OWNER, REPO),
+    ];
+
+    it("offers the next minor's beta to a beta client", async () => {
+      const { app } = configureTestAppWithReleases(withNextBeta());
+      const res = await supertest(app)
+        .get("/update/channel/beta/osx/2.8.0-beta.2")
+        .expect(200);
+      expectSquirrelMacResponse(res.body);
+      expect(res.body.name).toBe("2.9.0-beta.1");
+      expect(res.body.url).toMatch(
+        /\/download\/version\/2\.9\.0-beta\.1\/osx_64\?filetype=zip$/,
+      );
+      // notes cover every beta newer than the client, excluding its own
+      expect(res.body.notes).toBe("Notes for 2.9.0-beta.1\n");
+    });
+
+    it("offers the current beta to a stable client polling the beta feed", async () => {
+      const { app } = configureTestAppWithReleases(
+        buildMixedChannelReleaseSet(OWNER, REPO),
+      );
+      const res = await supertest(app)
+        .get("/update/channel/beta/osx/2.7.0")
+        .expect(200);
+      expectSquirrelMacResponse(res.body);
+      expect(res.body.name).toBe("2.8.0-beta.2");
+    });
+
+    it("still keeps stable clients off the betas on the bare feed", async () => {
+      const { app } = configureTestAppWithReleases(withNextBeta());
+      await supertest(app).get("/update/osx/2.7.0").expect(204);
+    });
   });
 });
 

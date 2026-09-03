@@ -99,6 +99,32 @@ describe("/dl/:os/:arch", () => {
     expect(res.headers.location).toContain("app-2.8.0-beta.2-x64.dmg");
   });
 
+  // regression (#79): a range on a prerelease channel must match that
+  // channel's builds across minor bumps
+  it("?channel=beta&version=<range> matches betas across tuples", async () => {
+    const releases = [
+      buildRelease({
+        owner: OWNER,
+        repo: REPO,
+        version: "2.9.0-beta.1",
+        prerelease: true,
+        assets: buildFullPlatformAssets(OWNER, REPO, "2.9.0-beta.1"),
+      }),
+      ...buildMixedChannelReleaseSet(OWNER, REPO),
+    ];
+    const { app, backend } = configureTestAppWithReleases(releases);
+    const asset = await findAsset(
+      backend,
+      "2.9.0-beta.1",
+      "app-2.9.0-beta.1-x64.dmg",
+    );
+    nockGithubReleasesAssetRedirect(nock, OWNER, REPO, asset);
+    const res = await supertest(app)
+      .get("/dl/osx/64?channel=beta&version=%3E%3D2.8.0-beta.2") // >=2.8.0-beta.2
+      .expect(302);
+    expect(res.headers.location).toContain("app-2.9.0-beta.1-x64.dmg");
+  });
+
   it("defaults to the stable channel when prereleases exist", async () => {
     const { app, backend } = configureTestAppWithReleases(
       buildMixedChannelReleaseSet(OWNER, REPO),

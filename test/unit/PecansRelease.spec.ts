@@ -143,6 +143,47 @@ describe("PecansRelease", () => {
     it("should return true for empty query", () => {
       expect(release.satisfiesQuery({})).toBe(true);
     });
+
+    // regression (#79): a named prerelease channel evaluates the version
+    // range with prereleases included across tuples; "*" and stable keep
+    // default semver semantics
+    describe("version ranges on a prerelease channel", () => {
+      const beta = new PecansRelease(
+        createMockReleaseDTO({
+          version: "2.9.0-beta.1",
+          assets: [createMockAssetDTO({ filename: "app-osx.dmg" })],
+        }),
+      );
+
+      it("matches across tuples when the channel is named", () => {
+        expect(
+          beta.satisfiesQuery({ channel: "beta", version: ">=2.8.0-beta.2" }),
+        ).toBe(true);
+        expect(
+          beta.satisfiesQuery({ channel: "beta", version: ">=2.7.0" }),
+        ).toBe(true);
+        expect(
+          beta.satisfiesQuery({ channel: "beta", version: "^2.0.0" }),
+        ).toBe(true);
+      });
+
+      it("keeps default semver semantics for any-channel queries", () => {
+        expect(beta.satisfiesQuery({ channel: "*", version: ">=2.7.0" })).toBe(
+          false,
+        );
+        expect(beta.satisfiesQuery({ version: ">=2.7.0" })).toBe(false);
+        // same-tuple prerelease comparators still match as before
+        expect(
+          beta.satisfiesQuery({ channel: "*", version: ">=2.9.0-beta.0" }),
+        ).toBe(true);
+      });
+
+      it("never lets a stable query match a prerelease", () => {
+        expect(
+          beta.satisfiesQuery({ channel: "stable", version: ">=2.7.0" }),
+        ).toBe(false);
+      });
+    });
   });
 
   describe("queryAssets", () => {
@@ -228,6 +269,29 @@ describe("PecansRelease", () => {
       expect(() => release.satisfiesSemVerRange("invalid-range")).toThrow(
         "Invalid Range Specified",
       );
+    });
+
+    // regression (#79): semver's default only matches a prerelease inside
+    // the tuple of a prerelease comparator, so a beta client's ">=" filter
+    // never saw the next minor's beta
+    it("matches prereleases across tuples only with includePrerelease", () => {
+      const beta = new PecansRelease(
+        createMockReleaseDTO({ version: "2.9.0-beta.1" }),
+      );
+      expect(beta.satisfiesSemVerRange(">=2.8.0-beta.2")).toBe(false);
+      expect(beta.satisfiesSemVerRange(">=2.7.0")).toBe(false);
+      expect(
+        beta.satisfiesSemVerRange(">=2.8.0-beta.2", {
+          includePrerelease: true,
+        }),
+      ).toBe(true);
+      expect(
+        beta.satisfiesSemVerRange(">=2.7.0", { includePrerelease: true }),
+      ).toBe(true);
+      // still bounded by the range itself
+      expect(
+        beta.satisfiesSemVerRange(">=3.0.0", { includePrerelease: true }),
+      ).toBe(false);
     });
   });
 

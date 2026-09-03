@@ -1,7 +1,10 @@
 import { satisfies, validRange } from "semver";
 // keep the module graph cycle-free: import specific util modules rather
 // than the ../utils barrel
-import { channelFromVersion } from "../utils/channelFromVersion.js";
+import {
+  channelFromVersion,
+  channelQueryIncludesPrereleases,
+} from "../utils/channelFromVersion.js";
 import type { PecansAssetQuery } from "./PecansAssetQuery.js";
 import { PecansAsset, type PecansAssetDTO } from "./PecansAsset.js";
 import type { PecansReleaseQuery } from "./PecansReleaseQuery.js";
@@ -56,7 +59,9 @@ export class PecansRelease implements PecansReleaseDTO {
   satisfiesQuery(query: PecansReleaseQuery): boolean {
     return (
       this.satisfiesChannel(query.channel) &&
-      this.satisfiesSemVerRange(query.version) &&
+      this.satisfiesSemVerRange(query.version, {
+        includePrerelease: channelQueryIncludesPrereleases(query.channel),
+      }) &&
       this.queryAssets(query).length > 0
     );
   }
@@ -71,7 +76,16 @@ export class PecansRelease implements PecansReleaseDTO {
     return this.channel == channel;
   }
 
-  satisfiesSemVerRange(range?: string) {
+  /**
+   * True when the version is in the range. With includePrerelease,
+   * prereleases match across every major.minor.patch tuple (see
+   * channelQueryIncludesPrereleases); by default semver only matches a
+   * prerelease inside the tuple of a prerelease comparator.
+   */
+  satisfiesSemVerRange(
+    range?: string,
+    opts: { includePrerelease?: boolean } = {},
+  ) {
     if (range == undefined) return true;
     // latest isn't actually applicable to single entries.
     // we ignore it here so pre-filtering by other props will still work
@@ -80,6 +94,8 @@ export class PecansRelease implements PecansReleaseDTO {
     if (!validRange(range)) {
       throw new Error("Invalid Range Specified");
     }
-    return satisfies(this.version, range);
+    return satisfies(this.version, range, {
+      includePrerelease: opts.includePrerelease ?? false,
+    });
   }
 }

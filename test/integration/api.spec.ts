@@ -100,6 +100,30 @@ describe("/api/versions", () => {
     expect(versions).toEqual(["2.8.0-beta.2", "2.8.0-beta.1"]);
   });
 
+  // regression (#79): this is the example in docs/api.md; it returned []
+  // because the range excluded prereleases outside the 2.0.0 tuple
+  it("?channel=<prerelease>&version=<range> matches betas across tuples", async () => {
+    const { app } = configureTestAppWithReleases(
+      buildMixedChannelReleaseSet(OWNER, REPO),
+    );
+    const res = await supertest(app)
+      .get("/api/versions?channel=beta&version=%3E%3D2.0.0") // >=2.0.0
+      .expect(200);
+    const versions = res.body.map((r: { version: string }) => r.version);
+    expect(versions).toEqual(["2.8.0-beta.2", "2.8.0-beta.1"]);
+  });
+
+  it("?version=<range> without a channel keeps prereleases out (standard semver)", async () => {
+    const { app } = configureTestAppWithReleases(
+      buildMixedChannelReleaseSet(OWNER, REPO),
+    );
+    const res = await supertest(app)
+      .get("/api/versions?version=%3E%3D2.6.0") // >=2.6.0, channel defaults to *
+      .expect(200);
+    const versions = res.body.map((r: { version: string }) => r.version);
+    expect(versions).toEqual(["2.7.0", "2.6.0"]);
+  });
+
   it("?version=latest collapses to the newest release", async () => {
     const { app } = configureTestAppWithReleases(
       buildStableReleaseSet(OWNER, REPO),

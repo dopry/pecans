@@ -132,6 +132,29 @@ describe("/update/:platform/:version/RELEASES (Squirrel.Windows)", () => {
     expect(text).toContain("app-2.8.0-beta.2-x64-full.nupkg");
   });
 
+  // regression (#79): a beta client on Windows was handed its own
+  // version's manifest instead of the next minor's beta
+  it("serves the next minor's beta manifest to a beta client", async () => {
+    const releases = [
+      buildRelease({
+        owner: OWNER,
+        repo: REPO,
+        version: "2.9.0-beta.1",
+        prerelease: true,
+        assets: buildFullPlatformAssets(OWNER, REPO, "2.9.0-beta.1"),
+      }),
+      ...buildMixedChannelReleaseSet(OWNER, REPO),
+    ];
+    const { app } = await setupReleasesRequest(releases, "2.9.0-beta.1");
+    const res = await supertest(app)
+      .get("/update/channel/beta/windows_64/2.8.0-beta.2/RELEASES")
+      .expect(200);
+    const text = bodyText(res);
+    expectRELEASESFormat(text);
+    expect(text).toContain("app-2.9.0-beta.1-x64-full.nupkg");
+    expect(text).not.toContain("2.8.0-beta.2");
+  });
+
   it("400s on a range-shaped version", async () => {
     const { app } = configureTestAppWithReleases(
       buildStableReleaseSet(OWNER, REPO),

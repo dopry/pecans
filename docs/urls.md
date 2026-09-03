@@ -63,7 +63,11 @@ extension — uejs has no channel concept:
 - `/update/channel/:channel/:platform/:format/:version` (+ `/RELEASES`)
 
 `:version` is the client's installed version and must be a specific semver
-version, not a range.
+version, not a range. The bare routes serve the stable channel: a client on
+`2.8.0-beta.2` is offered `2.8.0` or newer stable releases. The channel
+variants serve every newer release on that channel, including across minor
+and major bumps (`2.8.0-beta.2` is offered `2.9.0-beta.1`), and a stable
+client polling a channel variant is offered that channel's newest build.
 
 ## API
 
