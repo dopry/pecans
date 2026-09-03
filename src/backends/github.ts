@@ -14,8 +14,8 @@ import {
 // keep the module graph cycle-free: import specific util modules rather
 // than the ../utils barrel
 import { filenameToPlatform } from "../utils/platforms.js";
+import { versionFromTag } from "../utils/versionFromTag.js";
 import { PecansReleases } from "../models/PecansReleases.js";
-import { clean } from "semver";
 
 // see: https://docs.github.com/en/rest/releases/releases
 export type GithubReleaseAsset =
@@ -24,12 +24,6 @@ export type GithubReleaseAsset =
 // see: https://docs.github.com/en/rest/releases/releases
 export type GithubRelease =
   Endpoints["GET /repos/{owner}/{repo}/releases/latest"]["response"]["data"];
-
-/** The semver version a release tag names (a leading v is fine), or
- * undefined when the tag is not a version at all. */
-export function versionFromTag(tag: string): string | undefined {
-  return clean(tag, { loose: true }) ?? undefined;
-}
 
 export interface PecansGitHubBackendOpts extends BackendOpts {
   baseUrl?: string;
