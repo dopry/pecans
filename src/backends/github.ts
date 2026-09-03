@@ -14,7 +14,6 @@ import {
 // keep the module graph cycle-free: import specific util modules rather
 // than the ../utils barrel
 import { filenameToPlatform } from "../utils/platforms.js";
-import { versionFromTag } from "../utils/versionFromTag.js";
 import { PecansReleases } from "../models/PecansReleases.js";
 
 // see: https://docs.github.com/en/rest/releases/releases
@@ -163,7 +162,7 @@ export class PecansGitHubBackend extends Backend<GithubReleaseAsset> {
       if (release.draft !== false) return false;
       // one non-semver tag (a "nightly" or "latest" tag, a docs tag) must
       // not take every route down: skip it, loudly, and serve the rest (#80)
-      if (versionFromTag(release.tag_name) === undefined) {
+      if (this.versionFromTag(release.tag_name) === undefined) {
         console.warn(
           `Skipping release ${release.tag_name}: tag is not a semver version`,
         );
@@ -258,7 +257,7 @@ export class PecansGitHubBackend extends Backend<GithubReleaseAsset> {
    * a semver version; fetchReleases filters those out before calling this.
    */
   normalizeRelease(release: GithubRelease): PecansRelease {
-    const version = versionFromTag(release.tag_name);
+    const version = this.versionFromTag(release.tag_name);
     if (version === undefined) {
       throw new Error(
         `Release tag is not a semver version (${release.tag_name})`,

@@ -5,5 +5,4 @@ export * from "./platforms.js";
 export * from "./channelFromVersion.js";
 export * from "./mergeReleaseNotes.js";
 export * from "./sortReleaseBySemVerDescending.js";
-export * from "./versionFromTag.js";
 export * from "./win-releases.js";

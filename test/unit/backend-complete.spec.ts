@@ -26,6 +26,11 @@ class TestBackend extends Backend {
     this.fetchCount++;
     return this.mockReleases;
   }
+
+  // expose the protected hook for the tests below
+  public parseTag(tag: string) {
+    return this.versionFromTag(tag);
+  }
 }
 
 describe("Backend Complete Coverage", () => {
@@ -191,6 +196,42 @@ describe("Backend Complete Coverage", () => {
       expect(refreshCacheSpy).toHaveBeenCalled();
       expect(mockNext).toHaveBeenCalledWith(testError);
       expect(mockRes.json).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("versionFromTag", () => {
+    const backend = new TestBackend();
+
+    it("returns the version for semver tags, with or without a leading v", () => {
+      expect(backend.parseTag("1.2.3")).toBe("1.2.3");
+      expect(backend.parseTag("v1.2.3")).toBe("1.2.3");
+      expect(backend.parseTag("v2.0.0-beta.3")).toBe("2.0.0-beta.3");
+    });
+
+    it("drops build metadata", () => {
+      expect(backend.parseTag("v1.2.3+build.7")).toBe("1.2.3");
+    });
+
+    it("returns undefined for tags that are not versions", () => {
+      for (const tag of [
+        "nightly",
+        "latest",
+        "docs-1",
+        "release-1.0.0",
+        "1.0",
+      ]) {
+        expect(backend.parseTag(tag)).toBeUndefined();
+      }
+    });
+
+    it("can be overridden for other naming schemes", () => {
+      class PrefixedTagBackend extends TestBackend {
+        protected versionFromTag(tag: string) {
+          return super.versionFromTag(tag.replace(/^release-/, ""));
+        }
+      }
+      expect(new PrefixedTagBackend().parseTag("release-1.0.0")).toBe("1.0.0");
+      expect(new PrefixedTagBackend().parseTag("nightly")).toBeUndefined();
     });
   });
 
