@@ -10,6 +10,7 @@ import type { PecansReleases } from "./models/PecansReleases.js";
 // keep the module graph cycle-free: import specific util modules rather
 // than the ./utils barrel (the models above follow the same rule)
 import type { Architecture } from "./utils/Architecture.js";
+import { channelQueryIncludesPrereleases } from "./utils/channelFromVersion.js";
 import type { OperatingSystem } from "./utils/OperatingSystem.js";
 import {
   type PackageFormatFilter,
@@ -32,7 +33,11 @@ import { sortReleaseBySemVerDescending } from "./utils/sortReleaseBySemVerDescen
 export interface ReleaseFilter {
   /** undefined or "*" = any channel */
   channel?: string;
-  /** "latest" or a semver range; undefined = any */
+  /**
+   * "latest" or a semver range; undefined = any. On a named prerelease
+   * channel the range matches that channel's prereleases across every
+   * major.minor.patch tuple; otherwise default semver semantics apply.
+   */
   version?: string;
   os?: OperatingSystem;
   /** undefined = any architecture */
@@ -178,6 +183,7 @@ export class ReleaseService {
   async filterReleases(filter: ReleaseFilter): Promise<PecansRelease[]> {
     const releases = await this.list();
     const preferUniversal = filter.preferUniversal ?? this.preferUniversal();
+    const includePrerelease = channelQueryIncludesPrereleases(filter.channel);
 
     // pkg: "default" is an explicit constraint (the platform's default
     // package), so only undefined means unconstrained
@@ -197,7 +203,9 @@ export class ReleaseService {
         );
         if (!available) return false;
       }
-      return release.satisfiesSemVerRange(filter.version);
+      return release.satisfiesSemVerRange(filter.version, {
+        includePrerelease,
+      });
     });
 
     if (matches.length > 1 && filter.version == "latest") {

@@ -325,6 +325,56 @@ describe("ReleaseService", () => {
     expect(latest.map((r) => r.version)).toEqual(["2.0.0"]);
   });
 
+  // regression (#79): on a named prerelease channel a range matches that
+  // channel's prereleases across minor/major bumps; the update feeds rely
+  // on this (">=" + the client's installed version)
+  it("filterReleases matches prereleases across tuples on a named channel", async () => {
+    const service = makeService([
+      release("2.2.0-beta.1", fullAssets),
+      release("2.1.0-beta.2", fullAssets),
+      release("2.1.0-beta.1", fullAssets),
+      release("2.0.0", fullAssets),
+    ]);
+    const fromBeta = await service.filterReleases({
+      channel: "beta",
+      version: ">=2.1.0-beta.2",
+    });
+    expect(fromBeta.map((r) => r.version)).toEqual([
+      "2.2.0-beta.1",
+      "2.1.0-beta.2",
+    ]);
+    // a stable client opting into the beta channel sees the betas too
+    const fromStable = await service.filterReleases({
+      channel: "beta",
+      version: ">=2.0.0",
+    });
+    expect(fromStable.map((r) => r.version)).toEqual([
+      "2.2.0-beta.1",
+      "2.1.0-beta.2",
+      "2.1.0-beta.1",
+    ]);
+  });
+
+  it("filterReleases keeps default semver semantics for stable and any-channel ranges", async () => {
+    const service = makeService([
+      release("2.2.0-beta.1", fullAssets),
+      release("2.1.0", fullAssets),
+      release("2.0.0", fullAssets),
+    ]);
+    const stable = await service.filterReleases({
+      channel: "stable",
+      version: ">=2.0.0",
+    });
+    expect(stable.map((r) => r.version)).toEqual(["2.1.0", "2.0.0"]);
+    // "*" means any channel, but a range without a prerelease comparator
+    // still excludes prereleases (standard semver)
+    const any = await service.filterReleases({
+      channel: "*",
+      version: ">=2.0.0",
+    });
+    expect(any.map((r) => r.version)).toEqual(["2.1.0", "2.0.0"]);
+  });
+
   it("filterReleases returns the full range for semver filters", async () => {
     const service = makeService(releases);
     const matches = await service.filterReleases({

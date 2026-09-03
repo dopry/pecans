@@ -22,6 +22,16 @@ the backend's private payload (`raw`) is never serialized.
 GET https://download.myapp.com/api/versions?channel=beta&version=%3E%3D2.0.0
 ```
 
+On a named prerelease channel a `?version` range matches that channel's
+releases across every major.minor.patch, so the request above lists
+`2.1.0-beta.1` alongside `2.5.0-beta.2`. Semver precedence still applies:
+`2.0.0-beta.3` sorts below `2.0.0`, so use a `-0` lower bound
+(`version=%3E%3D2.0.0-0`) to include the `2.0.0` betas themselves. With
+`*` or no channel, ranges follow standard semver semantics: a prerelease
+only matches inside the major.minor.patch of a prerelease comparator
+(`>=2.0.0` lists stable releases only; `>=2.1.0-beta.0` also lists the
+`2.1.0` betas).
+
 ## List channels
 
 ```
