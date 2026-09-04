@@ -66,8 +66,9 @@ describe("/api/channels", () => {
   });
 
   // regression (#81): 2.9.0-1 was classified stable and became the stable
-  // channel's latest, so /download served a prerelease to stable users
-  it("keeps a numeric-only prerelease off the stable channel", async () => {
+  // channel's latest, so /download served a prerelease to stable users; the
+  // numeric identifier is its channel, like any other identifier
+  it("keeps a numeric prerelease off the stable channel", async () => {
     const releases = [
       buildRelease({
         owner: OWNER,
@@ -85,7 +86,7 @@ describe("/api/channels", () => {
     );
     expect(byName.stable.latest).toBe("2.7.0");
     expect(byName.stable.versions_count).toBe(3);
-    expect(byName.prerelease.latest).toBe("2.9.0-1");
+    expect(byName["1"].latest).toBe("2.9.0-1");
   });
 
   it("lists every channel when prereleases exist", async () => {

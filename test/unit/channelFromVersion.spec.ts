@@ -1,8 +1,5 @@
 import { describe, it, expect } from "vitest";
-import {
-  channelFromVersion,
-  NUMERIC_PRERELEASE_CHANNEL,
-} from "../../src/utils/channelFromVersion.js";
+import { channelFromVersion } from "../../src/utils/channelFromVersion.js";
 
 describe("channelFromVersion", () => {
   it("should return 'stable' for versions without prerelease components", () => {
@@ -28,13 +25,15 @@ describe("channelFromVersion", () => {
 
   // regression (#81): semver.prerelease("1.0.0-1") returns [1] (a number),
   // which used to fall through to "stable" and put a prerelease in front of
-  // stable users
-  it("puts numeric-first prereleases on the shared prerelease channel", () => {
-    expect(channelFromVersion("1.0.0-1")).toBe(NUMERIC_PRERELEASE_CHANNEL);
-    expect(channelFromVersion("1.0.0-0")).toBe(NUMERIC_PRERELEASE_CHANNEL);
-    expect(channelFromVersion("2.1.0-42")).toBe(NUMERIC_PRERELEASE_CHANNEL);
-    expect(channelFromVersion("2.1.0-1.beta")).toBe(NUMERIC_PRERELEASE_CHANNEL);
-    expect(NUMERIC_PRERELEASE_CHANNEL).not.toBe("stable");
+  // stable users. A numeric identifier is a valid semver prerelease
+  // (the spec's own examples include 1.0.0-0.3.7) and names the channel
+  // like any other identifier
+  it("uses a numeric first identifier as the channel name", () => {
+    expect(channelFromVersion("1.0.0-1")).toBe("1");
+    expect(channelFromVersion("1.0.0-0")).toBe("0");
+    expect(channelFromVersion("2.1.0-42")).toBe("42");
+    expect(channelFromVersion("2.1.0-1.beta")).toBe("1");
+    expect(channelFromVersion("1.0.0-0.3.7")).toBe("0");
   });
 
   it("should handle various prerelease formats", () => {
