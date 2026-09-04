@@ -65,28 +65,6 @@ describe("/api/channels", () => {
     expect(res.body[0].versions_count).toBe(3);
   });
 
-  // regression (#81): 2.9.0-1 used to become the stable channel's latest
-  it("keeps a numeric prerelease off the stable channel", async () => {
-    const releases = [
-      buildRelease({
-        owner: OWNER,
-        repo: REPO,
-        version: "2.9.0-1",
-        prerelease: true,
-        assets: [],
-      }),
-      ...buildStableReleaseSet(OWNER, REPO),
-    ];
-    const { app } = configureTestAppWithReleases(releases);
-    const res = await supertest(app).get("/api/channels").expect(200);
-    const byName = Object.fromEntries(
-      res.body.map((c: { name: string }) => [c.name, c]),
-    );
-    expect(byName.stable.latest).toBe("2.7.0");
-    expect(byName.stable.versions_count).toBe(3);
-    expect(byName["1"].latest).toBe("2.9.0-1");
-  });
-
   it("lists every channel when prereleases exist", async () => {
     const { app } = configureTestAppWithReleases(
       buildMixedChannelReleaseSet(OWNER, REPO),

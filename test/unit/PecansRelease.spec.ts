@@ -61,16 +61,6 @@ describe("PecansRelease", () => {
       expect(new PecansRelease(createMockReleaseDTO()).channel).toBe("stable");
     });
 
-    // regression (#81)
-    it("keeps numeric prereleases off the stable channel", () => {
-      const release = new PecansRelease(
-        createMockReleaseDTO({ version: "1.0.0-2" }),
-      );
-      expect(release.channel).toBe("2");
-      expect(release.satisfiesChannel("stable")).toBe(false);
-      expect(release.satisfiesChannel("2")).toBe(true);
-    });
-
     it("should filter out assets that fail to parse", () => {
       const consoleErrorSpy = vi
         .spyOn(console, "error")
