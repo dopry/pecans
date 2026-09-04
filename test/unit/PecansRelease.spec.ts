@@ -86,7 +86,7 @@ describe("PecansRelease", () => {
 
     // regression (#80): an unparseable version slipped through as "stable"
     // and later threw inside the semver sort of the whole collection
-    it("throws on a version that is not semver", () => {
+    it("throws on a version that is not a release version", () => {
       for (const version of ["nightly", "not-a-semver", "1.0", "1.0.0-2"]) {
         expect(
           () => new PecansRelease(createMockReleaseDTO({ version })),

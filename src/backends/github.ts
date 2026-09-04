@@ -254,7 +254,7 @@ export class PecansGitHubBackend extends Backend<GithubReleaseAsset> {
 
   /**
    * Build a PecansRelease from a GitHub release. Throws when the tag is not
-   * a semver version; fetchReleases filters those out before calling this.
+   * a release version; fetchReleases filters those out before calling this.
    */
   normalizeRelease(release: GithubRelease): PecansRelease {
     const version = this.versionFromTag(release.tag_name);

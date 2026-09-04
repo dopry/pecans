@@ -359,7 +359,7 @@ describe("PecansGitHubBackend", () => {
 
     // regression (#80): one non-semver tag took every route down with
     // "Invalid Version"; it is skipped with a warning and the rest served
-    it("skips releases whose tag is not a semver version", async () => {
+    it("skips releases whose tag is not a release version", async () => {
       const mockReleases = [
         {
           id: 1,
@@ -674,7 +674,7 @@ describe("PecansGitHubBackend", () => {
 
     // regression (#80): a tag that is not a version used to fall back to
     // the raw tag string, which then blew up inside the PecansReleases sort
-    it("throws on a tag that is not a semver version", () => {
+    it("throws on a tag that is not a release version", () => {
       for (const tag_name of [
         "release-1.0.0-beta",
         "not-a-semver",
