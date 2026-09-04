@@ -38,9 +38,10 @@ Unmarked architectures default to 64-bit; `arm64`, `ia32`/`i386`/`x86`, and
 
 Pecans requires [SemVer](https://semver.org) tags (a leading `v` is fine).
 The prerelease identifier is the release channel: `2.0.0-beta.3` lands on
-the `beta` channel, `2.0.0` on `stable`. A version whose prerelease
-identifier is only a number (`2.9.0-1`) has no channel name of its own, so
-it lands on a shared `prerelease` channel; it is never served as stable.
+the `beta` channel, `2.0.0` on `stable`. A version whose first prerelease
+identifier is a number (`2.9.0-1`, `2.9.0-1.beta`) has no channel name of
+its own, so it lands on a shared `prerelease` channel; it is never served
+as stable.
 A published release whose tag is not a version (`nightly`, `latest`,
 `docs-1`) is skipped with a warning in the server log; the other releases
 are served normally.
