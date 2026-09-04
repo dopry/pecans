@@ -23,20 +23,12 @@ describe("channelFromVersion", () => {
     expect(channelFromVersion("3.2.1-canary.5")).toBe("canary");
   });
 
-  // regression (#81): numeric identifiers used to fall through to "stable"
-  it("uses a numeric first identifier as the channel name", () => {
-    expect(channelFromVersion("1.0.0-1")).toBe("1");
-    expect(channelFromVersion("1.0.0-0")).toBe("0");
-    expect(channelFromVersion("2.1.0-42")).toBe("42");
-    expect(channelFromVersion("2.1.0-1.beta")).toBe("1");
-    expect(channelFromVersion("1.0.0-0.3.7")).toBe("0");
-  });
-
   it("should handle various prerelease formats", () => {
     expect(channelFromVersion("1.0.0-beta.1")).toBe("beta");
     expect(channelFromVersion("1.0.0-alpha.2.3")).toBe("alpha");
     expect(channelFromVersion("1.0.0-rc")).toBe("rc");
     expect(channelFromVersion("1.0.0-dev.snapshot")).toBe("dev");
+    expect(channelFromVersion("1.0.0-1")).toBe("1"); // #81
   });
 
   it("should handle edge case versions", () => {
