@@ -3,12 +3,24 @@ import { prerelease } from "semver";
 /** The channel a version without a prerelease identifier lands on. */
 export const STABLE_CHANNEL = "stable";
 
-// Extract channel of version
+/**
+ * The channel a version whose first prerelease identifier is numeric lands
+ * on ("2.9.0-1"). Such a version is still a prerelease under semver, so it
+ * must never reach stable users (#81); it has no name of its own, so all
+ * numeric-first prereleases share this channel.
+ */
+export const NUMERIC_PRERELEASE_CHANNEL = "prerelease";
+
+/**
+ * The channel a version belongs to: stable for a plain release, otherwise
+ * the first prerelease identifier ("2.0.0-beta.3" -> "beta"), or the shared
+ * numeric-prerelease channel when that identifier is a number.
+ */
 export function channelFromVersion(version: string): string {
   const components = prerelease(version);
   if (!components) return STABLE_CHANNEL;
   const [channel] = components;
-  return typeof channel == "string" ? channel : STABLE_CHANNEL;
+  return typeof channel == "string" ? channel : NUMERIC_PRERELEASE_CHANNEL;
 }
 
 /**

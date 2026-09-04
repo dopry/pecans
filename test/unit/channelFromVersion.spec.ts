@@ -1,5 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { channelFromVersion } from "../../src/utils/channelFromVersion.js";
+import {
+  channelFromVersion,
+  NUMERIC_PRERELEASE_CHANNEL,
+} from "../../src/utils/channelFromVersion.js";
 
 describe("channelFromVersion", () => {
   it("should return 'stable' for versions without prerelease components", () => {
@@ -23,13 +26,15 @@ describe("channelFromVersion", () => {
     expect(channelFromVersion("3.2.1-canary.5")).toBe("canary");
   });
 
-  it("should return 'stable' when prerelease component is not a string", () => {
-    // This targets the uncovered branch: typeof channel == "string" ? channel : "stable"
-    // When semver.prerelease returns an array with numeric first element (not string)
-    // semver.prerelease("1.0.0-1") returns [1] (number), not ["1"] (string)
-    expect(channelFromVersion("1.0.0-1")).toBe("stable"); // Numeric prerelease -> stable
-    expect(channelFromVersion("1.0.0-0")).toBe("stable"); // Numeric 0 -> stable
-    expect(channelFromVersion("2.1.0-42")).toBe("stable"); // Any numeric prerelease -> stable
+  // regression (#81): semver.prerelease("1.0.0-1") returns [1] (a number),
+  // which used to fall through to "stable" and put a prerelease in front of
+  // stable users
+  it("puts numeric-first prereleases on the shared prerelease channel", () => {
+    expect(channelFromVersion("1.0.0-1")).toBe(NUMERIC_PRERELEASE_CHANNEL);
+    expect(channelFromVersion("1.0.0-0")).toBe(NUMERIC_PRERELEASE_CHANNEL);
+    expect(channelFromVersion("2.1.0-42")).toBe(NUMERIC_PRERELEASE_CHANNEL);
+    expect(channelFromVersion("2.1.0-1.beta")).toBe(NUMERIC_PRERELEASE_CHANNEL);
+    expect(NUMERIC_PRERELEASE_CHANNEL).not.toBe("stable");
   });
 
   it("should handle various prerelease formats", () => {

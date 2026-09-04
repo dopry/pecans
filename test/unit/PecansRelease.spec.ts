@@ -58,12 +58,17 @@ describe("PecansRelease", () => {
     });
 
     it("derives the stable channel for release versions", () => {
-      // no prerelease identifier means the stable channel; numeric-only
-      // prerelease ids (1.0.0-2) also fall back to stable
       expect(new PecansRelease(createMockReleaseDTO()).channel).toBe("stable");
-      expect(
-        new PecansRelease(createMockReleaseDTO({ version: "1.0.0-2" })).channel,
-      ).toBe("stable");
+    });
+
+    // regression (#81): a numeric-only prerelease id (1.0.0-2) is still a
+    // prerelease and must never land on the stable channel
+    it("keeps numeric-only prereleases off the stable channel", () => {
+      const release = new PecansRelease(
+        createMockReleaseDTO({ version: "1.0.0-2" }),
+      );
+      expect(release.channel).toBe("prerelease");
+      expect(release.satisfiesChannel("stable")).toBe(false);
     });
 
     it("should filter out assets that fail to parse", () => {
