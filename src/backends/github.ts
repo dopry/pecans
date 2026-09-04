@@ -15,7 +15,6 @@ import {
 // than the ../utils barrel
 import { filenameToPlatform } from "../utils/platforms.js";
 import { PecansReleases } from "../models/PecansReleases.js";
-import { clean } from "semver";
 
 // see: https://docs.github.com/en/rest/releases/releases
 export type GithubReleaseAsset =
@@ -159,8 +158,17 @@ export class PecansGitHubBackend extends Backend<GithubReleaseAsset> {
       { owner, repo },
     );
 
-    const publishedReleases = releases.filter((releases) => {
-      return releases.draft === false;
+    const publishedReleases = releases.filter((release) => {
+      if (release.draft !== false) return false;
+      // one non-semver tag (a "nightly" or "latest" tag, a docs tag) must
+      // not take every route down: skip it, loudly, and serve the rest (#80)
+      if (this.versionFromTag(release.tag_name) === undefined) {
+        console.warn(
+          `Skipping release ${release.tag_name}: tag is not a semver version`,
+        );
+        return false;
+      }
+      return true;
     });
 
     const normalizedReleases = publishedReleases.map((release) =>
@@ -244,9 +252,17 @@ export class PecansGitHubBackend extends Backend<GithubReleaseAsset> {
     return response.body ? Readable.fromWeb(response.body) : null;
   }
 
+  /**
+   * Build a PecansRelease from a GitHub release. Throws when the tag is not
+   * a semver version; fetchReleases filters those out before calling this.
+   */
   normalizeRelease(release: GithubRelease): PecansRelease {
-    const version =
-      clean(release.tag_name, { loose: true }) || release.tag_name;
+    const version = this.versionFromTag(release.tag_name);
+    if (version === undefined) {
+      throw new Error(
+        `Release tag is not a semver version (${release.tag_name})`,
+      );
+    }
     const notes = release.body || "";
     const published_at = release.published_at
       ? new Date(release.published_at)

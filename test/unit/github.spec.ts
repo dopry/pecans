@@ -357,6 +357,49 @@ describe("PecansGitHubBackend", () => {
       expect(result.getReleases()).toHaveLength(1);
     });
 
+    // regression (#80): one non-semver tag took every route down with
+    // "Invalid Version"; it is skipped with a warning and the rest served
+    it("skips releases whose tag is not a semver version", async () => {
+      const mockReleases = [
+        {
+          id: 1,
+          tag_name: "v1.1.0",
+          draft: false,
+          published_at: "2023-02-01T00:00:00Z",
+          body: null,
+          assets: [],
+        },
+        {
+          id: 2,
+          tag_name: "nightly",
+          draft: false,
+          published_at: "2023-01-15T00:00:00Z",
+          body: null,
+          assets: [],
+        },
+        {
+          id: 3,
+          tag_name: "v1.0.0",
+          draft: false,
+          published_at: "2023-01-01T00:00:00Z",
+          body: null,
+          assets: [],
+        },
+      ];
+
+      mockOctokit.paginate.mockResolvedValue(mockReleases);
+
+      const result = await backend.fetchReleases();
+
+      expect(result.getReleases().map((r) => r.version)).toEqual([
+        "1.1.0",
+        "1.0.0",
+      ]);
+      expect(consoleWarnSpy).toHaveBeenCalledWith(
+        "Skipping release nightly: tag is not a semver version",
+      );
+    });
+
     it("should handle releases without published_at", async () => {
       const mockReleases = [
         {
@@ -619,32 +662,34 @@ describe("PecansGitHubBackend", () => {
       expect(result.published_at).toEqual(new Date("2023-01-01T00:00:00Z"));
     });
 
-    it("should handle release with loose semver tag", () => {
+    // regression (#80): a tag that is not a version used to fall back to
+    // the raw tag string, which then blew up inside the PecansReleases sort
+    it("throws on a tag that is not a semver version", () => {
+      for (const tag_name of ["release-1.0.0-beta", "not-a-semver"]) {
+        const githubRelease = {
+          id: 1,
+          tag_name,
+          published_at: "2023-01-01T00:00:00Z",
+          body: "Not a version",
+          assets: [],
+        };
+        expect(() => backend.normalizeRelease(githubRelease as any)).toThrow(
+          `Release tag is not a semver version (${tag_name})`,
+        );
+      }
+    });
+
+    it("cleans a leading v and build metadata from the tag", () => {
       const githubRelease = {
         id: 1,
-        tag_name: "release-1.0.0-beta",
+        tag_name: "v1.0.0-beta.1+build.7",
         published_at: "2023-01-01T00:00:00Z",
         body: "Beta release",
         assets: [],
       };
-
       const result = backend.normalizeRelease(githubRelease as any);
-
-      expect(result.version).toBe("release-1.0.0-beta");
-    });
-
-    it("should handle release with invalid semver tag", () => {
-      const githubRelease = {
-        id: 1,
-        tag_name: "not-a-semver",
-        published_at: "2023-01-01T00:00:00Z",
-        body: "Invalid semver",
-        assets: [],
-      };
-
-      const result = backend.normalizeRelease(githubRelease as any);
-
-      expect(result.version).toBe("not-a-semver");
+      expect(result.version).toBe("1.0.0-beta.1");
+      expect(result.channel).toBe("beta");
     });
 
     it("should handle release with null body and published_at", () => {

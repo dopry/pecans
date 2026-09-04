@@ -89,6 +89,16 @@ describe("PecansRelease", () => {
       consoleErrorSpy.mockRestore();
     });
 
+    // regression (#80): an unparseable version slipped through as "stable"
+    // and later threw inside the semver sort of the whole collection
+    it("throws on a version that is not semver", () => {
+      for (const version of ["nightly", "not-a-semver", "1.0"]) {
+        expect(
+          () => new PecansRelease(createMockReleaseDTO({ version })),
+        ).toThrow(`Invalid semver version (${version})`);
+      }
+    });
+
     it("should handle empty assets array", () => {
       const release = new PecansRelease(
         createMockReleaseDTO({

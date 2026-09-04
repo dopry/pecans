@@ -3,6 +3,7 @@ import supertest from "supertest";
 import { afterEach, describe, expect, it } from "vitest";
 import {
   buildMixedChannelReleaseSet,
+  buildRelease,
   buildStableReleaseSet,
 } from "../fixtures/builders.js";
 import { configureTestAppWithReleases } from "../harness.js";
@@ -42,6 +43,26 @@ describe("/api/channels", () => {
       "published_at",
       "versions_count",
     ]);
+  });
+
+  // regression (#80): one published release with a non-semver tag made
+  // every route 500 with "Invalid Version"; it is skipped and the rest served
+  it("ignores a release whose tag is not a semver version", async () => {
+    const releases = [
+      buildRelease({
+        owner: OWNER,
+        repo: REPO,
+        version: "nightly",
+        published_at: "2026-01-01T00:00:00.000Z",
+        assets: [],
+      }),
+      ...buildStableReleaseSet(OWNER, REPO),
+    ];
+    const { app } = configureTestAppWithReleases(releases);
+    const res = await supertest(app).get("/api/channels").expect(200);
+    expect(res.body).toHaveLength(1);
+    expect(res.body[0].latest).toBe("2.7.0");
+    expect(res.body[0].versions_count).toBe(3);
   });
 
   it("lists every channel when prereleases exist", async () => {
