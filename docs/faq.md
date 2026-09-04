@@ -36,12 +36,12 @@ Unmarked architectures default to 64-bit; `arm64`, `ia32`/`i386`/`x86`, and
 
 ### How should I tag my releases?
 
-Pecans requires [SemVer](https://semver.org) tags (a leading `v` is fine).
-The prerelease identifier is the release channel: `2.0.0-beta.3` lands on
-the `beta` channel, `2.0.0` on `stable`, and `2.9.0-1` on a channel named
-`1`. A published release whose tag is not a version (`nightly`, `latest`,
-`docs-1`) is skipped with a warning in the server log; the other releases
-are served normally.
+Tag releases as `X.Y.Z` or `X.Y.Z-<channel>.<N>`, the shapes
+[semantic-release](https://semantic-release.gitbook.io) produces (a leading
+`v` is fine). The channel is the release channel: `2.0.0-beta.3` lands on
+the `beta` channel, `2.0.0` on `stable`. A published release with any other
+tag (`nightly`, `2.0.0-rc1`, `2.9.0-1`) is skipped with a warning in the
+server log; the other releases are served normally.
 
 ### Does pecans provide an Atom feed of versions?
 

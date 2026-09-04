@@ -3,6 +3,7 @@ export * from "./OperatingSystem.js";
 export * from "./PackageFormat.js";
 export * from "./platforms.js";
 export * from "./channelFromVersion.js";
+export * from "./isReleaseVersion.js";
 export * from "./mergeReleaseNotes.js";
 export * from "./sortReleaseBySemVerDescending.js";
 export * from "./win-releases.js";

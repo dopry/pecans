@@ -1,10 +1,11 @@
-import { satisfies, valid, validRange } from "semver";
+import { satisfies, validRange } from "semver";
 // keep the module graph cycle-free: import specific util modules rather
 // than the ../utils barrel
 import {
   channelFromVersion,
   channelQueryIncludesPrereleases,
 } from "../utils/channelFromVersion.js";
+import { isReleaseVersion } from "../utils/isReleaseVersion.js";
 import type { PecansAssetQuery } from "./PecansAssetQuery.js";
 import { PecansAsset, type PecansAssetDTO } from "./PecansAsset.js";
 import type { PecansReleaseQuery } from "./PecansReleaseQuery.js";
@@ -37,12 +38,10 @@ export class PecansRelease implements PecansReleaseDTO {
   version: string;
 
   constructor(dto: PecansReleaseDTO) {
-    // every consumer (channel derivation, semver sorting, range matching)
-    // assumes a parseable version; an invalid one used to slip through as a
-    // "stable" release and then throw inside the PecansReleases sort,
-    // taking the whole collection down with it (#80)
-    if (!valid(dto.version)) {
-      throw new Error(`Invalid semver version (${dto.version})`);
+    // every consumer assumes a version of the accepted shape; an invalid one
+    // used to slip through and throw inside the PecansReleases sort (#80)
+    if (!isReleaseVersion(dto.version)) {
+      throw new Error(`Invalid release version (${dto.version})`);
     }
     this.channel = channelFromVersion(dto.version);
     this.assets = dto.assets
