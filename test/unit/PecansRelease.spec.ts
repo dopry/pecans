@@ -61,9 +61,7 @@ describe("PecansRelease", () => {
       expect(new PecansRelease(createMockReleaseDTO()).channel).toBe("stable");
     });
 
-    // regression (#81): a numeric prerelease id (1.0.0-2) is still a
-    // prerelease and must never land on the stable channel; the identifier
-    // is the channel, like any other
+    // regression (#81)
     it("keeps numeric prereleases off the stable channel", () => {
       const release = new PecansRelease(
         createMockReleaseDTO({ version: "1.0.0-2" }),

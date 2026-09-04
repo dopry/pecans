@@ -23,11 +23,7 @@ describe("channelFromVersion", () => {
     expect(channelFromVersion("3.2.1-canary.5")).toBe("canary");
   });
 
-  // regression (#81): semver.prerelease("1.0.0-1") returns [1] (a number),
-  // which used to fall through to "stable" and put a prerelease in front of
-  // stable users. A numeric identifier is a valid semver prerelease
-  // (the spec's own examples include 1.0.0-0.3.7) and names the channel
-  // like any other identifier
+  // regression (#81): numeric identifiers used to fall through to "stable"
   it("uses a numeric first identifier as the channel name", () => {
     expect(channelFromVersion("1.0.0-1")).toBe("1");
     expect(channelFromVersion("1.0.0-0")).toBe("0");

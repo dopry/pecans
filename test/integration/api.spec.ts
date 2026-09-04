@@ -65,9 +65,7 @@ describe("/api/channels", () => {
     expect(res.body[0].versions_count).toBe(3);
   });
 
-  // regression (#81): 2.9.0-1 was classified stable and became the stable
-  // channel's latest, so /download served a prerelease to stable users; the
-  // numeric identifier is its channel, like any other identifier
+  // regression (#81): 2.9.0-1 used to become the stable channel's latest
   it("keeps a numeric prerelease off the stable channel", async () => {
     const releases = [
       buildRelease({
