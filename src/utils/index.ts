@@ -6,4 +6,5 @@ export * from "./channelFromVersion.js";
 export * from "./isReleaseVersion.js";
 export * from "./mergeReleaseNotes.js";
 export * from "./sortReleaseBySemVerDescending.js";
+export * from "./versionFromFilename.js";
 export * from "./win-releases.js";

@@ -1,15 +1,5 @@
-import { SemVer } from "semver";
 import { stripBom } from "./stripBOM.js";
-
-// Ordered list of supported channels
-// there is an implicit assumptions that windows build numbers map to
-// alpha.N = 1000 + N,
-// beta.N = 2000 + N
-// unstable.N = 3000 + N,
-// rc.N = 4000 + N
-// I'm not sure if this is a sane assumption, but it is probably something that should be documented.
-const CHANNEL_MAGINITUDE = 1000;
-const CHANNELS = ["alpha", "beta", "unstable", "rc"];
+import { versionFromFilename } from "./versionFromFilename.js";
 
 // RELEASES parsing
 const releaseRe = /^([0-9a-fA-F]{40})\s+(\S+)\s+(\d+)[\r]*$/;
@@ -21,49 +11,8 @@ export interface SquirrelRelease {
   size: number;
   isDelta: boolean;
   version: string;
-  semver: string;
-}
-
-// Hash a prerelease
-function hashPrerelease(s: readonly (string | number)[] = []): number {
-  const [channel, ver] = s;
-  if (typeof channel == "string") {
-    const chanIdx = CHANNELS.indexOf(channel) + 1;
-    const offset = Number(ver || 0);
-    return chanIdx * 1000 + offset;
-  } else {
-    return channel;
-  }
-}
-
-// Map a semver version to a windows version
-export function normVersion(tag: string) {
-  const parts = new SemVer(tag);
-  let prerelease = "";
-  if (parts.prerelease && parts.prerelease.length > 0) {
-    prerelease = hashPrerelease(parts.prerelease).toString();
-  }
-
-  return (
-    [parts.major, parts.minor, parts.patch].join(".") +
-    (prerelease ? "." + prerelease : "")
-  );
-}
-
-// Map a windows version to a semver
-export function toSemver(tag: string) {
-  const parts = tag.split(".");
-  const version = parts.slice(0, 3).join(".");
-  const prerelease = Number(parts[3]);
-
-  // semver == windows version
-  if (!prerelease) return version;
-
-  const channelId = Math.floor(prerelease / CHANNEL_MAGINITUDE);
-  const channel = CHANNELS[channelId - 1];
-  const count = prerelease - channelId * CHANNEL_MAGINITUDE;
-
-  return version + "-" + channel + "." + count;
+  /** undefined when the filename carries no release version */
+  semver?: string;
 }
 
 // Parse RELEASES file
@@ -97,7 +46,9 @@ export async function parseRELEASES(
       .join(".");
     const sha = parts[1] || "";
     const size = Number(parts[3] || 0);
-    const semver = toSemver(version);
+    // the filename carries the release version verbatim; the four-part
+    // build number above cannot name a channel it does not encode
+    const semver = versionFromFilename(filename);
 
     return {
       // TODO: This should probably have a value.
