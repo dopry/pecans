@@ -43,9 +43,12 @@ export function createUpdateOSXHandler(
 
       // a channel named in the path must exist: an unknown one is a 404,
       // never "you are current", or a typo in the feed url looks to the
-      // client like an app that never needs updating (#87)
+      // client like an app that never needs updating (#87). "*" names every
+      // channel rather than one, so there is nothing to look up.
       const channelParam = getStringParam(req, "channel");
-      if (channelParam) await ctx.validateChannelName(channelParam);
+      if (channelParam && channelParam !== "*") {
+        await ctx.validateChannelName(channelParam);
+      }
       const channel = channelParam || "stable";
       // the nuts-era ?filetype query on /update was removed in 2.0 in favor
       // of the update.electronjs.org format segment
@@ -111,7 +114,9 @@ export function createUpdateWinHandler(ctx: PecansHttpContext) {
       // as on the Squirrel.Mac feed, a channel named in the path must
       // exist, so a typo is a clear 404 rather than "Version not found"
       const channelParam = getStringParam(req, "channel");
-      if (channelParam) await ctx.validateChannelName(channelParam);
+      if (channelParam && channelParam !== "*") {
+        await ctx.validateChannelName(channelParam);
+      }
       const channel = channelParam || "stable";
       const tag = getStringParam(req, "version");
       if (!tag) throw new BadRequestError('Requires "version" parameter');

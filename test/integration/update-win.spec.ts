@@ -144,6 +144,17 @@ describe("/update/:platform/:version/RELEASES (Squirrel.Windows)", () => {
     expect(res.text).toContain("Invalid Channel: nightly");
   });
 
+  it("serves a manifest across channels on the * channel", async () => {
+    const { app } = await setupReleasesRequest(
+      buildMixedChannelReleaseSet(OWNER, REPO),
+      "2.7.0",
+    );
+    const res = await supertest(app)
+      .get("/update/channel/*/windows_64/2.6.0/RELEASES")
+      .expect(200);
+    expectRELEASESFormat(bodyText(res));
+  });
+
   // regression (#79): a beta client on Windows was handed its own
   // version's manifest instead of the next minor's beta
   it("serves the next minor's beta manifest to a beta client", async () => {

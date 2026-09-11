@@ -45,7 +45,8 @@ canonical `linux_32` id if you need it.)
 
 Squirrel.Mac-shaped JSON (`204` when current; `200 {url, name, notes,
 pub_date}` when an update exists). On the channel variants an unknown
-channel is a `404`, so a typo in the feed url cannot pass for "up to date":
+channel is a `404`, so a typo in the feed url cannot pass for "up to date"
+(`*` names every channel and is always accepted):
 
 - `/update/:platform/:version`
 - `/update/channel/:channel/:platform/:version`
