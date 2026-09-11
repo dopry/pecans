@@ -43,6 +43,12 @@ the `beta` channel, `2.0.0` on `stable`. A published release with any other
 tag (`nightly`, `2.0.0-rc1`, `2.9.0-1`) is skipped with a warning in the
 server log; the other releases are served normally.
 
+GitHub's "Set as a pre-release" checkbox does not change the channel — the
+tag is the only source. A release tagged `2.9.0` is served on `stable` even
+when the box is ticked, and one tagged `2.9.0-beta.1` is served on `beta`
+even when it is not. Pecans warns in the server log when the two disagree,
+so tick the box to match your tag and keep the GitHub UI honest.
+
 ### Does pecans provide an Atom feed of versions?
 
 No — the 1.x Atom feeds were removed in 2.0. Poll

@@ -13,6 +13,10 @@ import {
 } from "../models/index.js";
 // keep the module graph cycle-free: import specific util modules rather
 // than the ../utils barrel
+import {
+  STABLE_CHANNEL,
+  channelFromVersion,
+} from "../utils/channelFromVersion.js";
 import { filenameToPlatform } from "../utils/platforms.js";
 import { PecansReleases } from "../models/PecansReleases.js";
 
@@ -162,12 +166,14 @@ export class PecansGitHubBackend extends Backend<GithubReleaseAsset> {
       if (release.draft !== false) return false;
       // one non-semver tag (a "nightly" or "latest" tag, a docs tag) must
       // not take every route down: skip it, loudly, and serve the rest (#80)
-      if (this.versionFromTag(release.tag_name) === undefined) {
+      const version = this.versionFromTag(release.tag_name);
+      if (version === undefined) {
         console.warn(
           `Skipping release ${release.tag_name}: expected a tag like X.Y.Z or X.Y.Z-<channel>.<N>`,
         );
         return false;
       }
+      this.warnOnPrereleaseFlagMismatch(release, version);
       return true;
     });
 
@@ -250,6 +256,27 @@ export class PecansGitHubBackend extends Backend<GithubReleaseAsset> {
     // native fetch resolves `body` to a web ReadableStream; wrap it as a Node
     // Readable so callers (readAsset's stream.pipeline) keep working unchanged.
     return response.body ? Readable.fromWeb(response.body) : null;
+  }
+
+  /**
+   * The tag decides the channel, so GitHub's pre-release checkbox is only
+   * advisory; say so when the two disagree rather than silently picking one
+   * (#86).
+   */
+  protected warnOnPrereleaseFlagMismatch(
+    release: GithubRelease,
+    version: string,
+  ): void {
+    const channel = channelFromVersion(version);
+    if (release.prerelease && channel === STABLE_CHANNEL) {
+      console.warn(
+        `Release ${release.tag_name} is marked as a pre-release on GitHub, but its tag names no prerelease channel, so it is served on ${STABLE_CHANNEL}. Tag it X.Y.Z-<channel>.<N> to keep it off ${STABLE_CHANNEL}.`,
+      );
+    } else if (!release.prerelease && channel !== STABLE_CHANNEL) {
+      console.warn(
+        `Release ${release.tag_name} is not marked as a pre-release on GitHub, but its tag names the ${channel} channel, so it is served on ${channel} rather than ${STABLE_CHANNEL}.`,
+      );
+    }
   }
 
   /**
