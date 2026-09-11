@@ -14,12 +14,28 @@ describe("versionFromFilename", () => {
     // 1.32.0 is a version, not a 32-bit marker
     ["MyApp-1.32.0-x64-full.nupkg", "1.32.0"],
     ["app-2.7.0-univ.dmg", "2.7.0"],
+    // a bare version keeps its last segment: ".0" is not a file extension
+    ["app-2.9.0", "2.9.0"],
   ])("reads %s as %s", (filename, version) => {
     expect(versionFromFilename(filename)).toBe(version);
   });
 
   it.each(["RELEASES", "app-latest-full.nupkg", "app-2.9-x64.exe"])(
     "returns undefined for %s",
+    (filename) => {
+      expect(versionFromFilename(filename)).toBeUndefined();
+    },
+  );
+
+  // a prerelease outside the supported shapes is not a stable release: the
+  // "2.9.0" sitting inside "2.9.0-rc1" must not be reported as the version
+  it.each([
+    "app-2.9.0-rc1-full.nupkg",
+    "app-2.9.0-rc1-x64-full.nupkg",
+    "app-2.9.0-beta-full.nupkg",
+    "app-2.9.0-1-full.nupkg",
+  ])(
+    "declines %s rather than truncating it to a stable version",
     (filename) => {
       expect(versionFromFilename(filename)).toBeUndefined();
     },

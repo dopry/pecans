@@ -24,6 +24,22 @@ const X64_TOKEN =
 const X32_TOKEN =
   /(?<![a-z0-9])(ia32|i386|x86|win32)(?![a-z0-9])|(?<![a-z0-9.])32(-?bit)?(?![a-z0-9])/;
 
+/**
+ * True when a whole filename part names an architecture, so a reader can
+ * tell "app-2.9.0-x64" (a version then an arch) from "app-2.9.0-rc1" (a
+ * version this project does not support).
+ */
+export function isArchitectureToken(part: string): boolean {
+  const token = part.toLowerCase();
+  return (
+    token == "universal" ||
+    token == "univ" ||
+    ARM_TOKEN.test(token) ||
+    X64_TOKEN.test(token) ||
+    X32_TOKEN.test(token)
+  );
+}
+
 export function filenameToArchitecture(
   filename: string,
   os: OperatingSystem,

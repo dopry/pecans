@@ -209,6 +209,13 @@ describe("Windows RELEASES", function () {
       expect(entry.semver).toBe(semver);
     });
 
+    it("is undefined for a prerelease outside the supported shapes", async function () {
+      const [entry] = await parseRELEASES(
+        "62E8BF432F29E8E08240910B85EDBF2D1A41EDF2 app-2.9.0-rc1-x64-full.nupkg 81272434",
+      );
+      expect(entry.semver).toBeUndefined();
+    });
+
     it("is undefined when the filename carries no version", async function () {
       const [entry] = await parseRELEASES(
         "62E8BF432F29E8E08240910B85EDBF2D1A41EDF2 app-name-only.nupkg 81272434",
