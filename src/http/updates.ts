@@ -66,9 +66,8 @@ export function createUpdateOSXHandler(
       const latest = versions[0];
       if (latest.version == tag) return res.status(204).send("No updates");
 
-      // exclude the client's own release by version: it is not always the
-      // last entry (it may have no release, or none on this channel)
-      const notesSlice = versions.filter((release) => release.version !== tag);
+      const notesSlice =
+        versions.length === 1 ? [latest] : versions.slice(0, -1);
       const url = `${ctx.getBaseUrl(req)}/download/version/${
         latest.version
       }/${platform}?filetype=${encodeURIComponent(filetype)}`;
