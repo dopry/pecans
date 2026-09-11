@@ -4,6 +4,15 @@ Pecans fetches releases from GitHub Releases and caches the list (2 hours by
 default, configurable with `PECANS_CACHE_MAX_AGE`). Without a webhook there
 can be a delay between publishing a release and pecans serving it.
 
+## Channels come from the tag
+
+Pecans derives a release's channel from its tag's prerelease identifier,
+not from GitHub's "Set as a pre-release" checkbox: `2.9.0` is `stable`,
+`2.9.0-beta.1` is `beta`. Ticking the box on a release tagged `2.9.0` does
+not keep it away from stable users — retag it `2.9.0-beta.1` for that.
+Pecans logs a warning when a release's flag and tag disagree. See
+[the FAQ](faq.md) for the accepted tag shapes.
+
 ## Release webhook
 
 Add a [GitHub webhook](https://docs.github.com/en/webhooks) on your releases

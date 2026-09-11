@@ -410,6 +410,61 @@ describe("PecansGitHubBackend", () => {
       }
     });
 
+    // #86: the tag decides the channel, so GitHub's pre-release checkbox is
+    // advisory; a disagreement is a warning, never a change of channel
+    describe("GitHub's pre-release flag", () => {
+      const release = (tag_name: string, prerelease: boolean) => ({
+        id: 1,
+        tag_name,
+        draft: false,
+        prerelease,
+        published_at: "2023-01-01T00:00:00Z",
+        body: null,
+        assets: [],
+      });
+
+      it("still serves a flagged stable-looking tag on stable, with a warning", async () => {
+        mockOctokit.paginate.mockResolvedValue([release("v2.9.0", true)]);
+
+        const result = await backend.fetchReleases();
+
+        expect(result.getChannel("stable").latest).toBe("2.9.0");
+        expect(consoleWarnSpy).toHaveBeenCalledWith(
+          expect.stringContaining(
+            "Release v2.9.0 is marked as a pre-release on GitHub",
+          ),
+        );
+      });
+
+      it("warns when an unflagged tag names a prerelease channel", async () => {
+        mockOctokit.paginate.mockResolvedValue([
+          release("v2.9.0-beta.1", false),
+        ]);
+
+        const result = await backend.fetchReleases();
+
+        expect(result.getChannel("beta").latest).toBe("2.9.0-beta.1");
+        expect(consoleWarnSpy).toHaveBeenCalledWith(
+          expect.stringContaining(
+            "Release v2.9.0-beta.1 is not marked as a pre-release on GitHub",
+          ),
+        );
+      });
+
+      it.each([
+        ["v2.9.0", false],
+        ["v2.9.0-beta.1", true],
+      ])("stays quiet when %s agrees with the flag", async (tag, flagged) => {
+        mockOctokit.paginate.mockResolvedValue([
+          release(tag, flagged as boolean),
+        ]);
+
+        await backend.fetchReleases();
+
+        expect(consoleWarnSpy).not.toHaveBeenCalled();
+      });
+    });
+
     it("should handle releases without published_at", async () => {
       const mockReleases = [
         {
