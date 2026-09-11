@@ -34,6 +34,8 @@ describe("versionFromFilename", () => {
     "app-2.9.0-rc1-x64-full.nupkg",
     "app-2.9.0-beta-full.nupkg",
     "app-2.9.0-1-full.nupkg",
+    // merely ending in an arch marker does not make the suffix one
+    "app-2.9.0-rc.1.x64-full.nupkg",
   ])(
     "declines %s rather than truncating it to a stable version",
     (filename) => {

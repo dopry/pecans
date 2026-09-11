@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   ARCHITECTURES,
   isArchitecture,
+  isArchitectureToken,
   filenameToArchitecture,
   getSupportedArchByOs,
   isValidArchForOS,
@@ -13,6 +14,39 @@ describe("Architecture", () => {
     it("should contain all expected architecture values", () => {
       expect(ARCHITECTURES).toEqual(["32", "64", "arm64", "universal"]);
     });
+  });
+
+  describe("isArchitectureToken", () => {
+    it.each([
+      "x64",
+      "X64",
+      "64",
+      "64bit",
+      "x86_64",
+      "amd64",
+      "win64",
+      "arm64",
+      "arm",
+      "armv7l",
+      "ia32",
+      "i386",
+      "x86",
+      "win32",
+      "32",
+      "universal",
+      "univ",
+    ])("accepts %s", (token) => {
+      expect(isArchitectureToken(token)).toBe(true);
+    });
+
+    // the whole part must be the marker: a part that merely ends in one is a
+    // prerelease identifier, not an architecture
+    it.each(["rc.1.x64", "x64.1", "3.x64", "rc1", "beta", "next.3", "1", ""])(
+      "rejects %s",
+      (token) => {
+        expect(isArchitectureToken(token)).toBe(false);
+      },
+    );
   });
 
   describe("isArchitecture", () => {
