@@ -29,6 +29,6 @@ We've created a few guides to help you getting started:
 - [API](api.md)
 - [Use it as a Node.js module](module.md)
 
-----
+---
 
 Using Pecans for your application? [Add it to the list](using-it.md).

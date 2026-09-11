@@ -27,11 +27,11 @@ none of these is the platform's default package.
 
 **Download priority by platform** (first match wins):
 
-| Platform | Extensions (by priority) |
-| -------- | ------------------------ |
-| Windows | `.exe` (default), `.msixbundle`/`.msix` (`?pkg=msix`) |
-| macOS | `.dmg` (downloads), `.zip` (Squirrel.Mac updates) |
-| Linux | `.tgz`/`.tar.gz` (default), `.deb` (`?pkg=deb`), `.rpm` (`?pkg=rpm`) |
+| Platform | Extensions (by priority)                                             |
+| -------- | -------------------------------------------------------------------- |
+| Windows  | `.exe` (default), `.msixbundle`/`.msix` (`?pkg=msix`)                |
+| macOS    | `.dmg` (downloads), `.zip` (Squirrel.Mac updates)                    |
+| Linux    | `.tgz`/`.tar.gz` (default), `.deb` (`?pkg=deb`), `.rpm` (`?pkg=rpm`) |
 
 ## Example
 
