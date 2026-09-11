@@ -18,16 +18,16 @@ listed here, and nothing else is scheduled for removal.
 
 ### Environment variables
 
-| 1.x | 2.x |
-| --- | --- |
-| `GITHUB_REPO=owner/repo` (combined) | `GITHUB_OWNER=owner` and `GITHUB_REPO=repo` (separate) |
-| `GITHUB_USERNAME` / `GITHUB_PASSWORD` | removed — use `GITHUB_TOKEN` |
-| `GITHUB_SECRET` (webhook secret, default `secret`) | `PECANS_REFRESH_SECRET` (no default; webhook disabled when unset) |
+| 1.x                                                           | 2.x                                                                                         |
+| ------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| `GITHUB_REPO=owner/repo` (combined)                           | `GITHUB_OWNER=owner` and `GITHUB_REPO=repo` (separate)                                      |
+| `GITHUB_USERNAME` / `GITHUB_PASSWORD`                         | removed — use `GITHUB_TOKEN`                                                                |
+| `GITHUB_SECRET` (webhook secret, default `secret`)            | `PECANS_REFRESH_SECRET` (no default; webhook disabled when unset)                           |
 | `API_USERNAME` / `API_PASSWORD` (basic auth on the debug API) | removed — the API is public; wrap `pecans.router` with your own middleware if you need auth |
-| `TRUST_PROXY` | unchanged (`true`, hop count, `loopback`, CIDR list, or JSON array) |
-| `PORT` | unchanged |
-| — | `PECANS_BASE_PATH` (path prefix behind rewriting proxies) |
-| — | `PECANS_CACHE_MAX_AGE` (release cache seconds, default 7200) |
+| `TRUST_PROXY`                                                 | unchanged (`true`, hop count, `loopback`, CIDR list, or JSON array)                         |
+| `PORT`                                                        | unchanged                                                                                   |
+| —                                                             | `PECANS_BASE_PATH` (path prefix behind rewriting proxies)                                   |
+| —                                                             | `PECANS_CACHE_MAX_AGE` (release cache seconds, default 7200)                                |
 
 ### Webhook
 
@@ -43,13 +43,13 @@ secret, e.g. `openssl rand -hex 32`.
 
 ### Removed routes
 
-| Removed | Replacement |
-| --- | --- |
-| `GET /` (user-agent-detected download) | none — platform selection is the client's responsibility |
-| `GET /update?platform=&version=` (redirect) | `/update/:platform/:version` |
-| Atom/RSS feeds (`/feed/channel/*.atom`) | none — poll `/api/versions` |
-| `/api/resolve` | `/api/versions?platform=&channel=` |
-| `/api/version/:version` | `/api/versions?version=<range>` |
+| Removed                                     | Replacement                                              |
+| ------------------------------------------- | -------------------------------------------------------- |
+| `GET /` (user-agent-detected download)      | none — platform selection is the client's responsibility |
+| `GET /update?platform=&version=` (redirect) | `/update/:platform/:version`                             |
+| Atom/RSS feeds (`/feed/channel/*.atom`)     | none — poll `/api/versions`                              |
+| `/api/resolve`                              | `/api/versions?platform=&channel=`                       |
+| `/api/version/:version`                     | `/api/versions?version=<range>`                          |
 
 ### Behavior changes
 
@@ -111,14 +111,14 @@ secret, e.g. `openssl rand -hex 32`.
 
 ## Module consumers
 
-| Removed | Replacement |
-| --- | --- |
-| `GitHubBackend` | `PecansGitHubBackend` — note the argument order is `owner, repo, token` (was `token, owner, repo`) |
-| `PecansSettings.timeout` | none needed (accepted but unused since the fork) |
-| `PecansReleaseDTO.channel` | none — the channel always derives from the version's prerelease identifier; `PecansRelease.channel` (derived) is unchanged |
-| `Pecans.versions`, `Versions`, `resolveReleaseAssetForVersion` | `ReleaseService` / `resolveAssetForRelease` |
-| `getPlatformFromUserAgent`, `getArchFromUserAgent`, `getOsFromUserAgent` | none — detect client-side |
-| `Pecans.getChannelFromQuery` | none (unused) |
+| Removed                                                                       | Replacement                                                                                                                                                                                       |
+| ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GitHubBackend`                                                               | `PecansGitHubBackend` — note the argument order is `owner, repo, token` (was `token, owner, repo`)                                                                                                |
+| `PecansSettings.timeout`                                                      | none needed (accepted but unused since the fork)                                                                                                                                                  |
+| `PecansReleaseDTO.channel`                                                    | none — the channel always derives from the version's prerelease identifier; `PecansRelease.channel` (derived) is unchanged                                                                        |
+| `Pecans.versions`, `Versions`, `resolveReleaseAssetForVersion`                | `ReleaseService` / `resolveAssetForRelease`                                                                                                                                                       |
+| `getPlatformFromUserAgent`, `getArchFromUserAgent`, `getOsFromUserAgent`      | none — detect client-side                                                                                                                                                                         |
+| `Pecans.getChannelFromQuery`                                                  | none (unused)                                                                                                                                                                                     |
 | `pecans.before("download", fn)` / `pecans.after("download", fn)` interceptors | `beforeDownload` / `afterDownload` **events** with payload `{req, release, asset}` — notifications only (return values ignored); for auth or gating, wrap `pecans.router` with express middleware |
 
 See [Node.js module usage](module.md) for current examples.
