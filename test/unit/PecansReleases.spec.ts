@@ -125,13 +125,30 @@ describe("PecansReleases", () => {
       const stableChannel = pecansReleases.getChannel("stable");
       const betaChannel = pecansReleases.getChannel("beta");
 
-      // Stable channel: latest by published date should be 1.5.0
+      // Stable channel: highest version should be 1.5.0
       expect(stableChannel!.latest).toBe("1.5.0");
       expect(stableChannel!.published_at).toEqual(new Date("2023-01-15"));
 
       // Beta channel: only one release
       expect(betaChannel!.latest).toBe("2.0.0-beta.1");
       expect(betaChannel!.published_at).toEqual(new Date("2023-02-01"));
+    });
+
+    it("should report the highest version as latest, not the newest publish", () => {
+      const releases = [
+        new PecansRelease(
+          createMockReleaseDTO("2.7.0", new Date("2023-03-01")),
+        ),
+        new PecansRelease(
+          createMockReleaseDTO("2.6.1", new Date("2023-03-02")),
+        ), // backport published after 2.7.0
+      ];
+
+      const pecansReleases = new PecansReleases(releases);
+      const stableChannel = pecansReleases.getChannel("stable");
+
+      expect(stableChannel!.latest).toBe("2.7.0");
+      expect(stableChannel!.published_at).toEqual(new Date("2023-03-01"));
     });
 
     it("should handle empty releases array", () => {
@@ -299,8 +316,8 @@ describe("PecansReleases", () => {
 
       expect(stableChannel!.versions_count).toBe(2);
       expect(stableChannel!.latest).toBe("1.0.0");
-      // Should pick the later published date
-      expect(stableChannel!.published_at).toEqual(new Date("2023-01-02"));
+      // Equal versions keep their source order
+      expect(stableChannel!.published_at).toEqual(new Date("2023-01-01"));
     });
 
     it("should handle prerelease versions correctly", () => {
