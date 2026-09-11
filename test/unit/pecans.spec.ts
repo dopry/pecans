@@ -1459,7 +1459,9 @@ describe("Pecans", () => {
           ).mockResolvedValueOnce(mockReleases as any);
 
           const req = createMockRequest({
-            params: { platform: "osx_64", version: "1.0.0", channel: "beta" },
+            // the mock backend publishes only stable; an unknown channel is
+            // a 404 on the channel routes (#87)
+            params: { platform: "osx_64", version: "1.0.0", channel: "stable" },
           });
           const res = createMockResponse();
           const next = createMockNext();
@@ -1574,7 +1576,9 @@ describe("Pecans", () => {
             params: {
               platform: "windows_32",
               version: "1.0.0",
-              channel: "beta",
+              // the mock backend publishes only stable; an unknown channel
+              // is a 404 on the channel routes (#87)
+              channel: "stable",
             },
           });
           const res = createMockResponse();

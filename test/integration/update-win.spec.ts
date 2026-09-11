@@ -132,6 +132,18 @@ describe("/update/:platform/:version/RELEASES (Squirrel.Windows)", () => {
     expect(text).toContain("app-2.8.0-beta.2-x64-full.nupkg");
   });
 
+  // an unknown channel names no releases: a 404, and now with a message
+  // that says so rather than "Version not found" (#87)
+  it("404s on an unknown channel", async () => {
+    const { app } = configureTestAppWithReleases(
+      buildMixedChannelReleaseSet(OWNER, REPO),
+    );
+    const res = await supertest(app)
+      .get("/update/channel/nightly/windows_64/2.7.0/RELEASES")
+      .expect(404);
+    expect(res.text).toContain("Invalid Channel: nightly");
+  });
+
   // regression (#79): a beta client on Windows was handed its own
   // version's manifest instead of the next minor's beta
   it("serves the next minor's beta manifest to a beta client", async () => {

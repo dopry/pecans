@@ -41,7 +41,12 @@ export function createUpdateOSXHandler(
         );
       }
 
-      const channel = getStringParam(req, "channel") || "stable";
+      // a channel named in the path must exist: an unknown one is a 404,
+      // never "you are current", or a typo in the feed url looks to the
+      // client like an app that never needs updating (#87)
+      const channelParam = getStringParam(req, "channel");
+      if (channelParam) await ctx.validateChannelName(channelParam);
+      const channel = channelParam || "stable";
       // the nuts-era ?filetype query on /update was removed in 2.0 in favor
       // of the update.electronjs.org format segment
       // (/update/:platform/:format/:version); the feed serves the squirrel
@@ -103,7 +108,11 @@ export function createUpdateWinHandler(ctx: PecansHttpContext) {
       const mapped_platform = mapLegacyPlatform(_platform);
       const platform = validateReqQueryPlatform(mapped_platform);
 
-      const channel = getStringParam(req, "channel") || "stable";
+      // as on the Squirrel.Mac feed, a channel named in the path must
+      // exist, so a typo is a clear 404 rather than "Version not found"
+      const channelParam = getStringParam(req, "channel");
+      if (channelParam) await ctx.validateChannelName(channelParam);
+      const channel = channelParam || "stable";
       const tag = getStringParam(req, "version");
       if (!tag) throw new BadRequestError('Requires "version" parameter');
       // the client reports its installed version, so require a specific

@@ -214,6 +214,15 @@ describe("/update/channel/:channel/:platform/:version (Squirrel.Mac)", () => {
       .expect(204);
   });
 
+  // regression (#87): an unknown channel answered 204, so a typo in the
+  // feed url looked to the client like an app that never needs updating
+  it("404s on an unknown channel", async () => {
+    const { app } = configureTestAppWithReleases(
+      buildMixedChannelReleaseSet(OWNER, REPO),
+    );
+    await supertest(app).get("/update/channel/nightly/osx/2.7.0").expect(404);
+  });
+
   // regression (#79): the ">=" + installed-version filter used semver's
   // default prerelease semantics, which only match inside one
   // major.minor.patch tuple, so a beta client never saw the next minor's

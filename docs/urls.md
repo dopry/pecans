@@ -44,7 +44,8 @@ canonical `linux_32` id if you need it.)
 ## Auto-update feeds
 
 Squirrel.Mac-shaped JSON (`204` when current; `200 {url, name, notes,
-pub_date}` when an update exists):
+pub_date}` when an update exists). On the channel variants an unknown
+channel is a `404`, so a typo in the feed url cannot pass for "up to date":
 
 - `/update/:platform/:version`
 - `/update/channel/:channel/:platform/:version`
