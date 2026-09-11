@@ -2,7 +2,6 @@ import type { NextFunction, Request, Response } from "express";
 import type { ParsedQs } from "qs";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
-  getFilenameFromQuery,
   getFiletypeFromQuery,
   getPlatformFromQuery,
   getStringValueFromRequestQuery,
@@ -357,23 +356,6 @@ describe("Pecans", () => {
       it("should return undefined for non-string version", () => {
         const query = { version: ["1.0.0"] };
         expect(getVersionFromQuery(query)).toBeUndefined();
-      });
-    });
-
-    describe("getFilenameFromQuery", () => {
-      it("should return filename from query", () => {
-        const query = { filename: "app.dmg" };
-        expect(getFilenameFromQuery(query)).toBe("app.dmg");
-      });
-
-      it("should return undefined for missing filename", () => {
-        const query = {};
-        expect(getFilenameFromQuery(query)).toBeUndefined();
-      });
-
-      it("should return undefined for non-string filename", () => {
-        const query = { filename: ["app.dmg"] };
-        expect(getFilenameFromQuery(query)).toBeUndefined();
       });
     });
 

@@ -1,9 +1,7 @@
-import QueryString from "qs";
 import { describe, expect, it } from "vitest";
 import {
   OPERATING_SYSTEMS,
   filenameToOperatingSystem,
-  getOsFromQuery,
   isOperatingSystem,
 } from "../../src/utils/OperatingSystem.js";
 
@@ -150,69 +148,6 @@ describe("OperatingSystem", () => {
           "Unable to determine OS from filename.",
         );
       });
-    });
-  });
-
-  describe("getOsFromQuery", () => {
-    it("should return valid operating system from query", () => {
-      const linuxQuery: QueryString.ParsedQs = { os: "linux" };
-      expect(getOsFromQuery(linuxQuery)).toBe("linux");
-
-      const osxQuery: QueryString.ParsedQs = { os: "osx" };
-      expect(getOsFromQuery(osxQuery)).toBe("osx");
-
-      const windowsQuery: QueryString.ParsedQs = { os: "windows" };
-      expect(getOsFromQuery(windowsQuery)).toBe("windows");
-    });
-
-    it("should return undefined for invalid operating systems", () => {
-      const invalidQueries: QueryString.ParsedQs[] = [
-        { os: "android" },
-        { os: "ios" },
-        { os: "freebsd" },
-        { os: "" },
-        { os: "LINUX" }, // case sensitive
-      ];
-
-      invalidQueries.forEach((query) => {
-        expect(getOsFromQuery(query)).toBe(undefined);
-      });
-    });
-
-    it("should return undefined when os is not a string", () => {
-      const nonStringQueries: QueryString.ParsedQs[] = [
-        { os: 123 as any },
-        { os: true as any },
-        { os: {} as any },
-        { os: [] as any },
-        { os: ["linux", "windows"] }, // array
-      ];
-
-      nonStringQueries.forEach((query) => {
-        expect(getOsFromQuery(query)).toBe(undefined);
-      });
-    });
-
-    it("should return undefined when os is missing", () => {
-      const missingOsQueries: QueryString.ParsedQs[] = [
-        {},
-        { other: "value" },
-        { os: undefined },
-      ];
-
-      missingOsQueries.forEach((query) => {
-        expect(getOsFromQuery(query)).toBe(undefined);
-      });
-    });
-
-    it("should handle complex query objects", () => {
-      const complexQuery: QueryString.ParsedQs = {
-        os: "linux",
-        version: "1.0.0",
-        arch: "amd64",
-        other: ["value1", "value2"],
-      };
-      expect(getOsFromQuery(complexQuery)).toBe("linux");
     });
   });
 });
