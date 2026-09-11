@@ -58,5 +58,11 @@ Returns `{uptime}` in seconds.
 GET https://download.myapp.com/notes/2.1.0
 ```
 
-Also accepts `?version=<range|latest>`. Responds with JSON (`{note}`) or
-plain text depending on the `Accept` header.
+Also accepts `?version=<range|latest>` and `?channel=<name|*>`. Responds
+with JSON (`{note}`) or plain text depending on the `Accept` header.
+
+Without a channel the notes come from the latest `stable` release, falling
+back to any channel when stable has none — the same rule as a bare
+`/download/:platform` link. A named channel is honored strictly: no release
+on it is a 404, never a prerelease served to stable users. Asking for a
+specific version serves that release's notes whatever channel it is on.

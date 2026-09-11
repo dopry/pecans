@@ -290,4 +290,73 @@ describe("/notes", () => {
     const res = await supertest(app).get("/notes?version=99.0.0").expect(404);
     expect(res.text).toContain("No release found");
   });
+
+  // regression (#84): notes resolved the semver-highest release across
+  // every channel, so a newer prerelease answered for the latest release
+  describe("channels", () => {
+    const mixed = () => buildMixedChannelReleaseSet(OWNER, REPO);
+
+    it.each(["/notes", "/notes/latest"])(
+      "%s serves the latest stable release, not a newer prerelease",
+      async (path) => {
+        const { app } = configureTestAppWithReleases(mixed());
+        const res = await supertest(app)
+          .get(path)
+          .set("Accept", "application/json")
+          .expect(200);
+        expect(res.body).toEqual({ note: "## 2.7.0\n\nNotes for 2.7.0\n" });
+      },
+    );
+
+    it("?channel selects that channel's latest notes", async () => {
+      const { app } = configureTestAppWithReleases(mixed());
+      const res = await supertest(app)
+        .get("/notes?channel=beta")
+        .set("Accept", "application/json")
+        .expect(200);
+      expect(res.body).toEqual({
+        note: "## 2.8.0-beta.2\n\nNotes for 2.8.0-beta.2\n",
+      });
+    });
+
+    it("?channel=* serves the highest version on any channel", async () => {
+      const { app } = configureTestAppWithReleases(mixed());
+      const res = await supertest(app)
+        .get("/notes?channel=*")
+        .set("Accept", "application/json")
+        .expect(200);
+      expect(res.body).toEqual({
+        note: "## 2.8.0-beta.2\n\nNotes for 2.8.0-beta.2\n",
+      });
+    });
+
+    it("404s rather than falling back when the channel is explicit", async () => {
+      const { app } = configureTestAppWithReleases(mixed());
+      await supertest(app).get("/notes?channel=nightly").expect(404);
+    });
+
+    it("falls back to any channel when stable has no release", async () => {
+      const { app } = configureTestAppWithReleases(
+        mixed().filter((release) => release.prerelease),
+      );
+      const res = await supertest(app)
+        .get("/notes")
+        .set("Accept", "application/json")
+        .expect(200);
+      expect(res.body).toEqual({
+        note: "## 2.8.0-beta.2\n\nNotes for 2.8.0-beta.2\n",
+      });
+    });
+
+    it("serves a prerelease's notes when asked for it by version", async () => {
+      const { app } = configureTestAppWithReleases(mixed());
+      const res = await supertest(app)
+        .get("/notes/2.8.0-beta.1")
+        .set("Accept", "application/json")
+        .expect(200);
+      expect(res.body).toEqual({
+        note: "## 2.8.0-beta.1\n\nNotes for 2.8.0-beta.1\n",
+      });
+    });
+  });
 });

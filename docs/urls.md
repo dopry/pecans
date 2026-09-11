@@ -76,7 +76,8 @@ client polling a channel variant is offered that channel's newest build.
   `?platform`, `?version` (range or `latest`)
 - `/api/status` — server uptime
 - `/notes/:version` (or `/notes?version=`) — release notes, JSON or plain
-  text via `Accept`
+  text via `Accept`; `?channel=<name|*>` selects a channel, defaulting to
+  `stable`
 
 ## Webhook
 
