@@ -25,6 +25,11 @@ Channel variant: `/update/channel/beta/${platform}/${version}`.
 Upload the files the Squirrel.Windows releaser generates as release assets:
 `RELEASES`, `*-full.nupkg`, and `*-delta.nupkg`.
 
+Pecans serves the manifest as the releaser wrote it, rewriting only each
+entry's filename to a `/dl/` url, so the four-part build numbers it
+contains are passed through untouched. Any channel name works here: a
+channel is read from the release tag, never from the build number.
+
 ## MSIX (Electron 39.5+ / 40.2+ / 41+)
 
 For apps packaged as MSIX, Electron's `autoUpdater` consumes a

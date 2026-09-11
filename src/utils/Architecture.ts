@@ -24,6 +24,26 @@ const X64_TOKEN =
 const X32_TOKEN =
   /(?<![a-z0-9])(ia32|i386|x86|win32)(?![a-z0-9])|(?<![a-z0-9.])32(-?bit)?(?![a-z0-9])/;
 
+// the markers above find a token inside a longer name; anchored, they ask
+// whether a string is nothing but that token
+const WHOLE_ARCH_TOKENS = [ARM_TOKEN, X64_TOKEN, X32_TOKEN].map(
+  (token) => new RegExp(`^(?:${token.source})$`),
+);
+
+/**
+ * True when a filename part is an architecture and nothing else, so a reader
+ * can tell "app-2.9.0-x64" (a version then an arch) from "app-2.9.0-rc.1.x64"
+ * (a version this project does not support, which merely ends in one).
+ */
+export function isArchitectureToken(part: string): boolean {
+  const token = part.toLowerCase();
+  return (
+    token == "universal" ||
+    token == "univ" ||
+    WHOLE_ARCH_TOKENS.some((arch) => arch.test(token))
+  );
+}
+
 export function filenameToArchitecture(
   filename: string,
   os: OperatingSystem,

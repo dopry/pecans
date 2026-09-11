@@ -1,35 +1,10 @@
 import { describe, it, expect, vi } from "vitest";
 import {
-  normVersion,
-  toSemver,
   parseRELEASES,
   generateRELEASES,
 } from "../../src/utils/win-releases.js";
 
 describe("Windows RELEASES", function () {
-  describe("Version Normalization", function () {
-    it("should not changed version without pre-release", function () {
-      expect(normVersion("1.0.0")).toBe("1.0.0");
-      expect(normVersion("4.5.0")).toBe("4.5.0");
-      expect(normVersion("67.8.345")).toBe("67.8.345");
-    });
-
-    it("should normalize the pre-release", function () {
-      expect(normVersion("1.0.0-alpha.1")).toBe("1.0.0.1001");
-      expect(normVersion("1.0.0-beta.1")).toBe("1.0.0.2001");
-      expect(normVersion("1.0.0-unstable.1")).toBe("1.0.0.3001");
-      expect(normVersion("1.0.0-rc.1")).toBe("1.0.0.4001");
-      expect(normVersion("1.0.0-14")).toBe("1.0.0.14");
-    });
-
-    it("should correctly return to a semver", function () {
-      expect(toSemver("1.0.0.1001")).toBe("1.0.0-alpha.1");
-      expect(toSemver("1.0.0.2001")).toBe("1.0.0-beta.1");
-      expect(toSemver("1.0.0.2015")).toBe("1.0.0-beta.15");
-      expect(toSemver("1.0.0")).toBe("1.0.0");
-    });
-  });
-
   describe("Parsing", async function () {
     const releases = await parseRELEASES(
       "62E8BF432F29E8E08240910B85EDBF2D1A41EDF2 atom-0.178.0-full.nupkg 81272434\n" +
@@ -218,43 +193,34 @@ describe("Windows RELEASES", function () {
     });
   });
 
-  describe("Version Normalization Edge Cases", function () {
-    it("should handle numeric prerelease", function () {
-      // Test when prerelease is a number instead of string channel
-      expect(normVersion("1.0.0-14")).toBe("1.0.0.14");
-      expect(normVersion("2.5.3-99")).toBe("2.5.3.99");
+  // regression (#90): the semver field was decoded from the four-part
+  // Windows build number through a table of four channel names, so any
+  // other channel came back as the literal "2.9.0-undefined.3"
+  describe("the semver of a parsed entry", function () {
+    it.each([
+      ["app-2.8.0-beta.2-x64-full.nupkg", "2.8.0-beta.2"],
+      ["app-2.9.0-next.3-x64-full.nupkg", "2.9.0-next.3"],
+      ["app-2.9.0-canary.1-x64-delta.nupkg", "2.9.0-canary.1"],
+      ["app-2.7.0-x64-full.nupkg", "2.7.0"],
+    ])("reads %s as %s", async function (filename, semver) {
+      const [entry] = await parseRELEASES(
+        `62E8BF432F29E8E08240910B85EDBF2D1A41EDF2 ${filename} 81272434`,
+      );
+      expect(entry.semver).toBe(semver);
     });
 
-    it("should handle empty prerelease array", function () {
-      // This tests the default parameter in hashPrerelease
-      expect(normVersion("1.0.0")).toBe("1.0.0");
+    it("is undefined for a prerelease outside the supported shapes", async function () {
+      const [entry] = await parseRELEASES(
+        "62E8BF432F29E8E08240910B85EDBF2D1A41EDF2 app-2.9.0-rc1-x64-full.nupkg 81272434",
+      );
+      expect(entry.semver).toBeUndefined();
     });
 
-    it("should handle channel without version number", function () {
-      expect(normVersion("1.0.0-alpha")).toBe("1.0.0.1000");
-      expect(normVersion("1.0.0-beta")).toBe("1.0.0.2000");
-      expect(normVersion("1.0.0-unstable")).toBe("1.0.0.3000");
-      expect(normVersion("1.0.0-rc")).toBe("1.0.0.4000");
-    });
-
-    it("should handle toSemver with zero prerelease", function () {
-      expect(toSemver("1.0.0.0")).toBe("1.0.0");
-    });
-
-    it("should handle toSemver with different channel numbers", function () {
-      expect(toSemver("1.0.0.3015")).toBe("1.0.0-unstable.15");
-      expect(toSemver("1.0.0.4025")).toBe("1.0.0-rc.25");
-    });
-
-    it("should handle prerelease with non-string first element", function () {
-      // Test the else branch in hashPrerelease when channel is not a string
-      // This happens when the prerelease starts with a number
-      expect(normVersion("1.0.0-123.something")).toBe("1.0.0.123");
-    });
-
-    it("should handle unknown channel names", function () {
-      // Test with a channel name not in the CHANNELS array
-      expect(normVersion("1.0.0-gamma.5")).toBe("1.0.0.5");
+    it("is undefined when the filename carries no version", async function () {
+      const [entry] = await parseRELEASES(
+        "62E8BF432F29E8E08240910B85EDBF2D1A41EDF2 app-name-only.nupkg 81272434",
+      );
+      expect(entry.semver).toBeUndefined();
     });
   });
 
