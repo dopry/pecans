@@ -1,5 +1,5 @@
 import type { NextFunction, Request, Response } from "express";
-import { valid } from "semver";
+import { gt, valid } from "semver";
 import { BadRequestError, NotFoundError } from "../errors.js";
 import { mergeReleaseNotes } from "../utils/mergeReleaseNotes.js";
 import { filetypeToPackageFormat } from "../utils/PackageFormat.js";
@@ -33,12 +33,13 @@ export function createUpdateOSXHandler(
       const platform = validateReqQueryPlatform(mapped_platform);
       // the client reports its installed version, so require a specific
       // semver version; a range would corrupt the ">=" + tag filter below
-      if (!valid(versionParam)) {
+      // normalized, so "v2.5.0" and "2.5.0+build.1" compare as 2.5.0 below
+      const tag = valid(versionParam);
+      if (!tag) {
         throw new BadRequestError(
           `Invalid version (${versionParam}), expected a specific semver version`,
         );
       }
-      const tag = versionParam;
 
       const channel = getStringParam(req, "channel") || "stable";
       // the nuts-era ?filetype query on /update was removed in 2.0 in favor
@@ -66,9 +67,10 @@ export function createUpdateOSXHandler(
       const latest = versions[0];
       if (latest.version == tag) return res.status(204).send("No updates");
 
-      // exclude the client's own release by version: it is not always the
-      // last entry (it may have no release, or none on this channel)
-      const notesSlice = versions.filter((release) => release.version !== tag);
+      // notes cover the releases newer than the client: its own release is
+      // not always the last entry (it may have no release, or none on this
+      // channel), and semver comparison ignores how a version is spelled
+      const notesSlice = versions.filter((release) => gt(release.version, tag));
       const url = `${ctx.getBaseUrl(req)}/download/version/${
         latest.version
       }/${platform}?filetype=${encodeURIComponent(filetype)}`;

@@ -133,6 +133,29 @@ describe("/update/:platform/:version (Squirrel.Mac)", () => {
     );
   });
 
+  // the client's version is compared semantically, not by spelling: a
+  // leading v or build metadata still identifies its own release
+  it.each(["v2.5.0", "2.5.0+build.1"])(
+    "excludes the client's own notes when it reports %s",
+    async (version) => {
+      const { app } = configureTestAppWithReleases(
+        buildStableReleaseSet(OWNER, REPO),
+      );
+      const res = await supertest(app)
+        .get(`/update/osx/${encodeURIComponent(version)}`)
+        .expect(200);
+      expectSquirrelMacResponse(res.body);
+      expect(res.body.notes).toBe("Notes for 2.7.0\nNotes for 2.6.0\n");
+    },
+  );
+
+  it("204s when the client reports the latest version as v2.7.0", async () => {
+    const { app } = configureTestAppWithReleases(
+      buildStableReleaseSet(OWNER, REPO),
+    );
+    await supertest(app).get("/update/osx/v2.7.0").expect(204);
+  });
+
   it("ignores prereleases for clients on the stable channel", async () => {
     const { app } = configureTestAppWithReleases(
       buildMixedChannelReleaseSet(OWNER, REPO),
