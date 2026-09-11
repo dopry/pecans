@@ -160,12 +160,19 @@ export function createDlHandler(ctx: PecansHttpContext) {
         throw new NotFoundError(`Unsupported Arch (${arch}) for OS (${os})`);
       }
 
-      const channel = req.query.channel
-        ? validateReqQueryChannel(req.query.channel)
-        : "stable";
+      // an explicitly requested channel is honored strictly: an unknown name
+      // is a 404 and nothing falls back to hand prerelease builds to stable
+      // users (#15). Only the defaulted channel keeps the any-channel
+      // fallback, as on /download and /notes (#89). An empty ?channel=
+      // names no channel, so || is deliberate.
+      const requestedChannel = req.query.channel || undefined;
+      const channelExplicit = requestedChannel !== undefined;
+      const channel = validateReqQueryChannel(requestedChannel ?? "stable");
       // "*" names every channel rather than one, so there is nothing to
       // look up (#88)
-      if (channel !== "*") await ctx.validateChannelName(channel);
+      if (channelExplicit && channel !== "*") {
+        await ctx.validateChannelName(channel);
+      }
       const version = getVersionFromQuery(req.query);
       const pkg = getPkgFromQuery(req.query);
 
@@ -177,7 +184,10 @@ export function createDlHandler(ctx: PecansHttpContext) {
         pkg,
       };
 
-      const releases = await ctx.queryReleases(releaseQuery);
+      let releases = await ctx.queryReleases(releaseQuery);
+      if (releases.length === 0 && !channelExplicit && channel !== "*") {
+        releases = await ctx.queryReleases({ ...releaseQuery, channel: "*" });
+      }
       if (releases.length == 0) {
         throw new NotFoundError("No Matching Releases Found");
       }

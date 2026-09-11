@@ -186,6 +186,56 @@ describe("/dl/:os/:arch", () => {
     await supertest(app).get("/dl/windows/32").expect(404);
   });
 
+  // regression (#89): the defaulted channel was validated by name, so a
+  // repo publishing only prereleases answered "Invalid Channel: stable"
+  // for a channel the client never asked for, where /download falls back
+  describe("the defaulted channel", () => {
+    const betasOnly = () =>
+      ["2.8.0-beta.2", "2.8.0-beta.1"].map((version) =>
+        buildRelease({
+          owner: OWNER,
+          repo: REPO,
+          version,
+          prerelease: true,
+          assets: buildFullPlatformAssets(OWNER, REPO, version),
+        }),
+      );
+
+    it("falls back to any channel when no stable release exists", async () => {
+      const { app, backend } = configureTestAppWithReleases(betasOnly());
+      const asset = await findAsset(
+        backend,
+        "2.8.0-beta.2",
+        "app-2.8.0-beta.2-x64.dmg",
+      );
+      nockGithubReleasesAssetRedirect(nock, OWNER, REPO, asset);
+      const res = await supertest(app).get("/dl/osx/64").expect(302);
+      expect(res.headers.location).toContain("app-2.8.0-beta.2-x64.dmg");
+    });
+
+    // an explicit channel never falls back, so stable users are not handed
+    // prerelease builds (#15)
+    it("404s on ?channel=stable when no stable release exists", async () => {
+      const { app } = configureTestAppWithReleases(betasOnly());
+      const res = await supertest(app)
+        .get("/dl/osx/64?channel=stable")
+        .expect(404);
+      expect(res.text).toContain("Invalid Channel: stable");
+    });
+
+    it("treats an empty ?channel= as absent, keeping the fallback", async () => {
+      const { app, backend } = configureTestAppWithReleases(betasOnly());
+      const asset = await findAsset(
+        backend,
+        "2.8.0-beta.2",
+        "app-2.8.0-beta.2-x64.dmg",
+      );
+      nockGithubReleasesAssetRedirect(nock, OWNER, REPO, asset);
+      const res = await supertest(app).get("/dl/osx/64?channel=").expect(302);
+      expect(res.headers.location).toContain("app-2.8.0-beta.2-x64.dmg");
+    });
+  });
+
   it("404s on an unknown channel", async () => {
     const { app } = configureTestAppWithReleases(
       buildStableReleaseSet(OWNER, REPO),
