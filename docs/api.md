@@ -39,8 +39,10 @@ GET https://download.myapp.com/api/channels
 ```
 
 Returns slim summaries: `{name, latest, versions_count, published_at}`.
-Fetch a channel's releases (notes included) with
-`/api/versions?channel=<name>`.
+`latest` is the channel's highest version and `published_at` is that
+release's publish date, so a backport published after a newer release does
+not become the channel's latest. Fetch a channel's releases (notes
+included) with `/api/versions?channel=<name>`.
 
 ## Server status
 

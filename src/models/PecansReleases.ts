@@ -22,9 +22,9 @@ export class PecansReleases {
     });
     this.getChannelNames().forEach((key) => {
       const version_count = this.idxReleaseByChannel[key].length;
-      const latest = this.idxReleaseByChannel[key].reduce((latest, item) => {
-        return item.published_at > latest.published_at ? item : latest;
-      });
+      // the channel's releases are sorted by semver descending, so the
+      // highest version is first
+      const latest = this.idxReleaseByChannel[key][0];
       const channel: PecansChannel = {
         name: key,
         latest: latest.version,
