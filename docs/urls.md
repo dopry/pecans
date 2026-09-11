@@ -32,7 +32,8 @@ canonical `linux_32` id if you need it.)
 - `/download/channel/:channel/:platform` — latest build on a channel (404
   when the channel has no matching release).
 - `/download/version/:tag/:platform` — a specific version (`:tag` is a
-  semver version, a range, or `latest`).
+  semver version, a range, or `latest`). An exact version is served
+  whatever channel it is on; a range resolves within the requested channel.
 - `/download/:tag/:filename` — a release asset by exact filename.
 - `?filetype=zip` — prefer an extension (other extensions remain fallbacks).
 - `/dl/:os/:arch` — discrete resolution; supports `?channel`, `?version`,

@@ -328,6 +328,50 @@ describe("/download/channel/:channel/:platform?", () => {
     );
     await supertest(app).get("/download/channel/nightly/osx").expect(404);
   });
+
+  // regression (#85): any tag but "latest" widened the channel to "*", so a
+  // range on an explicit channel silently served another channel's build
+  it("keeps the explicit channel when the tag is a range", async () => {
+    const { app, backend } = configureTestAppWithReleases(
+      buildMixedChannelReleaseSet(OWNER, REPO),
+    );
+    const asset = await findAsset(
+      backend,
+      "2.8.0-beta.2",
+      "app-2.8.0-beta.2-univ.dmg",
+    );
+    nockGithubReleasesAssetRedirect(nock, OWNER, REPO, asset);
+    await expectRedirectTo(
+      app,
+      "/download/channel/beta/osx?tag=%5E2.0.0",
+      "app-2.8.0-beta.2-univ.dmg",
+    );
+  });
+
+  it("404s rather than crossing channels for a range only stable matches", async () => {
+    const { app } = configureTestAppWithReleases(
+      buildMixedChannelReleaseSet(OWNER, REPO),
+    );
+    // ~2.7.0 matches 2.7.0 on stable and nothing on beta
+    await supertest(app)
+      .get("/download/channel/beta/osx?tag=~2.7.0")
+      .expect(404);
+  });
+
+  // an exact version identifies one release, so it is still served whatever
+  // channel it is on
+  it("serves an exact version from another channel", async () => {
+    const { app, backend } = configureTestAppWithReleases(
+      buildMixedChannelReleaseSet(OWNER, REPO),
+    );
+    const asset = await findAsset(backend, "2.7.0", "app-2.7.0-univ.dmg");
+    nockGithubReleasesAssetRedirect(nock, OWNER, REPO, asset);
+    await expectRedirectTo(
+      app,
+      "/download/channel/beta/osx?tag=2.7.0",
+      "app-2.7.0-univ.dmg",
+    );
+  });
 });
 
 describe("/download/:tag/:filename", () => {
