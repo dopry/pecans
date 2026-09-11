@@ -4,6 +4,7 @@ import type { NextFunction, Request, Response } from "express";
 import { pipeline, Writable } from "stream";
 import { promisify } from "util";
 import { clean } from "semver";
+import { isReleaseVersion } from "../utils/isReleaseVersion.js";
 import { ForbiddenError } from "../errors.js";
 import type { PecansReleases } from "../models/index.js";
 import type { PecansAssetDTO } from "../models/PecansAsset.js";
@@ -155,15 +156,15 @@ export abstract class Backend<TRaw = unknown> {
   abstract fetchReleases(): Promise<PecansReleases>;
 
   /**
-   * The semver version a source-specific release name (a git tag, an
-   * object key) resolves to, or undefined when it is not a version and the
-   * release must be skipped rather than ingested: an unparseable version
-   * used to slip through and break the whole release collection (#80).
-   * Loose by default (a leading "v" is fine, build metadata is dropped);
-   * backends override this to accept other naming schemes.
+   * The version a source-specific release name (a git tag, an object key)
+   * resolves to, or undefined when the release must be skipped. Accepts the
+   * shapes semantic-release emits, X.Y.Z or X.Y.Z-<channel>.<N>, with a
+   * leading "v" allowed and build metadata dropped. Backends override this
+   * to accept other naming schemes.
    */
   protected versionFromTag(tag: string): string | undefined {
-    return clean(tag, { loose: true }) ?? undefined;
+    const version = clean(tag, { loose: true });
+    return version !== null && isReleaseVersion(version) ? version : undefined;
   }
 
   // Serve an asset to the response (redirect or stream). Backends must

@@ -3,12 +3,12 @@ import { prerelease } from "semver";
 /** The channel a version without a prerelease identifier lands on. */
 export const STABLE_CHANNEL = "stable";
 
-// Extract channel of version
+/** The first prerelease identifier ("2.0.0-beta.3" -> "beta"), or stable. */
 export function channelFromVersion(version: string): string {
   const components = prerelease(version);
   if (!components) return STABLE_CHANNEL;
-  const [channel] = components;
-  return typeof channel == "string" ? channel : STABLE_CHANNEL;
+  // semver returns numeric identifiers as numbers; they are channels too (#81)
+  return String(components[0]);
 }
 
 /**

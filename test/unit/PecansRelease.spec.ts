@@ -58,12 +58,7 @@ describe("PecansRelease", () => {
     });
 
     it("derives the stable channel for release versions", () => {
-      // no prerelease identifier means the stable channel; numeric-only
-      // prerelease ids (1.0.0-2) also fall back to stable
       expect(new PecansRelease(createMockReleaseDTO()).channel).toBe("stable");
-      expect(
-        new PecansRelease(createMockReleaseDTO({ version: "1.0.0-2" })).channel,
-      ).toBe("stable");
     });
 
     it("should filter out assets that fail to parse", () => {
@@ -91,11 +86,11 @@ describe("PecansRelease", () => {
 
     // regression (#80): an unparseable version slipped through as "stable"
     // and later threw inside the semver sort of the whole collection
-    it("throws on a version that is not semver", () => {
-      for (const version of ["nightly", "not-a-semver", "1.0"]) {
+    it("throws on a version that is not a release version", () => {
+      for (const version of ["nightly", "not-a-semver", "1.0", "1.0.0-2"]) {
         expect(
           () => new PecansRelease(createMockReleaseDTO({ version })),
-        ).toThrow(`Invalid semver version (${version})`);
+        ).toThrow(`Invalid release version (${version})`);
       }
     });
 

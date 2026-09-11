@@ -219,6 +219,9 @@ describe("Backend Complete Coverage", () => {
         "docs-1",
         "release-1.0.0",
         "1.0",
+        "v2.9.0-1",
+        "v2.0.0-beta",
+        "v2.0.0-rc1",
       ]) {
         expect(backend.parseTag(tag)).toBeUndefined();
       }

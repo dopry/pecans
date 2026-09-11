@@ -359,7 +359,7 @@ describe("PecansGitHubBackend", () => {
 
     // regression (#80): one non-semver tag took every route down with
     // "Invalid Version"; it is skipped with a warning and the rest served
-    it("skips releases whose tag is not a semver version", async () => {
+    it("skips releases whose tag is not a release version", async () => {
       const mockReleases = [
         {
           id: 1,
@@ -385,6 +385,14 @@ describe("PecansGitHubBackend", () => {
           body: null,
           assets: [],
         },
+        {
+          id: 4,
+          tag_name: "v1.2.0-1",
+          draft: false,
+          published_at: "2023-03-01T00:00:00Z",
+          body: null,
+          assets: [],
+        },
       ];
 
       mockOctokit.paginate.mockResolvedValue(mockReleases);
@@ -395,9 +403,11 @@ describe("PecansGitHubBackend", () => {
         "1.1.0",
         "1.0.0",
       ]);
-      expect(consoleWarnSpy).toHaveBeenCalledWith(
-        "Skipping release nightly: tag is not a semver version",
-      );
+      for (const tag of ["nightly", "v1.2.0-1"]) {
+        expect(consoleWarnSpy).toHaveBeenCalledWith(
+          `Skipping release ${tag}: expected a tag like X.Y.Z or X.Y.Z-<channel>.<N>`,
+        );
+      }
     });
 
     it("should handle releases without published_at", async () => {
@@ -664,8 +674,12 @@ describe("PecansGitHubBackend", () => {
 
     // regression (#80): a tag that is not a version used to fall back to
     // the raw tag string, which then blew up inside the PecansReleases sort
-    it("throws on a tag that is not a semver version", () => {
-      for (const tag_name of ["release-1.0.0-beta", "not-a-semver"]) {
+    it("throws on a tag that is not a release version", () => {
+      for (const tag_name of [
+        "release-1.0.0-beta",
+        "not-a-semver",
+        "v2.0.0-rc1",
+      ]) {
         const githubRelease = {
           id: 1,
           tag_name,
@@ -674,7 +688,7 @@ describe("PecansGitHubBackend", () => {
           assets: [],
         };
         expect(() => backend.normalizeRelease(githubRelease as any)).toThrow(
-          `Release tag is not a semver version (${tag_name})`,
+          `Release tag is not a release version (${tag_name})`,
         );
       }
     });

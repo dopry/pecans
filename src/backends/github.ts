@@ -164,7 +164,7 @@ export class PecansGitHubBackend extends Backend<GithubReleaseAsset> {
       // not take every route down: skip it, loudly, and serve the rest (#80)
       if (this.versionFromTag(release.tag_name) === undefined) {
         console.warn(
-          `Skipping release ${release.tag_name}: tag is not a semver version`,
+          `Skipping release ${release.tag_name}: expected a tag like X.Y.Z or X.Y.Z-<channel>.<N>`,
         );
         return false;
       }
@@ -254,13 +254,13 @@ export class PecansGitHubBackend extends Backend<GithubReleaseAsset> {
 
   /**
    * Build a PecansRelease from a GitHub release. Throws when the tag is not
-   * a semver version; fetchReleases filters those out before calling this.
+   * a release version; fetchReleases filters those out before calling this.
    */
   normalizeRelease(release: GithubRelease): PecansRelease {
     const version = this.versionFromTag(release.tag_name);
     if (version === undefined) {
       throw new Error(
-        `Release tag is not a semver version (${release.tag_name})`,
+        `Release tag is not a release version (${release.tag_name}), expected X.Y.Z or X.Y.Z-<channel>.<N>`,
       );
     }
     const notes = release.body || "";

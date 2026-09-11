@@ -23,20 +23,12 @@ describe("channelFromVersion", () => {
     expect(channelFromVersion("3.2.1-canary.5")).toBe("canary");
   });
 
-  it("should return 'stable' when prerelease component is not a string", () => {
-    // This targets the uncovered branch: typeof channel == "string" ? channel : "stable"
-    // When semver.prerelease returns an array with numeric first element (not string)
-    // semver.prerelease("1.0.0-1") returns [1] (number), not ["1"] (string)
-    expect(channelFromVersion("1.0.0-1")).toBe("stable"); // Numeric prerelease -> stable
-    expect(channelFromVersion("1.0.0-0")).toBe("stable"); // Numeric 0 -> stable
-    expect(channelFromVersion("2.1.0-42")).toBe("stable"); // Any numeric prerelease -> stable
-  });
-
   it("should handle various prerelease formats", () => {
     expect(channelFromVersion("1.0.0-beta.1")).toBe("beta");
     expect(channelFromVersion("1.0.0-alpha.2.3")).toBe("alpha");
     expect(channelFromVersion("1.0.0-rc")).toBe("rc");
     expect(channelFromVersion("1.0.0-dev.snapshot")).toBe("dev");
+    expect(channelFromVersion("1.0.0-1")).toBe("1"); // #81
   });
 
   it("should handle edge case versions", () => {
