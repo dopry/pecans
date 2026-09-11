@@ -36,9 +36,10 @@ canonical `linux_32` id if you need it.)
   whatever channel it is on; a range resolves within the requested channel.
 - `/download/:tag/:filename` — a release asset by exact filename.
 - `?filetype=zip` — prefer an extension (other extensions remain fallbacks).
-- `/dl/:os/:arch` — discrete resolution; supports `?channel`, `?version`,
-  and `?pkg=deb|rpm|msix`. Examples: `/dl/linux/arm64?pkg=deb`,
-  `/dl/windows/universal?pkg=msix` (the `.msixbundle`).
+- `/dl/:os/:arch` — discrete resolution; supports `?channel=<name|*>`
+  (default `stable`), `?version`, and `?pkg=deb|rpm|msix`. Examples:
+  `/dl/linux/arm64?pkg=deb`, `/dl/windows/universal?pkg=msix` (the
+  `.msixbundle`).
 - `/dl/:filename` — a release asset by exact filename.
 
 ## Auto-update feeds

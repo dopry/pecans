@@ -163,7 +163,9 @@ export function createDlHandler(ctx: PecansHttpContext) {
       const channel = req.query.channel
         ? validateReqQueryChannel(req.query.channel)
         : "stable";
-      await ctx.validateChannelName(channel);
+      // "*" names every channel rather than one, so there is nothing to
+      // look up (#88)
+      if (channel !== "*") await ctx.validateChannelName(channel);
       const version = getVersionFromQuery(req.query);
       const pkg = getPkgFromQuery(req.query);
 

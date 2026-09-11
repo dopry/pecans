@@ -125,6 +125,22 @@ describe("/dl/:os/:arch", () => {
     expect(res.headers.location).toContain("app-2.9.0-beta.1-x64.dmg");
   });
 
+  // regression (#88): "*" names every channel rather than one, so it has
+  // nothing to look up and was rejected as an unknown channel name
+  it("?channel=* selects the highest version on any channel", async () => {
+    const { app, backend } = configureTestAppWithReleases(
+      buildMixedChannelReleaseSet(OWNER, REPO),
+    );
+    const asset = await findAsset(
+      backend,
+      "2.8.0-beta.2",
+      "app-2.8.0-beta.2-x64.dmg",
+    );
+    nockGithubReleasesAssetRedirect(nock, OWNER, REPO, asset);
+    const res = await supertest(app).get("/dl/osx/64?channel=%2A").expect(302);
+    expect(res.headers.location).toContain("app-2.8.0-beta.2-x64.dmg");
+  });
+
   it("defaults to the stable channel when prereleases exist", async () => {
     const { app, backend } = configureTestAppWithReleases(
       buildMixedChannelReleaseSet(OWNER, REPO),
