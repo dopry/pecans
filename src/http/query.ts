@@ -62,10 +62,6 @@ export function getVersionFromQuery(query: ParsedQs): string | undefined {
   return value && (validRange(value) || value == "latest") ? value : undefined;
 }
 
-export function getFilenameFromQuery(query: ParsedQs): string | undefined {
-  return getStringValueFromRequestQuery(query, "filename");
-}
-
 export function getFiletypeFromQuery(
   query: ParsedQs,
 ): SupportedFileExtension | undefined {

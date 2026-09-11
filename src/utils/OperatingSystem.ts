@@ -1,5 +1,3 @@
-import QueryString from "qs";
-
 export const OPERATING_SYSTEMS = ["linux", "osx", "windows"] as const;
 export type OperatingSystem = (typeof OPERATING_SYSTEMS)[number];
 // check if a string is an OS identifier
@@ -40,12 +38,4 @@ export function filenameToOperatingSystem(filename: string): OperatingSystem {
   )
     return "osx";
   throw new Error("Unable to determine OS from filename.");
-}
-
-export function getOsFromQuery(
-  query: QueryString.ParsedQs,
-): OperatingSystem | undefined {
-  return query.os && typeof query.os === "string" && isOperatingSystem(query.os)
-    ? query.os
-    : undefined;
 }

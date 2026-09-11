@@ -8,7 +8,6 @@ import {
   type PackageFormat,
   type Platform,
   platforms,
-  platformToType,
   mapLegacyPlatform,
   isPlatform,
 } from "../../src/utils/index.js";
@@ -487,28 +486,6 @@ describe("Platforms", function () {
           expect(target?.filename).toBe(filename);
         }
       });
-    });
-  });
-
-  describe("platformToType", () => {
-    it("should extract OS from platform strings", () => {
-      expect(platformToType("linux")).toBe("linux");
-      expect(platformToType("linux_64")).toBe("linux");
-      expect(platformToType("linux_deb_32")).toBe("linux");
-      expect(platformToType("osx")).toBe("osx");
-      expect(platformToType("osx_64")).toBe("osx");
-      expect(platformToType("osx_arm64")).toBe("osx");
-      expect(platformToType("windows")).toBe("windows");
-      expect(platformToType("windows_32")).toBe("windows");
-    });
-
-    it("should throw error for invalid platform strings", () => {
-      expect(() => platformToType("invalid_64" as Platform)).toThrow(
-        "Unrecognized OS in platform string",
-      );
-      expect(() => platformToType("unknown" as Platform)).toThrow(
-        "Unrecognized OS in platform string",
-      );
     });
   });
 

@@ -188,15 +188,6 @@ export function platformToQuery(platform: Platform): DiscretePlatformQuery {
   };
 }
 
-// Reduce a platform id to its OS,
-export function platformToType(platform: Platform): OperatingSystem {
-  const [os] = platform.split("_");
-  if (isOperatingSystem(os)) return os;
-  // if our typeguards are working and ts compiles without error,
-  // we shouldn't get here... but just in case we do, throw and error.
-  throw new Error("Unrecognized OS in platform string");
-}
-
 export function filenameToPlatform(filename: string): Platform {
   const name = filename.toLowerCase();
   // Detect NuGet/Squirrel.Windows files
