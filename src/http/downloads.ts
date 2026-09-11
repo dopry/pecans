@@ -1,4 +1,5 @@
 import type { NextFunction, Request, Response } from "express";
+import { valid } from "semver";
 import { BadRequestError, NotFoundError } from "../errors.js";
 import type { PecansRelease } from "../models/PecansRelease.js";
 import type { PecansReleaseQuery } from "../models/PecansReleaseQuery.js";
@@ -84,9 +85,11 @@ export function createDownloadHandler(ctx: PecansHttpContext) {
         ...(filetypePkg ? { pkg: filetypePkg } : {}),
       };
 
-      // If a specific version was requested, don't enforce a channel; an
-      // absent tag means "latest" and keeps the requested/default channel.
-      if (tag && tag != "latest") channel = "*";
+      // An exact version identifies one release, so it is not channel-bound.
+      // A range is not: it resolves within the requested channel, or the
+      // default one with the fallback below (#85). An absent tag means
+      // "latest" and keeps the requested/default channel.
+      if (tag && tag != "latest" && valid(tag)) channel = "*";
 
       let release: PecansRelease | undefined = undefined;
       try {
