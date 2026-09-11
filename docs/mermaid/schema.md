@@ -1,5 +1,5 @@
 graph LR
-A[Developers] -->|Publish Release| B[Github]
+A[Developers] -->|Publish Release| B[GitHub]
 D --> | Install | E[Application]
 C -->|Send Update Download URL | E
 D[Users] -->| Download Installer | C
