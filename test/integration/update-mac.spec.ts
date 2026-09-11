@@ -120,6 +120,19 @@ describe("/update/:platform/:version (Squirrel.Mac)", () => {
     expect(download.headers.location).toContain(".zip");
   });
 
+  // regression (#83): the client's release was excluded by position, so a
+  // client whose version has no release lost the oldest update's notes
+  it("keeps every newer release's notes when the client's version has no release", async () => {
+    const { app } = configureTestAppWithReleases(
+      buildStableReleaseSet(OWNER, REPO),
+    );
+    const res = await supertest(app).get("/update/osx/2.4.0").expect(200);
+    expectSquirrelMacResponse(res.body);
+    expect(res.body.notes).toBe(
+      "Notes for 2.7.0\nNotes for 2.6.0\nNotes for 2.5.0\n",
+    );
+  });
+
   it("ignores prereleases for clients on the stable channel", async () => {
     const { app } = configureTestAppWithReleases(
       buildMixedChannelReleaseSet(OWNER, REPO),
@@ -217,6 +230,11 @@ describe("/update/channel/:channel/:platform/:version (Squirrel.Mac)", () => {
         .expect(200);
       expectSquirrelMacResponse(res.body);
       expect(res.body.name).toBe("2.8.0-beta.2");
+      // the client's own version is not on this channel, so no beta's notes
+      // are dropped for it
+      expect(res.body.notes).toBe(
+        "Notes for 2.8.0-beta.2\nNotes for 2.8.0-beta.1\n",
+      );
     });
 
     it("still keeps stable clients off the betas on the bare feed", async () => {
