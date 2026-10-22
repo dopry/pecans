@@ -50,6 +50,20 @@ export abstract class Backend<TRaw = unknown> {
     // until new data is fetched.
     const promise = this.fetchReleases()
       .then((releases) => {
+        // an upstream outage can return an empty list with a success status
+        // (GitHub's release pagination stops at the first empty page), so
+        // treat losing every release as a failed refresh and keep serving
+        // the stale cache; with no cache yet, empty is all we have
+        if (
+          releases.getReleases().length === 0 &&
+          this.cache &&
+          this.cache.getReleases().length > 0
+        ) {
+          throw new Error(
+            "Refusing to replace a cache of " +
+              `${this.cache.getReleases().length} releases with an empty fetch`,
+          );
+        }
         this.cache = releases;
         this.cacheTimestamp = Date.now();
         this.cacheRefreshPromise = undefined;
