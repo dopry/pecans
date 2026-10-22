@@ -343,6 +343,31 @@ describe("Backend Caching", () => {
       expect(backend.fetchCount).toBe(3); // Initial + failed attempt + successful retry
     });
 
+    it("keeps a populated cache when a refresh fetches no releases", async () => {
+      const originalReleases = await backend.releases();
+      const originalTimestamp = backend.getCacheTimestamp();
+      advanceTime(1000);
+      backend.mockReleases = new PecansReleases([]);
+
+      await expect(backend.refreshCache()).rejects.toThrow(
+        "Refusing to replace a cache of 1 releases with an empty fetch",
+      );
+
+      expect(backend.getCache()).toBe(originalReleases);
+      // untouched, so an expired cache retries on the next request
+      expect(backend.getCacheTimestamp()).toBe(originalTimestamp);
+      expect(backend.getCacheRefreshPromise()).toBeUndefined();
+    });
+
+    it("accepts an empty fetch when there is no cache yet", async () => {
+      backend.mockReleases = new PecansReleases([]);
+
+      const releases = await backend.releases();
+
+      expect(releases.getReleases()).toHaveLength(0);
+      expect(backend.getCache()).toBe(releases);
+    });
+
     it("should serve stale cache when no cache exists and fetch fails", async () => {
       backend.shouldFailFetch = true;
 
